@@ -931,11 +931,14 @@
     flex-direction: column;
   }
 
-  .p2006t #station-input-mount { order: 1; }
-  .p2006t #suggest-card-mount  { order: 2; }
-  .p2006t #cg-envelope-mount   { order: 3; }
-  .p2006t #print-summary-mount { order: 4; }
-  .p2006t #nomograph-mount     { order: 5; }
+  .p2006t #station-input-mount     { order: 1; }
+  .p2006t #suggest-card-mount      { order: 2; }
+  .p2006t #performance-h2          { order: 3; }
+  .p2006t #performance-panel-mount { order: 4; }
+  .p2006t #print-summary-mount     { order: 5; }
+  .p2006t #graphs-h2               { order: 6; }
+  .p2006t #cg-envelope-mount       { order: 7; }
+  .p2006t #nomograph-mount         { order: 8; }
 
   .p2006t [data-unit="kg"],      .p2006t [data-unit="kg"]      + .unit,
   .p2006t [data-unit="L"],       .p2006t [data-unit="L"]       + .unit,
@@ -1222,6 +1225,33 @@
 .p2006t .perf-status--loading { color: var(--muted); font-style: italic; }
 .p2006t .perf-status--error   { color: var(--warn); }
 .p2006t .perf-status--warn    { color: light-dark(#b35a00, #e8a04a); }
+
+.p2006t .perf-spinner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.p2006t .perf-spinner[hidden] {
+  display: none;
+}
+
+.p2006t .perf-spinner__ring {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent, #4a90d9);
+  border-radius: 50%;
+  animation: perf-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes perf-spin {
+  to { transform: rotate(360deg); }
+}
 
 .p2006t .perf-apt-header {
   display: flex;

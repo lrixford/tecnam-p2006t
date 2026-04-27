@@ -47,6 +47,10 @@ function template() {
         </div>
         <span class="perf-status" id="perf-apt-status"></span>
       </div>
+      <div class="perf-spinner" id="perf-spinner" hidden>
+        <span class="perf-spinner__ring"></span>
+        <span class="perf-spinner__label" id="perf-spinner-label"></span>
+      </div>
 
       <div id="perf-metar-section" hidden>
         <div class="perf-apt-header">
@@ -164,6 +168,11 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
   const resultsEl     = $('perf-results');
   const distancesEl   = $('perf-distances');
   const runwayListEl  = $('perf-runway-list');
+  const spinnerEl     = $('perf-spinner');
+  const spinnerLabel  = $('perf-spinner-label');
+
+  function showSpinner(label) { spinnerLabel.textContent = label; spinnerEl.hidden = false; }
+  function hideSpinner()      { spinnerEl.hidden = true; }
 
   // Warm the cache in background
   loadAirports().then(data => { db = data; }).catch(() => {});
@@ -173,6 +182,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
     lookupRowEl.hidden  = false;
     metarSection.hidden = true;
     resultsEl.hidden    = true;
+    hideSpinner();
     setStatus(aptStatusEl, '');
     aptIdEl.value = '';
   }
@@ -184,12 +194,16 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
   async function loadAirport() {
     const id = aptIdEl.value.trim();
     if (!id) return;
-    setStatus(aptStatusEl, 'Loading…', 'loading');
+    showSpinner('Loading airport…');
+    setStatus(aptStatusEl, '');
     try {
       if (!db) db = await loadAirports();
       airport = lookupAirport(db, id);
-      if (!airport) { setStatus(aptStatusEl, 'Airport not found', 'error'); return; }
-      setStatus(aptStatusEl, '');
+      if (!airport) {
+        hideSpinner();
+        setStatus(aptStatusEl, 'Airport not found', 'error');
+        return;
+      }
       aptInfoEl.textContent = `${airport.name} — ${airport.city}, ${airport.state}`;
       lookupRowEl.hidden  = true;
       metarSection.hidden = false;
@@ -197,6 +211,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
       metar = null; selected = null;
       doFetch(airport.metar_id ?? airport.id);
     } catch (e) {
+      hideSpinner();
       setStatus(aptStatusEl, `Error: ${e.message}`, 'error');
     }
   }
@@ -208,9 +223,11 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
 
   async function doFetch(stationId) {
     if (!stationId) return;
-    setStatus(metarStatusEl, 'Fetching…', 'loading');
+    showSpinner('Fetching weather…');
+    setStatus(metarStatusEl, '', '');
     try {
       const result = await fetchMETAR(stationId);
+      hideSpinner();
       if (!result) {
         setStatus(metarStatusEl,
           'No METAR for this station — enter an alternate station below', 'warn');
@@ -223,6 +240,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
       renderResults();
       onMetarLoad?.();
     } catch (e) {
+      hideSpinner();
       setStatus(metarStatusEl, `Error: ${e.message}`, 'error');
     }
   }

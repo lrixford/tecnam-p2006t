@@ -17,10 +17,10 @@ export function mountWidget(target) {
     <div class="widget__body">
       <div id="station-input-mount"></div>
       <div id="suggest-card-mount"></div>
-      <h2 class="section-h2">Performance</h2>
+      <h2 class="section-h2" id="performance-h2">Performance</h2>
       <div id="performance-panel-mount"></div>
       <div id="print-summary-mount"></div>
-      <h2 class="section-h2">Graphs</h2>
+      <h2 class="section-h2" id="graphs-h2">Graphs</h2>
       <div id="nomograph-mount"></div>
       <div id="cg-envelope-mount" class="cg-envelope"></div>
     </div>
