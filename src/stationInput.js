@@ -199,7 +199,9 @@ function fuelPlanHtml() {
 
 function template() {
   return `
+    <h2 class="section-h2">Aircraft</h2>
     ${emptySectionHtml()}
+    <h2 class="section-h2">Loading</h2>
     <div class="plan-view">
       <div class="plan-view__fuel-col">${fuelCellHtml(FUEL_TANKS[0])}</div>
       <div class="plan-view__interior">

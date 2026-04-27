@@ -80,7 +80,10 @@ export function renderFuelTable(target, state) {
   target.replaceChildren(section);
 }
 
-export function renderPrintSummary(target, state) {
+function fmtFtM(m)   { return `${Math.round(m / 0.3048).toLocaleString()} ft (${Math.round(m)} m)`; }
+function fmtFpmM(fpm){ return `${fpm.toLocaleString()} fpm (${Math.round(fpm * 0.3048)} m/min)`; }
+
+export function renderPrintSummary(target, state, metar = null, perf = null) {
   const conds = computeAll(state);
   const totalGal      = state.fuelL.volume_gal + state.fuelR.volume_gal;
   const taxiGal       = state.fuelTaxi?.volume_gal    ?? 0;
@@ -109,13 +112,29 @@ export function renderPrintSummary(target, state) {
   section.className = 'print-summary';
   section.innerHTML = `
     <div class="print-summary__title">
-      <span class="print-summary__name">Tecnam P2006T Weight &amp; Balance${aircraft}</span>
-      <span class="print-summary__ts">${timestamp}</span>
+      <div class="print-summary__title__row">
+        <span class="print-summary__name">Tecnam P2006T Weight &amp; Balance${aircraft}</span>
+        <span class="print-summary__ts">${timestamp}</span>
+      </div>
+      ${metar?.raw ? `<span class="print-summary__metar">${metar.raw}</span>` : ''}
     </div>
+    <h2 class="section-h2">Tables</h2>
     <div class="print-summary__grid">
+      ${perf ? `<div>
+        <table class="dt-table">
+          <thead><tr><th>Performance</th><th>GR / Dist</th><th>50 ft / OEI</th></tr></thead>
+          <tbody>
+            <tr><td>Takeoff</td><td>${fmtFtM(perf.takeoff.gr)}</td><td>${fmtFtM(perf.takeoff.to50ft)}</td></tr>
+            <tr><td>Accelerate-Stop</td><td colspan="2">${fmtFtM(perf.accel_stop.dist_m)}</td></tr>
+            <tr><td>Accelerate-Go</td><td colspan="2">${perf.accel_go.dist_m !== null ? fmtFtM(perf.accel_go.dist_m) : '<span class="dt-oei-warn">Unable to maintain 25 fpm OEI</span>'}</td></tr>
+            <tr><td>Landing</td><td>${fmtFtM(perf.landing.gr)}</td><td>${fmtFtM(perf.landing.to50ft)}</td></tr>
+            <tr><td>Rate of Climb</td><td>${fmtFpmM(perf.roc_fpm)}</td><td>${fmtFpmM(perf.roc_oei_fpm)}</td></tr>
+          </tbody>
+        </table>
+      </div>` : ''}
       <div>
         <table class="dt-table">
-          <thead><tr><th></th><th>lb</th><th>kg</th><th>Moment</th></tr></thead>
+          <thead><tr><th>Loading</th><th>lb</th><th>kg</th><th>Moment</th></tr></thead>
           <tbody>
             ${wRow('Empty A/C', state.empty.weight_lb, state.empty.moment_lb_ft)}
             ${wRow('Pilot',     state.pilot.weight_lb,    state.pilot.weight_lb    * arms.pilot)}
@@ -129,21 +148,18 @@ export function renderPrintSummary(target, state) {
         <table class="dt-table">
           <thead><tr><th>Fuel</th><th>gal</th><th>L</th><th>lb</th><th>kg</th></tr></thead>
           <tbody>
-            ${fuelRow('Initial',        totalGal)}
-            ${fuelRow('Taxi',          taxiGal)}
-            ${fuelRow('Departure',     departureGal, 'dt-subtotal')}
-            ${fuelRow('Enroute',       burnoffGal)}
-            ${fuelRow('Landing',       landingGal, 'dt-subtotal')}
+            ${fuelRow('Initial',    totalGal)}
+            ${fuelRow('Taxi',       taxiGal)}
+            ${fuelRow('Departure',  departureGal, 'dt-subtotal')}
+            ${fuelRow('Enroute',    burnoffGal)}
+            ${fuelRow('Landing',    landingGal, 'dt-subtotal')}
           </tbody>
         </table>
       </div>
-      <div>
+      <div class="print-summary__wb">
         <table class="dt-table">
           <thead><tr>
-            <th>W&amp;B</th>
-            <th>lb</th><th>kg</th>
-            <th>% MAC</th>
-            <th></th>
+            <th>W&amp;B</th><th>lb</th><th>kg</th><th>% MAC</th><th></th>
           </tr></thead>
           <tbody>
             <tr class="dt-cond--mtow">

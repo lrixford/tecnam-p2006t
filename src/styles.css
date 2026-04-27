@@ -52,6 +52,27 @@
   color: var(--muted);
 }
 
+.p2006t .section-h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 1.75rem 0 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--muted);
+}
+.p2006t .section-h2::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.p2006t .section-h2:first-child {
+  margin-top: 0.25rem;
+}
+
 /* Plan view layout — fuelL spans rows on the left, fuelR on the right,
    front/rear/baggage stack in the middle two columns. */
 .p2006t .plan-view {
@@ -847,9 +868,15 @@
 
 .p2006t .print-summary__title {
   display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.5rem;
+}
+
+.p2006t .print-summary__title__row {
+  display: flex;
   justify-content: space-between;
   align-items: baseline;
-  margin-bottom: 0.5rem;
 }
 
 .p2006t .print-summary__name {
@@ -860,6 +887,18 @@
 .p2006t .print-summary__ts {
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+.p2006t .print-summary__metar {
+  font-family: monospace;
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-bottom: 0.6rem;
+  word-break: break-all;
+}
+
+.p2006t .print-summary__perf {
+  margin-bottom: 1rem;
 }
 
 .p2006t .print-summary__grid {
@@ -927,7 +966,13 @@
 
   .p2006t .widget__header,
   .p2006t .station-input,
-  .p2006t .suggest-card {
+  .p2006t .suggest-card,
+  .p2006t .section-h2,
+  .p2006t .perf-panel {
+    display: none;
+  }
+
+  .p2006t .print-summary__wb {
     display: none;
   }
 
@@ -977,6 +1022,10 @@
   .p2006t .print-summary {
     display: block;
     margin-bottom: 1rem;
+  }
+
+  .p2006t .print-summary__title {
+    display: none;
   }
 
   .p2006t .print-summary__grid {
@@ -1107,4 +1156,434 @@
 
 @media print {
   .p2006t .cg-envelope { display: none; }
+}
+
+/* ── Performance panel ──────────────────────────────────────────────────── */
+
+.p2006t .perf-panel {
+  margin-top: 0;
+}
+
+.p2006t .perf-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.p2006t .perf-row[hidden] {
+  display: none;
+}
+
+.p2006t .perf-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  min-width: 6rem;
+  flex-shrink: 0;
+}
+
+.p2006t .perf-input-group {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.p2006t .perf-input {
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  width: 9rem;
+}
+
+.p2006t .perf-btn {
+  padding: 0.3rem 0.75rem;
+  background: light-dark(#1f5fa8, #4a8fd4);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.p2006t .perf-btn:hover { background: light-dark(#174d8a, #3a7dc0); }
+
+.p2006t .perf-status {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.p2006t .perf-status--loading { color: var(--muted); font-style: italic; }
+.p2006t .perf-status--error   { color: var(--warn); }
+.p2006t .perf-status--warn    { color: light-dark(#b35a00, #e8a04a); }
+
+.p2006t .perf-apt-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+
+.p2006t .perf-apt-name {
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.p2006t .perf-apt-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  color: var(--muted);
+  padding: 0 0.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.p2006t .perf-apt-clear:hover {
+  color: var(--fg);
+}
+
+.p2006t .perf-metar-raw {
+  font-size: 0.75rem;
+  font-family: monospace;
+  color: var(--muted);
+  background: light-dark(#f8f8f8, #1a1a1a);
+  border-radius: 4px;
+  padding: 0.35rem 0.6rem;
+  margin-bottom: 0.6rem;
+  word-break: break-all;
+}
+
+.p2006t .perf-conditions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.p2006t .perf-cond-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+}
+
+.p2006t .perf-cond-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.p2006t .perf-cond-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.p2006t .perf-runway-header {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 0.4rem;
+}
+
+.p2006t .perf-runway-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Runway card ── */
+.p2006t .rwy-card {
+  display: grid;
+  grid-template-columns: 9rem 1fr 5.5rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* Left: runway info */
+.p2006t .rwy-card__info {
+  padding: 0.65rem 0.75rem;
+  background: light-dark(#f4f4f4, #222);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 0.2rem;
+}
+
+.p2006t .rwy-card__designation {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.p2006t .rwy-card__dims {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.p2006t .rwy-card__surface {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Middle: end rows */
+.p2006t .rwy-card__ends {
+  display: flex;
+  flex-direction: column;
+}
+
+.p2006t .rwy-end-row {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+  flex-wrap: wrap;
+}
+
+.p2006t .rwy-end-row:last-child { border-bottom: none; }
+
+.p2006t .rwy-end-row:hover { background: light-dark(#f5f9ff, #1a2230); }
+
+.p2006t .rwy-end-row--active {
+  background: light-dark(#e8f0fb, #141e2e);
+  border-left: 3px solid var(--accent);
+}
+
+.p2006t .rwy-end-row--best.rwy-end-row--active {
+  border-left-color: var(--accent);
+}
+
+.p2006t .rwy-end-row--warn { background: var(--warn-bg); }
+.p2006t .rwy-end-row--warn.rwy-end-row--active { border-left-color: var(--warn); }
+
+.p2006t .rwy-end__id {
+  font-size: 0.9rem;
+  font-weight: 700;
+  min-width: 3rem;
+}
+
+.p2006t .rwy-end__badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--accent);
+  color: #fff;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.p2006t .rwy-end__wind {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.p2006t .rwy-end__hw,
+.p2006t .rwy-end__xw {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.p2006t .rwy-arrow {
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.p2006t .rwy-end__hw--head { color: light-dark(#1a8a4a, #5fb88a); }
+.p2006t .rwy-end__hw--tail { color: light-dark(#b35a00, #e8a04a); }
+.p2006t .rwy-end__xw       { color: var(--text); }
+.p2006t .rwy-end__xw--warn { color: var(--warn); font-weight: 600; }
+.p2006t .rwy-end__xw--nil  { color: var(--muted); }
+
+.p2006t .rwy-end__slope {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+
+/* Right: wind vector SVG */
+.p2006t .rwy-card__vector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--border);
+  background: light-dark(#fafafa, #1a1a1a);
+  padding: 0.25rem;
+}
+
+/* Distance output */
+.p2006t .perf-dist-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.p2006t .perf-dist-section {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+}
+
+.p2006t .perf-dist-heading {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.p2006t .perf-dist-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.2rem 0;
+  font-size: 0.82rem;
+  border-top: 1px solid var(--border);
+}
+
+.p2006t .perf-dist-row:first-of-type { border-top: none; }
+
+.p2006t .perf-dist-label { color: var(--muted); }
+
+.p2006t .perf-dist-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  text-align: right;
+}
+
+.p2006t .perf-dist-val--warn { color: var(--warn); }
+.p2006t .perf-oei-warn { color: var(--warn); }
+.p2006t .dt-oei-warn   { color: var(--warn); }
+
+.p2006t .perf-dist-note {
+  font-size: 0.65rem;
+  font-weight: 400;
+  color: var(--muted);
+  margin-left: 0.3rem;
+  text-transform: lowercase;
+  letter-spacing: 0;
+}
+
+.p2006t .perf-dist-ft {
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* Accel cards */
+.p2006t .perf-accel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.p2006t .perf-accel-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.65rem;
+  text-align: center;
+}
+
+.p2006t .perf-accel-card--warn { border-color: var(--warn); background: var(--warn-bg); }
+
+.p2006t .perf-accel-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.p2006t .perf-accel-val {
+  font-size: 1.2rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  margin: 0.15rem 0;
+}
+
+.p2006t .perf-accel-card--warn .perf-accel-val { color: var(--warn); }
+
+.p2006t .perf-accel-note {
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+
+/* Available distances */
+.p2006t .perf-avail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.35rem 0.75rem;
+}
+
+.p2006t .perf-avail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  background: light-dark(#f4f4f4, #222);
+  border-radius: 4px;
+}
+
+.p2006t .perf-avail-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.p2006t .perf-avail-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+@media print {
+  .p2006t .perf-panel { display: none; }
+  .p2006t .print-summary__title { display: flex; }
+}
+
+@media (max-width: 480px) {
+  .p2006t .perf-dist-grid,
+  .p2006t .perf-accel-grid,
+  .p2006t .perf-avail-grid { grid-template-columns: 1fr; }
+  .p2006t .perf-conditions  { grid-template-columns: 1fr 1fr; }
 }

@@ -1,0 +1,13 @@
+{
+  "name": "apt-parser",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "parse": "ts-node parse-apt.ts ../docs/airport/APT.txt airports.json ../docs/airport/WXL.txt"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.39",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

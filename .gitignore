@@ -7,3 +7,7 @@ node_modules/
 
 # Docs kept local only
 docs/
+
+# Airport parser — large/generated files
+airport/node_modules/
+airport/APT.txt
