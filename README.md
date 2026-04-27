@@ -1,6 +1,6 @@
 # Tecnam P2006T Weight & Balance Calculator
 
-A browser-based weight and balance calculator for the Tecnam P2006T twin, built with vanilla JS and no bundler dependency. The Tecnam POH works in metric, but this calculator speaks "freedom units" 🇺🇸😄, so it handles all the kg/lb, L/gal, and kg·m/lb·ft conversions so you don't have to.
+A browser-based weight, balance, and departure performance calculator for the Tecnam P2006T twin. Built with vanilla JS and no bundler dependency. Enter your load, fetch a live METAR for your departure airport, and get POH-interpolated takeoff and landing distances, accelerate-stop and accelerate-go distances, and climb rates for both all-engine and single-engine conditions. The POH works in metric, but this calculator speaks "freedom units" 🇺🇸😄, so it handles all the kg/lb, L/gal, and kg·m/lb·ft conversions so you don't have to.
 
 **[Run it now on GitHub Pages](https://lrixford.github.io/tecnam-p2006t)**
 
@@ -11,9 +11,10 @@ A browser-based weight and balance calculator for the Tecnam P2006T twin, built 
 - **Loading condition table** with ramp, takeoff, landing, and zero-fuel weights with CG arm and % MAC
 - **SVG nomograph** showing the CG envelope with a live trajectory dot for each loading condition
 - **W&B suggestion engine** that automatically suggests fuel adjustments (and baggage additions when necessary) to bring an out-of-limits load into the envelope
+- **Departure performance** — enter an airport ID to fetch a live METAR and compute POH takeoff, landing, accelerate-stop, and accelerate-go distances; runway cards rank runways by headwind component with wind arrow/sock diagrams; crosswind limit flagged per POH
 - **Editable MTOW** to support modified aircraft with different maximum gross weights
 - **Reserve fuel input** for configurable minimum landing fuel used by the suggestion engine
-- **Print view** with a landscape-optimized layout with all four condition tables side by side
+- **Print view** with a landscape-optimized layout showing performance, loading, fuel, and W&B tables side by side
 - **Mobile responsive** with a breakpoint at 1024 px; interior layout reorders for narrow screens
 - **Persistent state** with last-entered values restored from `localStorage` on reload
 
@@ -82,14 +83,21 @@ Tests cover the calculation engine (`loadingCondition.js`) and the suggestion en
 
 ```
 src/
-  data/p2006t.js          aircraft constants (arms, envelope, fuel)
+  data/p2006t.js          aircraft constants (arms, envelope, fuel, POH tables)
   loadingCondition.js     pure W&B calculation engine
   suggest.js              fuel/baggage suggestion engine
   nomograph.js            SVG envelope chart builder
   stationInput.js         input form component
-  dataTable.js            loading condition table component
+  dataTable.js            loading condition and print summary tables
+  performance.js          POH takeoff/landing/climb interpolation engine
+  performancePanel.js     departure performance UI component
+  airportDB.js            airport database loader (Cache API, 28-day TTL)
+  metar.js                METAR fetch and parser
   tecnam-p2006t-widget.js top-level component
   styles.css
+airport/
+  parse-apt.ts            FAA APT.txt + WXL.txt parser (generates airports.json)
+  airports.json           compiled airport database
 tests/
   loadingCondition.test.js
   suggest.test.js
