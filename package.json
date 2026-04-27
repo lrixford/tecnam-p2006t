@@ -1,0 +1,11 @@
+{
+  "name": "tecnam-wb",
+  "version": "0.1.0",
+  "description": "Tecnam P2006T weight & balance widget (imperial units)",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test --test-reporter spec \"tests/**/*.test.js\"",
+    "serve": "npx serve ."
+  }
+}

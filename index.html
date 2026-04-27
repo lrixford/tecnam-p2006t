@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Tecnam P2006T Weight & Balance Calculator</title>
+    <meta name="description" content="Browser-based weight and balance calculator for the Tecnam P2006T twin. Computes CG for ramp, takeoff, landing, and zero-fuel conditions with an interactive envelope nomograph." />
+
+    <meta property="og:title" content="Tecnam P2006T Weight & Balance Calculator" />
+    <meta property="og:description" content="Browser-based weight and balance calculator for the Tecnam P2006T twin. Computes CG for ramp, takeoff, landing, and zero-fuel conditions with an interactive envelope nomograph." />
+    <meta property="og:type" content="website" />
+
+    <link rel="stylesheet" href="./src/styles.css" />
+    <style>
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        display: grid;
+        grid-template-columns: 1fr;
+        place-items: start stretch;
+        min-height: 100vh;
+        padding: 1rem 0.25rem;
+      }
+      @media print {
+        body { min-height: 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,1110 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color-scheme: light dark;
+
+  --bg:        light-dark(#ffffff, #141414);
+  --surface:   light-dark(#ffffff, #1d1d1d);
+  --border:    light-dark(#d4d4d4, #303030);
+  --text:      light-dark(#1a1a1a, #f5f5f5);
+  --muted:     light-dark(#666666, #999999);
+  --accent:    light-dark(#1f5fa8, #6aa9e9);
+  --warn:      light-dark(#b3261e, #ff6b5e);
+  --warn-bg:   light-dark(#fde7e6, #3a1614);
+}
+
+.p2006t, .p2006t *, .p2006t *::before, .p2006t *::after { box-sizing: border-box; }
+
+
+.p2006t.widget {
+  width: 100%;
+  max-width: none;
+  background: var(--surface);
+  border: none;
+  border-radius: 0;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.p2006t .widget__body--split {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(560px, 1.5fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.p2006t .widget__col { min-width: 0; }
+.p2006t .widget__col--right > * + * { margin-top: 1rem; }
+
+@media (max-width: 1000px) {
+  .p2006t .widget__body--split {
+    grid-template-columns: 1fr;
+  }
+}
+
+.p2006t .widget__header h1 {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+  letter-spacing: -0.01em;
+}
+
+.p2006t .widget__subtitle {
+  margin: 0 0 1.25rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Plan view layout — fuelL spans rows on the left, fuelR on the right,
+   front/rear/baggage stack in the middle two columns. */
+.p2006t .plan-view {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.p2006t .plan-view__interior {
+  flex: 2;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.p2006t .station--baggage { grid-column: 1 / span 2; }
+
+.p2006t .plan-view__fuel-col {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.p2006t .plan-view__fuel-col .station {
+  flex: 0 0 65%;
+}
+
+.p2006t .station {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem 0.7rem;
+  margin: 0;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.p2006t .station legend {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding: 0 0.25rem;
+  text-align: center;
+}
+
+.p2006t .station legend .muted {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.65rem;
+}
+
+.p2006t .station--fuel {
+  border-color: light-dark(#a8c8e9, #2c4a6e);
+  background: light-dark(#f4f8fc, #161e26);
+  justify-content: center;
+}
+
+.p2006t .station--baggage {
+  border-color: light-dark(#e9c89b, #6e4d2c);
+  background: light-dark(#fcf6ec, #261e16);
+}
+
+/* Compound dual-unit input — looks like a single rounded "button" with
+   two number fields and their unit labels seamlessly inline. */
+.p2006t .dual-input {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  overflow: hidden;
+  box-shadow: 0 1px 0 light-dark(rgba(0,0,0,0.02), rgba(0,0,0,0.2)) inset;
+  width: 100%;
+}
+
+.p2006t .dual-input input[type="number"] {
+  width: 4.25rem;
+  field-sizing: content;
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  /* Hide native spinners — the compound look is cleaner without them */
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.p2006t .dual-input input[type="number"]::-webkit-outer-spin-button,
+.p2006t .dual-input input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.p2006t .dual-input input[type="number"]:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: light-dark(#f5faff, #1a2230);
+}
+
+.p2006t .dual-input .unit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  white-space: nowrap;
+  padding: 0 0.5rem;
+  background: light-dark(#f1f1f1, #262626);
+  color: var(--muted);
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
+  border-left: 1px solid var(--border);
+  user-select: none;
+}
+
+/* Warning state: red border on the whole compound */
+.p2006t .station.warn .dual-input {
+  border-color: var(--warn);
+}
+.p2006t .station.warn .dual-input .unit {
+  border-left-color: var(--warn);
+}
+
+.p2006t .fuel-weight {
+  margin: 0.1rem 0 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.p2006t .cell-warn {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+  color: var(--warn);
+}
+
+.p2006t .station.warn,
+.p2006t .totals-row.warn {
+  border-color: var(--warn);
+  background: var(--warn-bg);
+}
+
+.p2006t .station.warn input[type="number"] {
+  border-color: var(--warn);
+}
+
+/* Visually hidden labels for a11y */
+.p2006t .vh {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Empty W&B */
+.p2006t .empty-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1.5fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+
+.p2006t .fuel-plan {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+
+.p2006t .empty-derived {
+  margin: 0.25rem 0 0;
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.p2006t .aircraft-input {
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+/* Totals */
+.p2006t .totals {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.p2006t .totals-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+}
+
+.p2006t .totals-label {
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.p2006t .totals-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+}
+
+.p2006t .totals-row .cell-warn {
+  grid-column: 1 / -1;
+}
+
+/* Flight plan section (burnoff input) */
+.p2006t .flight-plan {
+  margin-top: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  background: var(--surface);
+}
+
+.p2006t .flight-plan__title {
+  margin: 0 0 0.6rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.p2006t .flight-plan__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.p2006t .station--taxi,
+.p2006t .station--burnoff {
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+/* Loading condition output panel */
+.p2006t .loading-condition {
+  margin-top: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+}
+
+.p2006t .lc-header {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+
+.p2006t .lc-row {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr auto auto;
+  gap: 0.5rem 0.75rem;
+  align-items: baseline;
+  padding: 0.4rem 0.5rem;
+  border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.85rem;
+}
+
+.p2006t .lc-row + .lc-row {
+  border-top: 1px solid var(--border);
+}
+
+.p2006t .lc-label {
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.p2006t .lc-row--ramp .lc-label { color: light-dark(#1a8a4a, #5fb88a); }
+.p2006t .lc-row--to .lc-label    { color: var(--accent); }
+.p2006t .lc-row--ldg .lc-label   { color: light-dark(#b35a00, #e8a04a); }
+.p2006t .lc-row--zfw .lc-label   { color: var(--muted); }
+
+.p2006t .lc-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.6rem;
+  align-items: baseline;
+}
+
+.p2006t .lc-sep { color: var(--muted); }
+
+.p2006t .lc-mac {
+  font-weight: 500;
+}
+
+.p2006t .lc-status {
+  font-size: 0.78rem;
+  color: light-dark(#1a8a4a, #5fb88a);
+}
+
+.p2006t .lc-row.warn {
+  background: var(--warn-bg);
+}
+
+.p2006t .lc-row.warn .lc-status {
+  color: var(--warn);
+  font-weight: 600;
+}
+
+/* Nomograph */
+.p2006t #nomograph-mount {
+  margin-top: 1.25rem;
+}
+
+.p2006t .nomograph {
+  width: 100%;
+  height: auto;
+  background: light-dark(#ffffff, #f5f5f0);
+  display: block;
+}
+
+.p2006t .nomograph .nm-title {
+  font-size: 14px;
+  font-weight: 600;
+  fill: #222;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-axis {
+  stroke: #222;
+  stroke-width: 1;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-axis-label {
+  font-size: 10px;
+  fill: #222;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-axis-label-secondary {
+  font-size: 9px;
+  fill: #666;
+  text-anchor: end;
+}
+
+.p2006t .nomograph .nm-tick-grid {
+  stroke: #efefef;
+  stroke-width: 1;
+}
+
+.p2006t .nomograph .nm-axis-tick-mark {
+  stroke: #222;
+  stroke-width: 1;
+}
+
+.p2006t .nomograph .nm-axis-tick {
+  font-size: 9px;
+  fill: #222;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-axis-tick-secondary {
+  font-size: 9px;
+  fill: #777;
+  text-anchor: end;
+}
+
+.p2006t .nomograph .nm-axis-rotated {
+  font-size: 10px;
+  fill: #222;
+  text-anchor: middle;
+  transform: rotate(-90deg);
+  transform-origin: 20px 290px;
+}
+
+.p2006t .nomograph .nm-axis-vert-label {
+  font-size: 10px;
+  fill: #444;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-axis-tick-top {
+  font-size: 9px;
+  fill: #555;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-axis-label-top {
+  font-size: 9px;
+  fill: #555;
+  text-anchor: middle;
+  font-style: italic;
+}
+
+.p2006t .nomograph .nm-mac-label {
+  font-size: 8px;
+  fill: #333;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-mac-struct-label {
+  fill: #888;
+}
+
+.p2006t .nomograph .nm-cg-shade {
+  fill: rgba(160, 0, 0, 0.10);
+  stroke: none;
+}
+
+.p2006t .nomograph .nm-ldg-path {
+  stroke: #b35a00;
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-wt-line {
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  fill: none;
+}
+.p2006t .nomograph .nm-wt-line--to  { stroke: #1f5fa8; }
+.p2006t .nomograph .nm-wt-line--ldg { stroke: #b35a00; }
+.p2006t .nomograph .nm-wt-line--zfw { stroke: #c43030; }
+
+.p2006t .nomograph .nm-wt-label {
+  font-size: 8px;
+  font-weight: normal;
+  stroke: none;
+  text-anchor: middle;
+}
+.p2006t .nomograph .nm-wt-label.nm-wt-line--to  { fill: #1f5fa8; }
+.p2006t .nomograph .nm-wt-label.nm-wt-line--ldg { fill: #b35a00; }
+.p2006t .nomograph .nm-wt-label.nm-wt-line--zfw { fill: #c43030; }
+
+.p2006t .nomograph .nm-cond-label {
+  font-size: 8px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-cond-label--to  { fill: #1f5fa8; }
+.p2006t .nomograph .nm-cond-label--ldg { fill: #b35a00; }
+.p2006t .nomograph .nm-cond-label--zfw { fill: #c43030; }
+
+.p2006t .nomograph .nm-strip-box {
+  fill: #fff;
+  stroke: #222;
+  stroke-width: 1;
+}
+
+.p2006t .nomograph .nm-strip-header {
+  font-size: 9px;
+  font-weight: 600;
+  fill: #222;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-rail {
+  stroke: #cfcfcf;
+  stroke-width: 0.6;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-mac-fwd {
+  stroke: #222;
+  stroke-width: 1.2;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-mac-aft {
+  stroke: #222;
+  stroke-width: 1.2;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-mac-ref {
+  stroke: #aaa;
+  stroke-width: 0.8;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-mac-struct {
+  stroke: #888;
+  stroke-width: 1;
+  stroke-dasharray: 4 2;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-mass-ref {
+  stroke: #222;
+  stroke-width: 1;
+  stroke-dasharray: 6 3;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-mass-ref-label {
+  font-size: 8px;
+  fill: #222;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-mass-ref-secondary {
+  stroke: #888;
+  stroke-width: 0.8;
+  stroke-dasharray: 3 3;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-mass-ref-label-secondary {
+  font-size: 8px;
+  fill: #888;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-to-path,
+.p2006t .nomograph .nm-to-line {
+  stroke: #1f5fa8;
+  stroke-width: 2;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-zfw-path,
+.p2006t .nomograph .nm-zfw-line {
+  stroke: #c43030;
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-ldg-line {
+  stroke: #b35a00;
+  stroke-width: 1.5;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-burnoff {
+  stroke: #444;
+  stroke-width: 1.2;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-violation-line {
+  stroke: #c43030;
+  stroke-width: 2;
+  stroke-dasharray: 3 2;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-plumb {
+  stroke: #000;
+  stroke-width: 0.8;
+  stroke-dasharray: 4 3;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-plumb-label {
+  font-size: 8px;
+  font-weight: normal;
+  stroke: none;
+  fill: #000;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-cg-plumb {
+  stroke: #444;
+  stroke-width: 0.8;
+  stroke-dasharray: 4 3;
+  fill: none;
+}
+
+.p2006t .nomograph .nm-cg-label {
+  font-size: 9px;
+  font-weight: 600;
+  fill: #1f5fa8;
+  text-anchor: middle;
+}
+
+.p2006t .nomograph .nm-to-circle {
+  fill: #1f5fa8;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.p2006t .nomograph .nm-zfw-circle {
+  fill: #c43030;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.p2006t .nomograph .nm-ldg-circle {
+  fill: #b35a00;
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+
+.p2006t .nomograph .nm-violation {
+  fill: #c43030;
+}
+
+.p2006t .nomograph .nm-entry {
+  fill: #1f5fa8;
+}
+
+.p2006t .nomograph .nm-em-tick  { stroke: var(--muted); stroke-width: 1; }
+.p2006t .nomograph .nm-em-label { font-size: 7px; fill: var(--muted); font-weight: 700; }
+.p2006t .nomograph .nm-em-value { font-size: 6px; fill: var(--muted); }
+
+/* ── Data table ─────────────────────────────────── */
+
+.p2006t .data-table {
+  margin-top: 1.5rem;
+}
+
+.p2006t .dt-heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  margin: 1.25rem 0 0.4rem;
+}
+
+.p2006t .dt-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.p2006t .dt-table th,
+.p2006t .dt-table td {
+  padding: 0.28rem 0.6rem;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+}
+
+.p2006t .dt-table th:first-child,
+.p2006t .dt-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.p2006t .dt-table thead th {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  border-bottom: 2px solid var(--border);
+  text-align: center;
+}
+
+.p2006t .dt-table .dt-subtotal td {}
+
+.p2006t .dt-table .dt-section-header td {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  padding-top: 0.5rem;
+  text-align: left;
+}
+
+.p2006t .dt-table .dt-warn td {
+  color: var(--warn);
+}
+
+.p2006t .dt-table .dt-status { font-weight: 600; }
+
+.p2006t .dt-table .dt-cond--ramp td:first-child { color: #555; }
+.p2006t .dt-table .dt-cond--to  td:first-child  { color: #1f5fa8; }
+.p2006t .dt-table .dt-cond--ldg td:first-child  { color: #b35a00; }
+.p2006t .dt-table .dt-cond--zfw td:first-child  { color: #c43030; }
+.p2006t .dt-table .dt-cond--mtow td { color: var(--muted); font-style: italic; border-top: 1px dashed var(--border); }
+
+/* ── Suggest card ───────────────────────────────── */
+.p2006t .suggest-card {
+  margin-top: 1rem;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.85rem;
+}
+
+.p2006t .suggest-card--warn {
+  background: light-dark(#fffbeb, #2a2310);
+  border: 1px solid light-dark(#d4a017, #7a5c00);
+  color: light-dark(#5a3e00, #f0c040);
+}
+
+.p2006t .suggest-card--error {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn);
+  color: var(--warn);
+}
+
+.p2006t .suggest-card__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.p2006t .suggest-card__title {
+  white-space: nowrap;
+  min-width: 0;
+}
+
+@media (max-width: 480px) {
+  .p2006t .suggest-card__title {
+    white-space: normal;
+  }
+}
+
+.p2006t .suggest-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.p2006t .suggest-card__items {
+  color: var(--text);
+}
+
+.p2006t .suggest-card__apply {
+  display: inline-block;
+  padding: 0.3rem 0.9rem;
+  background: light-dark(#1f5fa8, #4a8fd4);
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.p2006t .suggest-card__apply:hover {
+  background: light-dark(#174d8a, #3a7dc0);
+}
+
+.p2006t .nomograph .nm-disclaimer {
+  font-size: 11px;
+  fill: #222;
+  text-anchor: middle;
+}
+
+/* ── Print summary (screen: hidden; print: visible) ── */
+.p2006t .print-summary {
+  display: none;
+}
+
+.p2006t .print-summary__title {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.p2006t .print-summary__name {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.p2006t .print-summary__ts {
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.p2006t .print-summary__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.p2006t .print-summary__grid .dt-table {
+  width: 100%;
+}
+
+.p2006t .print-summary__grid .dt-table td {
+  text-align: center;
+}
+
+.p2006t .print-summary__grid .dt-table td:first-child {
+  text-align: left;
+}
+
+/* ── Mobile ──────────────────────────────────────── */
+@media (max-width: 480px) {
+  .p2006t .fuel-plan {
+    grid-template-columns: 1fr;
+  }
+
+  .p2006t .widget__body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .p2006t #station-input-mount { order: 1; }
+  .p2006t #suggest-card-mount  { order: 2; }
+  .p2006t #cg-envelope-mount   { order: 3; }
+  .p2006t #print-summary-mount { order: 4; }
+  .p2006t #nomograph-mount     { order: 5; }
+
+  .p2006t [data-unit="kg"],      .p2006t [data-unit="kg"]      + .unit,
+  .p2006t [data-unit="L"],       .p2006t [data-unit="L"]       + .unit,
+  .p2006t [data-unit="kg·m"],    .p2006t [data-unit="kg·m"]    + .unit,
+  .p2006t [data-unit="pct-mac"], .p2006t [data-unit="pct-mac"] + .unit {
+    display: none;
+  }
+}
+
+/* ── Print ──────────────────────────────────────── */
+@media print {
+  @page { size: landscape; margin: 0.5cm; }
+
+  .p2006t {
+    padding: 0;
+    background: #fff;
+    color: #000;
+    display: block;
+  }
+
+  .p2006t.widget {
+    border: none;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .p2006t .widget__header,
+  .p2006t .station-input,
+  .p2006t .suggest-card {
+    display: none;
+  }
+
+  .p2006t .print-summary {
+    display: block;
+    margin-bottom: 0.75rem;
+  }
+
+  .p2006t .dt-table {
+    font-size: 0.6rem;
+  }
+
+  .p2006t .dt-table th,
+  .p2006t .dt-table td {
+    padding: 0.22rem 0.47rem;
+  }
+
+  .p2006t .print-summary__grid {
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .p2006t .print-summary__grid > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .p2006t #nomograph-mount {
+    margin-top: 0;
+  }
+
+  .p2006t .nomograph {
+    width: 100%;
+    height: auto;
+    background: #fff;
+  }
+
+  .p2006t .data-table {
+    margin-top: 0.5rem;
+  }
+}
+
+/* Mobile: single column, source-order layout */
+@media (max-width: 1024px) {
+  .p2006t .print-summary {
+    display: block;
+    margin-bottom: 1rem;
+  }
+
+  .p2006t .print-summary__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .p2006t .plan-view {
+    flex-wrap: wrap;
+  }
+
+  .p2006t .plan-view__interior {
+    order: 1;
+    flex: 0 0 100%;
+  }
+
+  .p2006t .plan-view__fuel-col {
+    order: 2;
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .p2006t .plan-view__fuel-col .station {
+    flex: 0 0 auto;
+  }
+  .p2006t .empty-grid { grid-template-columns: 1fr 1fr; }
+  .p2006t .flight-plan__grid { grid-template-columns: 1fr; }
+  .p2006t .lc-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── CG Envelope chart ─────────────────────────────────────────── */
+
+.p2006t .cg-envelope {
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .p2006t .cg-envelope,
+  .p2006t .suggest-card {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+  }
+}
+
+.p2006t .cg-envelope-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.p2006t .cge-chart-bg {
+  fill: #f4f4f4;
+}
+
+.p2006t .cge-envelope {
+  fill: #ffffff;
+  stroke: #888;
+  stroke-width: 1;
+}
+
+.p2006t .cge-border {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 1;
+}
+
+.p2006t .cge-grid {
+  stroke: var(--border);
+  stroke-width: 0.5;
+  stroke-dasharray: 3 3;
+}
+
+.p2006t .cge-grid-minor {
+  stroke: var(--border);
+  stroke-width: 0.5;
+  stroke-dasharray: 3 3;
+}
+
+.p2006t .cge-tick        { stroke: #333; stroke-width: 1; }
+.p2006t .cge-axis-tick   { font-size: 11px; fill: #333; }
+.p2006t .cge-axis-tick-secondary { font-size: 10px; fill: var(--muted); }
+.p2006t .cge-axis-label  { font-size: 12px; fill: #333; font-weight: 600; }
+.p2006t .cge-axis-vert-label { font-size: 11px; fill: var(--muted); }
+.p2006t .cge-limit-label        { font-size: 10px; fill: #333; stroke: none; }
+.p2006t .cge-limit-label--fwd  { fill: #333; }
+.p2006t .cge-limit-label--aft  { fill: #333; }
+.p2006t .cge-marker-label { font-size: 11px; fill: #333; stroke: white; stroke-width: 3; stroke-linejoin: round; paint-order: stroke fill; }
+
+.p2006t .cge-ref-mtow    { stroke: var(--muted); stroke-width: 0.75; stroke-dasharray: 4 3; }
+.p2006t .cge-ref-mzfw    { stroke: var(--muted); stroke-width: 0.75; stroke-dasharray: 4 3; }
+.p2006t .cge-ref-ew      { stroke: var(--muted); stroke-width: 0.75; stroke-dasharray: 4 3; }
+.p2006t .cge-ref-label   { font-size: 8px; stroke: none; }
+.p2006t .cge-ref-label.cge-ref-mtow { fill: var(--muted); }
+.p2006t .cge-ref-label.cge-ref-mzfw { fill: var(--muted); }
+.p2006t .cge-ref-label.cge-ref-ew   { fill: var(--muted); }
+
+.p2006t .cge-wt-line        { stroke-width: 0.75; stroke-dasharray: 4 3; fill: none; }
+.p2006t .cge-wt-line--tow   { stroke: #1f5fa8; }
+.p2006t .cge-wt-line--ldw   { stroke: #b35a00; }
+.p2006t .cge-wt-line--zfw   { stroke: #c43030; }
+.p2006t .cge-wt-label       { font-size: 8px; font-weight: normal; stroke: none; }
+.p2006t .cge-wt-label.cge-wt-line--tow { fill: #1f5fa8; }
+.p2006t .cge-wt-label.cge-wt-line--ldw { fill: #b35a00; }
+.p2006t .cge-wt-label.cge-wt-line--zfw { fill: #c43030; }
+
+.p2006t .cge-burnoff {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 3;
+}
+
+.p2006t .cge-marker-shape {
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.p2006t .cge-cross {
+  stroke-width: 1;
+}
+
+.p2006t .cge-marker--ok   .cge-marker-shape,
+.p2006t .cge-marker--ok   .cge-cross { stroke: #27a854; }
+
+.p2006t .cge-marker--warn .cge-marker-shape,
+.p2006t .cge-marker--warn .cge-cross { stroke: #e03c31; }
+
+@media print {
+  .p2006t .cg-envelope { display: none; }
+}
