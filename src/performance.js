@@ -9,7 +9,7 @@ import { lbToKg }                                          from './units.js';
 export const XWIND_LIMIT_KT    = 17;     // POH §2 demonstrated crosswind
 const ACCEL_STOP_MARGIN        = 1.30;   // allows for a delayed decision
 const MIN_OEI_ROC_FPM          = 50;     // below this, no accel-go distance is given
-const CAUTION_OEI_ROC_FPM      = 100;    // up to and including this, accel-go shows a caution
+const CAUTION_BAND_FPM         = 50;     // this far above the floor, accel-go shows a caution
 
 // ---------------------------------------------------------------------------
 // Runway selection
@@ -129,6 +129,14 @@ function applyCorrections(raw, corr, headwind_kt, surface, slope_pct) {
   return { gr: Math.round(gr), to50ft: Math.round(to50ft) };
 }
 
+// OEI climb rate from liftoff to the top of the object past the runway end.
+function requiredOeiFpm(obstacle, length_ft, gr_m, gs_kt) {
+  if (!obstacle || !length_ft) return null;
+  const run_m = (length_ft + obstacle.dist_ft) * 0.3048 - gr_m;
+  if (run_m <= 0) return Infinity;
+  return Math.ceil(obstacle.height_ft / (run_m / (gs_kt * 30.867)));
+}
+
 // ---------------------------------------------------------------------------
 // Main calculation
 // ---------------------------------------------------------------------------
@@ -189,13 +197,18 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
   const vyse_kt     = P2006T.speeds_kias.vyse;
   const oeiGs_kt    = Math.max(1, vyse_kt - headwind_kt);
   const oeiClimb_m  = (50 / roc_oei_fpm) * (oeiGs_kt * 30.867); // 30.867 m/min per kt
-  const canAccelGo  = roc_oei_fpm >= MIN_OEI_ROC_FPM;
+  const required_fpm = requiredOeiFpm(end.obstacle, runway.length_ft ?? tora_ft, toCorr.gr, oeiGs_kt);
+  const floor_fpm   = Math.max(MIN_OEI_ROC_FPM, required_fpm ?? 0);
+  const canAccelGo  = roc_oei_fpm >= floor_fpm;
   const accelGo_m   = canAccelGo ? Math.round(toCorr.gr + oeiClimb_m) : null;
   const accelGoLevel = !canAccelGo ? 'warning'
-    : roc_oei_fpm <= CAUTION_OEI_ROC_FPM ? 'caution'
+    : roc_oei_fpm <= floor_fpm + CAUTION_BAND_FPM ? 'caution'
     : null;
-  const accelGoMessage = accelGoLevel === null ? null
-    : `Predicted single-engine climb rate is ${roc_oei_fpm} fpm.`;
+  const accelGoMessage = [
+    accelGoLevel && `Predicted single-engine climb rate is ${roc_oei_fpm} fpm.`,
+    floor_fpm > MIN_OEI_ROC_FPM && Number.isFinite(floor_fpm)
+      && `Required ${floor_fpm} fpm to clear obstacle.`,
+  ].filter(Boolean).join(' ') || null;
 
   // TORA/LDA fit checks
   const toraOk   = toCorr.to50ft <= (tora_ft * 0.3048);

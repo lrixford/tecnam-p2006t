@@ -136,6 +136,54 @@ test('wind components use the true runway heading', () => {
   assert.equal(r.headwind_kt, 10);
 });
 
+// 142 fpm single-engine, 328 m ground roll, 84 kt.
+function obstaclePerf(obstacle, length_ft = 3000) {
+  return calcPerformance({
+    grossLb: 2712,
+    airport: { elev_ft: 0 },
+    runway: { surface: 'turf', length_ft, ends: { 18: { hdg_mag: 180, slope_pct: 0, obstacle } } },
+    endId: '18',
+    metar: { altimeter_inhg: 29.92, oat_c: 25, wind_dir_deg: 180, wind_speed_kt: 0 },
+  });
+}
+
+test('an obstacle above the climb rate removes accel-go and states the requirement', () => {
+  const { accel_go } = obstaclePerf({ height_ft: 50, dist_ft: 500 });
+  assert.equal(accel_go.dist_m, null);
+  assert.equal(accel_go.level, 'warning');
+  assert.equal(accel_go.message,
+    'Predicted single-engine climb rate is 142 fpm. Required 176 fpm to clear obstacle.');
+});
+
+test('the caution band sits above the raised floor', () => {
+  const { accel_go } = obstaclePerf({ height_ft: 30, dist_ft: 500 });
+  assert.equal(typeof accel_go.dist_m, 'number');
+  assert.equal(accel_go.level, 'caution');
+  assert.equal(accel_go.message,
+    'Predicted single-engine climb rate is 142 fpm. Required 106 fpm to clear obstacle.');
+});
+
+test('the obstacle note shows on its own when climb is comfortably above the floor', () => {
+  const { accel_go } = obstaclePerf({ height_ft: 25, dist_ft: 500 });
+  assert.equal(typeof accel_go.dist_m, 'number');
+  assert.equal(accel_go.level, null);
+  assert.equal(accel_go.message, 'Required 88 fpm to clear obstacle.');
+});
+
+test('an obstacle needing less than the floor changes nothing', () => {
+  const { accel_go } = obstaclePerf({ height_ft: 10, dist_ft: 500 });
+  assert.equal(accel_go.level, null);
+  assert.equal(accel_go.message, null);
+  assert.deepEqual(accel_go, obstaclePerf(null).accel_go);
+});
+
+test('an obstacle within the ground roll removes accel-go with no required figure', () => {
+  const { accel_go } = obstaclePerf({ height_ft: 10, dist_ft: 0 }, 1000);
+  assert.equal(accel_go.dist_m, null);
+  assert.equal(accel_go.level, 'warning');
+  assert.equal(accel_go.message, 'Predicted single-engine climb rate is 142 fpm.');
+});
+
 test('crosswind uses the gust midpoint, distances use the steady wind', () => {
   const runway = {
     surface: 'turf',
