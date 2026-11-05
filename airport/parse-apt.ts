@@ -37,6 +37,7 @@ const APT_F = {
   elev:     [578, 585],  // elevation, nearest tenth of a foot MSL (right-justified)
   latSec:   [538, 550],  // latitude in total arc-seconds + N/S  e.g. "120403.200N"
   lonSec:   [565, 577],  // longitude in total arc-seconds + E/W  e.g. "397762.300W"
+  magVar:   [586, 589],  // magnetic variation to nearest degree  e.g. "03W"
   status:   [840, 842],  // "O" operational / "CI" / "CP"
   icaoId:   [1210, 1217],// ICAO identifier (e.g. "KORD   ")
 } as const;
@@ -115,6 +116,25 @@ function rwyEndToMag(endId: string): number | null {
   return CARDINAL_HDGS[s.toUpperCase()] ?? null;
 }
 
+/** Degrees, east positive. */
+function parseMagVar(raw: string): number | null {
+  const m = raw.trim().match(/^(\d{1,2})([EW])$/);
+  if (!m) return null;
+  return m[2] === 'E' ? parseInt(m[1], 10) : -parseInt(m[1], 10);
+}
+
+function fillTrueHeadings(apt: Airport, magVar: number): number {
+  let filled = 0;
+  for (const rwy of apt.runways) {
+    for (const end of Object.values(rwy.ends)) {
+      if (end.hdg_true !== null || end.hdg_mag === null) continue;
+      end.hdg_true = (end.hdg_mag + magVar + 360) % 360;
+      filled++;
+    }
+  }
+  return filled;
+}
+
 // ---------------------------------------------------------------------------
 // Parse helpers
 // ---------------------------------------------------------------------------
@@ -143,7 +163,7 @@ function intField(line: string, slice: readonly [number, number]): number | null
 
 interface RunwayEnd {
   hdg_mag:      number | null;   // magnetic heading (degrees)
-  hdg_true:     number | null;   // true heading from APT file
+  hdg_true:     number | null;   // true heading from APT file, else hdg_mag + variation
   elev_ft:      number | null;   // threshold elevation MSL (feet)
   tora_ft:      number | null;   // takeoff run available, feet
   lda_ft:       number | null;   // landing distance available, feet
@@ -270,6 +290,7 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
 
   const airports   = new Map<string, Airport>();   // keyed by site number
   const aptCoords  = new Map<string, { lat: number; lon: number }>();
+  const magVars    = new Map<string, number>();    // keyed by site number
   let currentSiteNo = '';
 
   const rl = readline.createInterface({
@@ -315,6 +336,9 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
       const lat = parseAptCoord(field(line, APT_F.latSec));
       const lon = parseAptCoord(field(line, APT_F.lonSec));
       if (lat !== null && lon !== null) aptCoords.set(siteNo, { lat, lon });
+
+      const magVar = parseMagVar(field(line, APT_F.magVar));
+      if (magVar !== null) magVars.set(siteNo, magVar);
 
       aptCount++;
 
@@ -388,6 +412,27 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
     if (coords) apt.metar_id = nearestMetar(coords.lat, coords.lon, metarStations);
   }
 
+  // METAR winds are true. Airports with no variation use the nearest airport's.
+  const varSources = [...magVars].flatMap(([siteNo, magVar]) => {
+    const coords = aptCoords.get(siteNo);
+    return coords ? [{ ...coords, magVar }] : [];
+  });
+  let trueHdgsFilled = 0;
+  let varsBorrowed   = 0;
+  for (const [siteNo, apt] of airports) {
+    let magVar = magVars.get(siteNo) ?? null;
+    const coords = aptCoords.get(siteNo);
+    if (magVar === null && coords) {
+      let bestDist = Infinity;
+      for (const s of varSources) {
+        const d = haversineSq(coords.lat, coords.lon, s.lat, s.lon);
+        if (d < bestDist) { bestDist = d; magVar = s.magVar; }
+      }
+      varsBorrowed++;
+    }
+    if (magVar !== null) trueHdgsFilled += fillTrueHeadings(apt, magVar);
+  }
+
   // Build output — keyed by preferred identifier (ICAO if present, else FAA)
   const output: Record<string, Airport> = {};
   for (const apt of airports.values()) {
@@ -400,6 +445,7 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
   console.log(`Lines read:   ${lineCount.toLocaleString()}`);
   console.log(`Airports:     ${aptCount.toLocaleString()}`);
   console.log(`Runways:      ${rwyCount.toLocaleString()} (${badEndIds} unusual end IDs)`);
+  console.log(`True hdgs:    ${trueHdgsFilled.toLocaleString()} filled from variation (${varsBorrowed} airports used a neighbour's)`);
   console.log(`Output keys:  ${Object.keys(output).length.toLocaleString()}`);
   console.log(`Output file:  ${outputPath}`);
 }
