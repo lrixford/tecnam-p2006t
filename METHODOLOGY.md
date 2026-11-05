@@ -68,7 +68,7 @@ The zero-fuel condition falls forward of the 16.5% limit, so it is flagged. Fuel
 
 ### Suggestion engine
 
-When a load is out of limits, the app looks for a fix. It treats passengers, taxi fuel and enroute fuel as fixed. The guiding principle is that fuel is the last thing to give up, because nobody regrets the fuel they brought. Baggage is the most movable variable.
+When a load is out of limits, the app looks for a fix. It treats passengers, taxi fuel, enroute fuel and reserve fuel as fixed. The guiding principle is that fuel is the last thing to give up, because nobody regrets the fuel they brought. Baggage is the most movable variable.
 
 Because fuel has a single arm, each CG limit reduces to a simple bound on takeoff fuel. The engine combines those bounds with MTOW, tank capacity and the fuel need to find a usable range. The need is taxi, enroute and reserve, or more if the forward CG limit at landing requires it.
 
@@ -320,7 +320,9 @@ npm run parse
 npm run alts
 ```
 
-After a rebuild, the `CACHE_NAME` in `src/airportDB.js` must be bumped so browsers download the new data. Where the FAA gives no TORA or LDA, the physical runway length is used.
+After a rebuild, the `CACHE_NAME` in `src/airportDB.js` must be bumped so browsers download the new data. Browsers also refresh the data after 28 days. If that refresh fails, for example with no signal, the app keeps using its cached copy and tries again on the next load.
+
+Where the FAA gives no TORA or LDA, the physical runway length is used.
 
 ## 12. Known limitations
 
@@ -332,8 +334,6 @@ After a rebuild, the `CACHE_NAME` in `src/airportDB.js` must be bumped so browse
 
 **Known defects**
 - A METAR with missing wind displays as "Calm", and a real calm report displays as "000° / 0 kt".
-- Typing a K-prefixed identifier for an airport that has no ICAO code, such as K1C5, returns "Airport not found". Use 1C5.
-- After 28 days the airport data is downloaded again, and the lookup fails if the device is offline at that moment, even though a cached copy exists.
 - A stalled weather request has no timeout, so the spinner keeps running.
 - Clearing the MTOW field flags every condition until a value is entered.
 - METAR text and the aircraft note are not escaped on the print sheet.

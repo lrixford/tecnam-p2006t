@@ -1,7 +1,7 @@
 import { P2006T } from './data/p2006t.js';
 
 // Pure W&B suggestion engine.
-// Immutable: passenger weights, taxi fuel, enroute (burnoff) fuel.
+// Immutable: passenger weights, taxi fuel, enroute (burnoff) fuel, reserve fuel.
 // Mutable:   baggage first, then fuel, which never goes below the need.
 // Solves for a takeoff_fuel_lb that satisfies CG envelope at TO and LDG, and MTOW.
 

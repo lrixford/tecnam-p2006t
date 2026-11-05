@@ -1,6 +1,6 @@
 # Tecnam P2006T Weight & Balance Calculator
 
-A browser-based weight, balance, and departure performance calculator for the Tecnam P2006T twin. Built with vanilla JS and no bundler dependency. Enter your load, fetch a live METAR for your departure airport, and get POH-interpolated takeoff and landing distances, accelerate-stop and accelerate-go distances, and climb rates for both all-engine and single-engine conditions. The POH works in metric, but this calculator speaks "freedom units" 🇺🇸😄, so it handles all the kg/lb, L/gal, and kg·m/lb·ft conversions so you don't have to.
+A browser-based weight, balance, and departure performance calculator for the Tecnam P2006T twin. Built with vanilla JS and no bundler dependency. Enter your load, fetch a METAR for your departure airport, and get POH-interpolated takeoff and landing distances and climb rates for both all-engine and single-engine conditions, plus estimated accelerate-stop and accelerate-go distances. The POH works in metric, but this calculator speaks "freedom units" 🇺🇸😄, so it handles all the kg/lb, L/gal, and kg·m/lb·ft conversions so you don't have to.
 
 **[Run it now on GitHub Pages](https://lrixford.github.io/tecnam-p2006t)**
 
@@ -9,12 +9,16 @@ A browser-based weight, balance, and departure performance calculator for the Te
 ## Features
 
 - **Loading condition table** with ramp, takeoff, landing, and zero-fuel weights with CG arm and % MAC
-- **SVG nomograph** showing the CG envelope with a live trajectory dot for each loading condition
-- **W&B suggestion engine** that automatically suggests fuel adjustments (and baggage additions when necessary) to bring an out-of-limits load into the envelope
-- **Departure performance** — enter an airport ID to fetch a live METAR and compute POH takeoff, landing, accelerate-stop, and accelerate-go distances; runway cards rank runways by headwind component with wind arrow/sock diagrams; crosswind limit flagged per POH
+- **SVG nomograph and CG envelope** charts that update live for each loading condition
+- **W&B suggestion engine** that brings an out-of-limits load back into limits, moving baggage first and giving up fuel last
+- **Departure performance** with POH takeoff and landing distances and climb rates, using the airport's weather and the selected runway's surface, slope and true heading
+- **Weather station choice** showing which station supplied the report, with nearby alternates to switch to
+- **Runway cards** ranked by crosswind and headwind, with wind diagrams and a warning above the 17 kt demonstrated crosswind; gusts use the midpoint of steady and gust
+- **Accelerate-stop estimate** that turns red when it is longer than the runway
+- **Accelerate-go estimate** that needs a minimum single-engine climb rate, raised when an FAA-listed object lies straight ahead
 - **Editable MTOW** to support modified aircraft with different maximum gross weights
-- **Reserve fuel input** for configurable minimum landing fuel used by the suggestion engine
-- **Print view** with a landscape-optimized layout showing performance, loading, fuel, and W&B tables side by side
+- **Reserve fuel input** that counts toward the fuel the suggestion engine must keep
+- **Print view** with a landscape-optimized layout showing the METAR, runway and crosswind, plus performance, loading, fuel, and W&B tables side by side
 - **Mobile responsive** with a breakpoint at 1024 px; interior layout reorders for narrow screens
 - **Persistent state** with last-entered values restored from `localStorage` on reload
 
@@ -37,9 +41,26 @@ fuel: {
 
 All fuel weight calculations throughout the app derive from this one value.
 
+## Weather and Airport Data
+
+Weather comes from the [VATSIM METAR API](https://metar.vatsim.net). It serves flight simulation and is not an official weather source, so check official weather before flight.
+
+Airport, runway and obstacle data comes from the FAA NASR 28-day subscription and is compiled into `airport/airports.json`. Browsers cache it for 28 days and keep using the cached copy if a refresh fails.
+
+The data does not update itself. To rebuild it, put `APT.txt` and `WXL.txt` in `docs/airport/`, then:
+
+```bash
+cd airport
+npm install
+npm run parse
+npm run alts
+```
+
+After a rebuild, bump `CACHE_NAME` in `src/airportDB.js` and add the old name to `OLD_CACHES`.
+
 ## Methodology
 
-See [METHODOLOGY.md](METHODOLOGY.md) for how each figure is calculated, what data it uses, and why. It also separates POH data from estimates.
+See [METHODOLOGY.md](METHODOLOGY.md) for how each figure is calculated, what data it uses, and why. It also separates POH data from estimates and lists known limitations.
 
 ## Adding to a Website
 
@@ -55,7 +76,9 @@ No build step or dependencies required. Copy the repository files to your web se
 </script>
 ```
 
-The calculator uses ES modules, so files must be served over HTTP/HTTPS. It will not work opened directly as a `file://` URL.
+The calculator uses ES modules, so files must be served over HTTP/HTTPS. It will not work opened directly as a `file://` URL. To run it locally, use `npm run serve`.
+
+`airport/airports.json` is loaded relative to the page, so keep it at that path beside the page that hosts the widget.
 
 Styles are self-contained in `src/styles.css`. Link it in your page `<head>` or import it alongside your own stylesheet:
 
@@ -71,7 +94,7 @@ Requires Node.js 22 or later (built-in test runner).
 npm test
 ```
 
-Tests cover the calculation engine (`loadingCondition.js`) and the suggestion engine (`suggest.js`), including apply-and-recheck round-trips, edge cases, and precision constraints.
+Tests cover weight and balance, the suggestion engine, POH interpolation and corrections, accelerate-stop and accelerate-go, wind components, METAR parsing, airport lookup and caching, and unit conversions.
 
 ## Tech Stack
 
@@ -81,7 +104,9 @@ Tests cover the calculation engine (`loadingCondition.js`) and the suggestion en
 | Styling | Plain CSS with `light-dark()` color scheme support |
 | Charts | Inline SVG, drawn programmatically |
 | Tests | Node.js built-in test runner (`node:test`) |
-| Serving | `npx serve` (dev only) |
+| Serving | `npm run serve` (dev only) |
+| Weather | VATSIM METAR API |
+| Airport data | FAA NASR, compiled to JSON |
 
 ## Project Structure
 
@@ -90,28 +115,31 @@ src/
   data/p2006t.js          aircraft constants (arms, envelope, fuel, POH tables)
   loadingCondition.js     pure W&B calculation engine
   suggest.js              fuel/baggage suggestion engine
-  nomograph.js            SVG envelope chart builder
+  suggestCard.js          suggestion advisory card
+  nomograph.js            SVG nomograph builder
+  cgEnvelope.js           SVG CG envelope chart
   stationInput.js         input form component
   dataTable.js            loading condition and print summary tables
-  performance.js          POH takeoff/landing/climb interpolation engine
+  performance.js          POH interpolation, corrections, accelerate-stop and accelerate-go
   performancePanel.js     departure performance UI component
   airportDB.js            airport database loader (Cache API, 28-day TTL)
-  metar.js                METAR fetch and parser
+  metar.js                METAR fetch, parser and wind components
+  persistence.js          saved values in localStorage
+  units.js                unit conversions
+  main.js                 page entry point
   tecnam-p2006t-widget.js top-level component
   styles.css
 airport/
   parse-apt.ts            FAA APT.txt + WXL.txt parser (generates airports.json)
   add-metar-alts.mjs      adds nearby weather station alternates to airports.json
   airports.json           compiled airport database
+  apt_rf.txt              FAA APT.txt column layout
 images/                   favicons
-tests/
-  loadingCondition.test.js
-  suggest.test.js
-  ...
+tests/                    node:test suites
 index.html
 METHODOLOGY.md
 ```
 
 ## Disclaimer
 
-This tool is for **planning and reference purposes only**. All weight and balance calculations must be verified against the official Aircraft Flight Manual (AFM) and Pilot's Operating Handbook (POH) before flight. The pilot in command is responsible for ensuring the aircraft is loaded within approved limits.
+This tool is for **planning and reference purposes only**. All weight, balance and performance calculations must be verified against the official Aircraft Flight Manual (AFM) and Pilot's Operating Handbook (POH) before flight. Accelerate-stop, accelerate-go and obstacle figures are estimates with no POH basis. The pilot in command is responsible for ensuring the aircraft is loaded within approved limits and for the safe operation of the flight.
