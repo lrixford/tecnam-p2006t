@@ -99,6 +99,7 @@ airport/
   parse-apt.ts            FAA APT.txt + WXL.txt parser (generates airports.json)
   add-metar-alts.mjs      adds nearby weather station alternates to airports.json
   airports.json           compiled airport database
+images/                   favicons
 tests/
   loadingCondition.test.js
   suggest.test.js
