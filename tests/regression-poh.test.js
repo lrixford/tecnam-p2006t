@@ -5,12 +5,13 @@ import { P2006T } from '../src/data/p2006t.js';
 
 // POH §6 Table 2-2 worked example (synthesis.md §5), in imperial.
 // Empty 1742 @ 1.595 ft, two front 176.3, two rear 154.3, baggage 39.7,
-// total fuel 23.7 US gal (split 11.85/11.85), density 6.7 lb/gal.
+// total fuel 158.79 lb.
 //   Gross  = 2601.5 lb
-//   ZFW    = 2601.5 − 23.7×6.7 = 2442.71 lb
+//   ZFW    = 2601.5 − 158.79 = 2442.71 lb
 //   MTOW   = 2712, MZFW = 2635 → both inside.
 
 const TOL = 0.5; // POH itself rounds inputs; ±0.5 lb is generous and safe.
+const FUEL_GAL_PER_TANK = 158.79 / 2 / P2006T.fuel.density_lb_per_gal;
 
 function pohState() {
   return {
@@ -21,8 +22,8 @@ function pohState() {
     rearLH:      { weight_lb: 154.3 },
     rearRH:      { weight_lb: 154.3 },
     baggage:     { weight_lb: 39.7 },
-    fuelL:       { volume_gal: 11.85 },
-    fuelR:       { volume_gal: 11.85 },
+    fuelL:       { volume_gal: FUEL_GAL_PER_TANK },
+    fuelR:       { volume_gal: FUEL_GAL_PER_TANK },
     fuelBurnoff: { volume_gal: 0 },
   };
 }
@@ -35,7 +36,7 @@ test('POH worked example: gross weight ≈ 2601.5 lb', () => {
 
 test('POH worked example: zero-fuel weight ≈ 2442.2 lb', () => {
   const zfw = computeZfwLb(pohState());
-  // 2601.5 − 23.7 × 6.7 = 2442.71
+  // 2601.5 − 158.79 = 2442.71
   assert.ok(Math.abs(zfw - 2442.71) <= TOL,
     `expected ~2442.71 lb, got ${zfw.toFixed(2)} lb`);
 });
@@ -52,6 +53,6 @@ test('POH worked example: no warnings (within MTOW & MZFW)', () => {
 test('POH constants match published values', () => {
   assert.equal(P2006T.mtow_lb, 2712);
   assert.equal(P2006T.mzfw_lb, 2635);
-  assert.equal(P2006T.fuel.density_lb_per_gal, 6.7);
+  assert.equal(P2006T.fuel.density_lb_per_gal, 6.1);
   assert.equal(P2006T.baggage.max_lb, 176);
 });

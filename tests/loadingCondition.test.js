@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { computeCondition, computeAll, isInEnvelope } from '../src/loadingCondition.js';
 import { P2006T } from '../src/data/p2006t.js';
 
+const DENSITY = P2006T.fuel.density_lb_per_gal;
+
 function blankState() {
   return {
     empty:       { weight_lb: 0, moment_lb_ft: 0, note: '' },
@@ -26,9 +28,9 @@ function pohState() {
     rearLH:      { weight_lb: 154.3 },
     rearRH:      { weight_lb: 154.3 },
     baggage:     { weight_lb: 39.7 },
-    fuelL:       { volume_gal: 11.85 },
-    fuelR:       { volume_gal: 11.85 },
-    fuelBurnoff: { volume_gal: 10.5 },  // POH "fuel required" 40 L = 10.57 USg
+    fuelL:       { volume_gal: 158.79 / 2 / DENSITY },
+    fuelR:       { volume_gal: 158.79 / 2 / DENSITY },
+    fuelBurnoff: { volume_gal: 70.35 / DENSITY },
   };
 }
 
@@ -77,7 +79,7 @@ test('POH worked example: takeoff condition', () => {
 
 test('POH worked example: zero-fuel condition', () => {
   const { zeroFuel } = computeAll(pohState());
-  // ZFW = TO − fuel_lb (23.7 gal × 6.7 = 158.79 lb)
+  // ZFW = TO − 158.79 lb of fuel
   // Expected zfw weight ≈ 2442.7 lb
   assert.ok(Math.abs(zeroFuel.weight_lb - 2442.7) <= TOL,
     `zfw weight expected ~2442.7, got ${zeroFuel.weight_lb.toFixed(2)}`);
@@ -88,10 +90,9 @@ test('POH worked example: zero-fuel condition', () => {
     'ZFW CG should be forward of TO CG when fuel arm > 0');
 });
 
-test('POH worked example: landing condition (10.5 USg burnoff)', () => {
+test('POH worked example: landing condition (70.35 lb burnoff)', () => {
   const { takeoff, landing, zeroFuel } = computeAll(pohState());
-  // landing fuel = total − burnoff = (23.7 − 10.5) × 6.7 = 88.44 lb
-  // landing weight = 2601.5 − 10.5×6.7 = 2601.5 − 70.35 = 2531.15 lb
+  // landing weight = 2601.5 − 70.35 = 2531.15 lb
   assert.ok(Math.abs(landing.weight_lb - 2531.15) <= TOL,
     `landing weight expected ~2531.15, got ${landing.weight_lb.toFixed(2)}`);
   // LDG must lie between TO and ZFW for a positive burnoff with positive fuel arm

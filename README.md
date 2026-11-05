@@ -24,13 +24,13 @@ Arms, envelope limits, fuel density, and tank capacities are defined in `src/dat
 
 ### Fuel Density
 
-This calculator uses **6.7 lb/gal (0.803 kg/L)** as specified in the Tecnam P2006T POH §6 W&B form. Note that the FAA standard planning weight is 6.01 lb/gal; the POH value is used here because it reflects the actual fuel (Avgas 100LL) density assumed in the certified weight and balance data.
+This calculator uses **6.1 lb/gal (0.731 kg/L)**.
 
 To change the fuel density, update the single constant in `src/data/p2006t.js`:
 
 ```js
 fuel: {
-  density_lb_per_gal: 6.7,   // change this value
+  density_lb_per_gal: 6.1,   // change this value
   ...
 }
 ```

@@ -40,7 +40,7 @@ CG arm  = total moment ÷ total weight
 | Fuel | +2.516 |
 | Baggage | +5.533 |
 
-Empty weight and moment are entered from the aircraft's own weighing record. Fuel is converted at 6.7 lb/gal.
+Empty weight and moment are entered from the aircraft's own weighing record. Fuel is converted at 6.1 lb/gal.
 
 ### Loading conditions
 
@@ -59,20 +59,26 @@ The default load is a 190 lb pilot, a 165 lb co-pilot, 25 lb of baggage and 40 g
 
 | Condition | Weight (lb) | Moment (lb·ft) | CG (ft) | % MAC |
 |---|---|---|---|---|
-| Ramp | 2601.0 | 2200.3 | 0.846 | 19.3 |
-| Takeoff | 2594.3 | 2183.4 | 0.842 | 19.2 |
-| Landing | 2493.8 | 1930.5 | 0.774 | 17.6 |
+| Ramp | 2577.0 | 2139.9 | 0.830 | 18.9 |
+| Takeoff | 2570.9 | 2124.5 | 0.826 | 18.8 |
+| Landing | 2479.4 | 1894.3 | 0.764 | 17.4 |
 | Zero fuel | 2333.0 | 1526.0 | 0.654 | 14.9 |
 
 The zero-fuel condition falls forward of the 16.5% limit, so it is flagged. Fuel has an aft arm in this aircraft, so burning fuel moves the CG forward.
 
 ### Suggestion engine
 
-When a load is out of limits, the app looks for a fix. It treats passenger weights, taxi fuel and enroute fuel as fixed, and may change only the fuel load or add baggage.
+When a load is out of limits, the app looks for a fix. It treats passengers, taxi fuel and enroute fuel as fixed. Fuel on board can change, but it has an absolute minimum: taxi, enroute and reserve. Baggage is the last lever.
 
-Because fuel has a single arm, each CG limit reduces to a simple bound on takeoff fuel. The engine combines those bounds with MTOW, tank capacity and required reserve to find a usable fuel range. If no fuel quantity works, it searches for the least baggage that opens a range, because baggage moves the CG aft.
+The engine works in this order:
 
-Suggested fuel is rounded down to 0.1 gal and rechecked, so rounding cannot push the load back out of limits. Baggage is capped so the suggestion cannot exceed MZFW. A load already over MZFW is reported as having no solution, because fuel cannot fix it.
+1. **Adjust fuel.** Because fuel has a single arm, each CG limit reduces to a simple bound on takeoff fuel. The engine combines those bounds with MTOW, tank capacity and required fuel to find a usable range.
+2. **Add baggage.** If the CG is too far forward for any usable fuel load, it finds the least baggage that opens a range, because baggage moves the CG aft.
+3. **Remove baggage.** If the required fuel cannot be carried, it removes only as much baggage as needed.
+
+If none of these works, the load is reported as having no solution. A load over MZFW goes straight to step 3, because fuel cannot fix it.
+
+Suggested fuel is rounded down to 0.1 gal and rechecked, so rounding cannot push the load back out of limits. Added baggage is capped so the suggestion cannot exceed MZFW.
 
 The engine solves for the takeoff and landing conditions only. It does not try to bring the zero-fuel CG inside the envelope, so a load can show no advisory while the zero-fuel row is flagged, as in the example above.
 
@@ -245,7 +251,7 @@ time available     = distance available ÷ groundspeed
 required climb     = object height ÷ time available
 ```
 
-If this is above 50 fpm, it becomes the floor, and the accelerate-go card adds a note such as "Required 121 fpm to clear obstacle." The obstacle details themselves are not displayed.
+If this is above 50 fpm, it becomes the floor, and the accelerate-go card adds a note such as "Required 120 fpm to clear obstacle." The obstacle details themselves are not displayed.
 
 Four decisions shape this calculation.
 
@@ -263,7 +269,7 @@ Four decisions shape this calculation.
 
 Parker County (KWEA), Runway 36, using the default load from Section 2 and an illustrative report: `KNFW 051553Z 34010G20KT 10SM CLR 25/12 A2992`.
 
-The field is 991 ft, the runway is 3,298 ft of pavement with a 0.18% upslope, and the weight is 2601 lb (1180 kg).
+The field is 991 ft, the runway is 3,298 ft of pavement with a 0.18% upslope, and the weight is 2577 lb (1169 kg).
 
 **Wind.** The runway's true heading is 000° and the wind is 340° at 10 gusting 20, so the midpoint is 15 kt.
 
@@ -273,25 +279,25 @@ The field is 991 ft, the runway is 3,298 ft of pavement with a 0.18% upslope, an
 | Headwind on the runway card, midpoint | 14 kt |
 | Headwind in distances, steady | 9 kt |
 
-**Takeoff and landing.** The table values at these conditions are shown first. Results are rounded to the metre.
+**Takeoff and landing.** The table values at these conditions are shown first. They are rounded here for display, so a column can differ from its result by a metre.
 
 | Step | Takeoff roll | To 50 ft | Landing roll | From 50 ft |
 |---|---|---|---|---|
-| Table value | 331 | 432 | 228 | 340 |
+| Table value | 323 | 422 | 227 | 338 |
 | Headwind, 9 kt | −22.5 | −22.5 | −45 | −45 |
-| Paved | −18.5 | −18.5 | −3.7 | −3.7 |
-| Slope, 0.18% | +2.6 | +2.6 | −0.8 | −0.8 |
-| **Result (m)** | **292** | **394** | **179** | **291** |
+| Paved | −18.0 | −18.0 | −3.6 | −3.6 |
+| Slope, 0.18% | +2.5 | +2.5 | −0.8 | −0.8 |
+| **Result (m)** | **285** | **384** | **177** | **289** |
 
-The landing figures use the 2494 lb landing weight.
+The landing figures use the 2479 lb landing weight.
 
-**Accelerate-stop.** (292 + 179) × 1.30 = **612 m**, which fits the 1,005 m runway.
+**Accelerate-stop.** (285 + 177) × 1.30 = **601 m**, which fits the 1,005 m runway.
 
-**Accelerate-go.** The predicted climb rate is 136 fpm. Groundspeed is 84 − 9 = 75 kt, so the climb to 50 ft takes 851 m, and the total is 292 + 851 = **1,143 m**.
+**Accelerate-go.** The predicted climb rate is 143 fpm. Groundspeed is 84 − 9 = 75 kt, so the climb to 50 ft takes 809 m, and the total is 285 + 809 = **1,094 m**.
 
-**Obstacle.** A tree stands 42 ft high, 313 ft past the end. Distance available is 3,298 + 313 ft, or 1,101 m, less the 292 m ground roll, leaving 809 m. At 75 kt that takes 0.349 minutes, so the required climb is 42 ÷ 0.349 = **121 fpm**.
+**Obstacle.** A tree stands 42 ft high, 313 ft past the end. Distance available is 3,298 + 313 ft, or 1,101 m, less the 285 m ground roll, leaving 816 m. At 75 kt that takes 0.352 minutes, so the required climb is 42 ÷ 0.352, rounded up to **120 fpm**.
 
-The floor rises from 50 to 121 fpm. The predicted 136 fpm is above the floor but within 50 fpm of it, so the card shows a caution: *"Predicted single-engine climb rate is 136 fpm. Required 121 fpm to clear obstacle."*
+The floor rises from 50 to 120 fpm. The predicted 143 fpm is above the floor but within 50 fpm of it, so the card shows a caution: *"Predicted single-engine climb rate is 143 fpm. Required 120 fpm to clear obstacle."*
 
 ## 11. Data sources and currency
 
@@ -310,9 +316,6 @@ npm run alts
 After a rebuild, the `CACHE_NAME` in `src/airportDB.js` must be bumped so browsers download the new data. Where the FAA gives no TORA or LDA, the physical runway length is used.
 
 ## 12. Known limitations
-
-**Not confirmed against the POH**
-- The 6.7 lb/gal fuel density and the 220 kg (485 lb) seat limit were not found in the POH's searchable text. They may be in a form or image.
 
 **Not modelled**
 - Wet or contaminated runways, and runway condition generally.

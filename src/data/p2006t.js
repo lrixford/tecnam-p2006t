@@ -7,7 +7,7 @@ export const P2006T = {
   mlw_lb:  2712,                  // POH §2 §15
 
   fuel: {
-    density_lb_per_gal: 6.7,      // POH §6 W&B form
+    density_lb_per_gal: 6.1,
     perTank_max_gal: 26.42,       // POH §2 §20 — 100 L tank capacity
     combined_usable_gal: 51.35,   // POH §2 §20 — 194.4 L usable total
   },
