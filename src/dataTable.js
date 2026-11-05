@@ -83,6 +83,12 @@ export function renderFuelTable(target, state) {
 function fmtFtM(m)   { return `${Math.round(m / 0.3048).toLocaleString()} ft (${Math.round(m)} m)`; }
 function fmtFpmM(fpm){ return `${fpm.toLocaleString()} fpm (${Math.round(fpm * 0.3048)} m/min)`; }
 
+function runwayLine(perf) {
+  if (!perf) return '';
+  const xwind = perf.xwind_kt !== null ? ` · Crosswind ${Math.abs(perf.xwind_kt)} kt` : '';
+  return `<span class="print-summary__rwy${perf.xwind_ok ? '' : ' dt-oei-warn'}">Rwy ${perf.end_id}${xwind}</span>`;
+}
+
 export function renderPrintSummary(target, state, metar = null, perf = null) {
   const conds = computeAll(state);
   const totalGal      = state.fuelL.volume_gal + state.fuelR.volume_gal;
@@ -116,7 +122,10 @@ export function renderPrintSummary(target, state, metar = null, perf = null) {
         <span class="print-summary__name">Tecnam P2006T Weight &amp; Balance${aircraft}</span>
         <span class="print-summary__ts">${timestamp}</span>
       </div>
-      ${metar?.raw ? `<span class="print-summary__metar">${metar.raw}</span>` : ''}
+      ${metar?.raw ? `<div class="print-summary__title__row">
+        <span class="print-summary__metar">${metar.raw}</span>
+        ${runwayLine(perf)}
+      </div>` : ''}
     </div>
     <h2 class="section-h2">Tables</h2>
     <div class="print-summary__grid">

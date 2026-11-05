@@ -2,7 +2,8 @@
 // and POH distance calculations.
 
 import { loadAirports, lookupAirport }  from './airportDB.js';
-import { fetchMETAR, pressureAlt }      from './metar.js';
+import { fetchMETAR, pressureAlt,
+         componentWind_kt }             from './metar.js';
 import { rankRunways, calcPerformance,
          XWIND_LIMIT_KT }               from './performance.js';
 
@@ -323,7 +324,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onResu
     ranked = rankRunways(
       airport.runways,
       metar.wind_variable ? null : metar.wind_dir_deg,
-      metar.wind_speed_kt ?? 0,
+      componentWind_kt(metar) ?? 0,
     );
 
     renderRunwayList();

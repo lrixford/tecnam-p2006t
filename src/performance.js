@@ -2,7 +2,7 @@
 // All POH tables use metric (metres, kg). Weight input accepted in lbs.
 
 import { P2006T }                                          from './data/p2006t.js';
-import { headwindComponent, crosswindComponent,
+import { headwindComponent, crosswindComponent, componentWind_kt,
          pressureAlt as calcPA, densityAlt as calcDA }     from './metar.js';
 import { lbToKg }                                          from './units.js';
 
@@ -160,8 +160,9 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
   const windDir     = metar.wind_dir_deg;
   const windSpeed   = metar.wind_speed_kt ?? 0;
   const hdg         = windHdg(end);
+  // Steady wind, so distances take no credit for gusts
   const headwind_kt = hdg !== null ? headwindComponent(windDir, windSpeed, hdg) : 0;
-  const xwind_kt    = hdg !== null ? crosswindComponent(windDir, windSpeed, hdg) : 0;
+  const xwind_kt    = hdg !== null ? crosswindComponent(windDir, componentWind_kt(metar) ?? 0, hdg) : null;
 
   const surface     = runway.surface;
   const slope_pct   = end.slope_pct;
@@ -202,6 +203,7 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
   const acStopOk = accelStop_m    <= (tora_ft * 0.3048);
 
   return {
+    end_id:      endId,
     weight_kg:   Math.round(weight_kg),
     pa_ft,
     da_ft,

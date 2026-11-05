@@ -897,6 +897,14 @@
   word-break: break-all;
 }
 
+.p2006t .print-summary__rwy {
+  flex-shrink: 0;
+  margin-left: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .p2006t .print-summary__perf {
   margin-bottom: 1rem;
 }

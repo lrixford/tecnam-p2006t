@@ -136,6 +136,41 @@ test('wind components use the true runway heading', () => {
   assert.equal(r.headwind_kt, 10);
 });
 
+test('crosswind uses the gust midpoint, distances use the steady wind', () => {
+  const runway = {
+    surface: 'turf',
+    length_ft: 9000,
+    ends: { 18: { hdg_mag: 180, slope_pct: 0 } },
+  };
+  const calc = gust => calcPerformance({
+    grossLb: 2712, airport: { elev_ft: 0 }, runway, endId: '18',
+    metar: { altimeter_inhg: 29.92, oat_c: 25, wind_dir_deg: 270, wind_speed_kt: 12, wind_gust_kt: gust },
+  });
+  assert.equal(calc(null).xwind_kt, 12);
+  assert.equal(calc(null).xwind_ok, true);
+  assert.equal(calc(28).xwind_kt, 20);
+  assert.equal(calc(28).xwind_ok, false);
+  assert.equal(calc(28).end_id, '18');
+
+  const headOn = gust => calcPerformance({
+    grossLb: 2712, airport: { elev_ft: 0 }, runway, endId: '18',
+    metar: { altimeter_inhg: 29.92, oat_c: 25, wind_dir_deg: 180, wind_speed_kt: 10, wind_gust_kt: gust },
+  });
+  assert.equal(headOn(30).headwind_kt, 10);
+  assert.equal(headOn(30).takeoff.gr, headOn(null).takeoff.gr);
+});
+
+test('crosswind is null without a wind direction or runway heading', () => {
+  const calc = (hdg_mag, wind_dir_deg) => calcPerformance({
+    grossLb: 2712, airport: { elev_ft: 0 }, endId: '18',
+    runway: { surface: 'turf', length_ft: 9000, ends: { 18: { hdg_mag, slope_pct: 0 } } },
+    metar: { altimeter_inhg: 29.92, oat_c: 25, wind_dir_deg, wind_speed_kt: 10 },
+  });
+  assert.equal(calc(null, 180).xwind_kt, null);
+  assert.equal(calc(180, null).xwind_kt, null);
+  assert.equal(calc(null, 180).xwind_ok, true);
+});
+
 test('wind components fall back to the magnetic heading', () => {
   const runway = { ends: { 18: { hdg_mag: 180, hdg_true: null } } };
   assert.equal(rankRunways([runway], 180, 10)[0].headwind_kt, 10);

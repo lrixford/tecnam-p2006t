@@ -1,6 +1,6 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchMETAR, parseMETAR } from '../src/metar.js';
+import { componentWind_kt, fetchMETAR, parseMETAR } from '../src/metar.js';
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
@@ -68,6 +68,12 @@ test('parses sky layers with heights and cloud types', () => {
     { coverage: 'BKN', alt_ft: 3000, cb: true },
     { coverage: 'OVC', alt_ft: null, cb: false },
   ]);
+});
+
+test('component wind is the midpoint of steady and gust', () => {
+  assert.equal(componentWind_kt(parseMETAR('KAAA 051553Z 18015G25KT 10SM CLR 21/12 A2994')), 20);
+  assert.equal(componentWind_kt(parseMETAR('KAAA 051553Z 18015KT 10SM CLR 21/12 A2994')), 15);
+  assert.equal(componentWind_kt(parseMETAR('KAAA 051553Z /////KT 10SM CLR 21/12 A2994')), null);
 });
 
 test('requests the VATSIM JSON endpoint', async () => {

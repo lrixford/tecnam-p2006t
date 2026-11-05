@@ -215,6 +215,13 @@ export function densityAlt(pressureAlt_ft, oat_c) {
   return Math.round(pressureAlt_ft + 118.8 * (oat_c - isaTemp_c));
 }
 
+// Wind speed for runway components: midpoint of steady and gust.
+export function componentWind_kt(metar) {
+  return metar.wind_gust_kt
+    ? (metar.wind_speed_kt + metar.wind_gust_kt) / 2
+    : metar.wind_speed_kt;
+}
+
 // Headwind component relative to a runway heading (positive = headwind).
 export function headwindComponent(windDir_deg, windSpeed_kt, runwayHdg_deg) {
   if (windDir_deg === null || windSpeed_kt === null) return null;
