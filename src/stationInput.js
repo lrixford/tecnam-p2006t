@@ -19,6 +19,7 @@ function saveLoadout(state) {
 
 export function defaultState() {
   const defaults = {
+    // Actual empty weight and moment from the aircraft's weight and balance record
     empty:       load(KEYS.empty) ?? { weight_lb: 1953, moment_lb_ft: 2442, note: '' },
     mtow:        { weight_lb: P2006T.mtow_lb },
     pilot:       { weight_lb: 190 },  // FAA standard male

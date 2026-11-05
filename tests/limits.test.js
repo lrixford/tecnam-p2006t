@@ -100,12 +100,12 @@ test('zero-fuel weight over MZFW (2635 lb) flags', () => {
   assert.match(v['totals-zfw'].message, /MZFW/);
 });
 
-test('defaultState() matches blankState shape (no localStorage in Node)', () => {
+test('defaultState() returns the default loadout (no localStorage in Node)', () => {
   // In Node there is no localStorage, so persistence falls back to in-memory
   // Map (empty on first run) → load() returns null → defaults apply.
   const s = defaultState();
-  assert.deepEqual(s.empty,       { weight_lb: 0, moment_lb_ft: 0, note: '' });
-  assert.deepEqual(s.pilot,       { weight_lb: 0 });
-  assert.deepEqual(s.fuelL,       { volume_gal: 0 });
-  assert.deepEqual(s.fuelBurnoff, { volume_gal: 0 });
+  assert.deepEqual(s.empty,       { weight_lb: 1953, moment_lb_ft: 2442, note: '' });
+  assert.deepEqual(s.pilot,       { weight_lb: 190 });
+  assert.deepEqual(s.fuelL,       { volume_gal: 20 });
+  assert.deepEqual(s.fuelBurnoff, { volume_gal: 15 });
 });
