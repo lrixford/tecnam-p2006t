@@ -85,6 +85,15 @@ export function suggest(state) {
   const reserve_lb = (state.fuelReserve?.volume_gal ?? 8) * DENSITY;
 
   const { weight: bw, moment: bm } = baseWeightMoment(state);
+
+  // Fuel can't fix this
+  if (bw > P2006T.mzfw_lb) {
+    return {
+      status: 'impossible',
+      reason: `Zero-fuel weight ${Math.round(bw)} lb exceeds MZFW ${P2006T.mzfw_lb} lb.`,
+    };
+  }
+
   const range = tfRange(bw, bm, burnoff_lb, taxi_lb, mtow_lb, reserve_lb);
 
   if (range.feasible) {
@@ -110,6 +119,7 @@ export function suggest(state) {
   const effectiveMaxBag = Math.min(
     maxBag,
     mtow_lb - bwNoBag - taxi_lb - burnoff_lb - reserve_lb,
+    P2006T.mzfw_lb - bwNoBag,
   );
 
   if (effectiveMaxBag < currentBag) {

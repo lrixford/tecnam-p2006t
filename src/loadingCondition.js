@@ -15,7 +15,8 @@ function fuelMoment(weight_lb) {
 
 // Compute weight + moment for a state. `fuelOverride_lb` lets us synthesize
 // the landing/zero-fuel conditions without mutating the input state.
-export function computeCondition(state, fuelOverride_lb, checkMtow = true) {
+// `maxWeight_lb` defaults to MTOW.
+export function computeCondition(state, fuelOverride_lb, checkMtow = true, maxWeight_lb = state.mtow?.weight_lb) {
   const fuel_lb = fuelOverride_lb !== undefined ? fuelOverride_lb : fuelLb(state);
 
   const stationMoment =
@@ -43,7 +44,7 @@ export function computeCondition(state, fuelOverride_lb, checkMtow = true) {
     cg_arm_ft,
     cg_pct_mac,
     fuel_lb,
-    inEnvelope: isInEnvelope(weight_lb, cg_arm_ft, state.mtow?.weight_lb, checkMtow),
+    inEnvelope: isInEnvelope(weight_lb, cg_arm_ft, maxWeight_lb, checkMtow),
   };
 }
 
@@ -71,6 +72,6 @@ export function computeAll(state) {
     ramp:     computeCondition(state, fuel_lb_total, false),
     takeoff:  computeCondition(state, takeoff_fuel_lb),
     landing:  computeCondition(state, landing_fuel_lb),
-    zeroFuel: computeCondition(state, 0),
+    zeroFuel: computeCondition(state, 0, true, P2006T.mzfw_lb),
   };
 }

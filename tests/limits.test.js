@@ -1,6 +1,57 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { defaultState, computeViolations } from '../src/stationInput.js';
+import { computeAll } from '../src/loadingCondition.js';
+import { suggest } from '../src/suggest.js';
+
+// Zero-fuel weight is 2553 lb plus baggage.
+function nearMzfwState(baggage_lb) {
+  return {
+    empty:       { weight_lb: 1953, moment_lb_ft: 2442, note: '' },
+    mtow:        { weight_lb: 2712 },
+    pilot:       { weight_lb: 150 },
+    copilot:     { weight_lb: 150 },
+    rearLH:      { weight_lb: 150 },
+    rearRH:      { weight_lb: 150 },
+    baggage:     { weight_lb: baggage_lb },
+    fuelL:       { volume_gal: 5.5 },
+    fuelR:       { volume_gal: 5.5 },
+    fuelTaxi:    { volume_gal: 0.5 },
+    fuelBurnoff: { volume_gal: 2 },
+    fuelReserve: { volume_gal: 8 },
+  };
+}
+
+test('zero-fuel weight over MZFW fails the condition and the suggestion', () => {
+  const state = nearMzfwState(85);
+  const conds = computeAll(state);
+  assert.equal(conds.takeoff.inEnvelope, true);
+  assert.equal(conds.zeroFuel.inEnvelope, false);
+
+  const s = suggest(state);
+  assert.equal(s.status, 'impossible');
+  assert.match(s.reason, /2638 lb exceeds MZFW 2635 lb/);
+});
+
+test('zero-fuel weight at MZFW is accepted', () => {
+  const state = nearMzfwState(82);
+  assert.equal(computeAll(state).zeroFuel.inEnvelope, true);
+  assert.equal(suggest(state).status, 'ok');
+});
+
+test('a baggage suggestion never takes zero-fuel weight over MZFW', () => {
+  const state = nearMzfwState(0);
+  Object.assign(state.pilot,   { weight_lb: 340 });
+  Object.assign(state.copilot, { weight_lb: 330 });
+  Object.assign(state.rearLH,  { weight_lb: 0 });
+  Object.assign(state.rearRH,  { weight_lb: 0 });
+  const s = suggest(state);
+  if (s.baggage_lb !== undefined) {
+    assert.ok(1953 + 340 + 330 + s.baggage_lb <= 2635);
+  } else {
+    assert.equal(s.status, 'impossible');
+  }
+});
 
 function blankState() {
   return {
