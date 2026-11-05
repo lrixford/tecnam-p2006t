@@ -538,6 +538,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
 // ---------------------------------------------------------------------------
 
 function setStatus(el, text, type = '') {
+  el.hidden      = !text;
   el.textContent = text;
   el.className   = `perf-status${type ? ` perf-status--${type}` : ''}`;
 }
