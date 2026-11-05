@@ -7,13 +7,18 @@ import { headwindComponent, crosswindComponent,
 import { lbToKg }                                          from './units.js';
 
 export const XWIND_LIMIT_KT    = 17;     // POH §2 demonstrated crosswind
-const ACCEL_STOP_MARGIN        = 1.30;   // 30 % buffer applied to accel-stop
+const ACCEL_STOP_MARGIN        = 1.30;   // allows for a delayed decision
 const MIN_OEI_ROC_FPM          = 50;     // below this, no accel-go distance is given
 const CAUTION_OEI_ROC_FPM      = 100;    // up to and including this, accel-go shows a caution
 
 // ---------------------------------------------------------------------------
 // Runway selection
 // ---------------------------------------------------------------------------
+
+// METAR winds are true
+function windHdg(end) {
+  return end.hdg_true ?? end.hdg_mag ?? null;
+}
 
 // Returns runways ranked best-first for the given wind.
 // Each element: { runway, endId, end, headwind_kt, xwind_kt, xwind_ok }
@@ -23,9 +28,10 @@ export function rankRunways(runways, windDir_deg, windSpeed_kt) {
   const results = [];
   for (const runway of runways) {
     for (const [endId, end] of Object.entries(runway.ends)) {
-      if (end.hdg_mag === null) continue;
-      const hw = headwindComponent(windDir_deg, windSpeed_kt, end.hdg_mag);
-      const xw = crosswindComponent(windDir_deg, windSpeed_kt, end.hdg_mag);
+      const hdg = windHdg(end);
+      if (hdg === null) continue;
+      const hw = headwindComponent(windDir_deg, windSpeed_kt, hdg);
+      const xw = crosswindComponent(windDir_deg, windSpeed_kt, hdg);
       results.push({ runway, endId, end, headwind_kt: hw, xwind_kt: xw,
                      xwind_ok: Math.abs(xw) <= XWIND_LIMIT_KT });
     }
@@ -50,79 +56,42 @@ function lerp(a, b, t) { return a + (b - a) * t; }
 
 function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
-// Interpolate a { gr, to50ft } result from one PA row at a given OAT.
-function interpTemp(row, oat_c) {
-  const t = clamp(oat_c, TEMP_COLS[0], TEMP_COLS[TEMP_COLS.length - 1]);
-  let lo = TEMP_COLS[0], hi = TEMP_COLS[TEMP_COLS.length - 1];
-  for (let i = 0; i < TEMP_COLS.length - 1; i++) {
-    if (t >= TEMP_COLS[i] && t <= TEMP_COLS[i + 1]) { lo = TEMP_COLS[i]; hi = TEMP_COLS[i + 1]; break; }
-  }
-  if (lo === hi) {
-    const idx = TEMP_COLS.indexOf(lo);
-    return { gr: row.gr[idx], to50ft: row.to50ft[idx] };
-  }
-  const f  = (t - lo) / (hi - lo);
-  const il = TEMP_COLS.indexOf(lo);
-  const ih = TEMP_COLS.indexOf(hi);
-  return { gr: lerp(row.gr[il], row.gr[ih], f), to50ft: lerp(row.to50ft[il], row.to50ft[ih], f) };
+// Table keys either side of v, clamped to the table
+function bracket(keys, v) {
+  const x = clamp(v, keys[0], keys[keys.length - 1]);
+  const i = keys.findIndex(k => k >= x);
+  if (keys[i] === x) return { lo: x, hi: x, f: 0 };
+  const lo = keys[i - 1], hi = keys[i];
+  return { lo, hi, f: (x - lo) / (hi - lo) };
 }
 
-// Interpolate across PA brackets at a given OAT.
-function interpPA(wtTable, pa_ft, oat_c) {
-  const pas    = Object.keys(wtTable).map(Number).sort((a, b) => a - b);
-  const paLo   = pas.reduce((a, b) => pa_ft >= b ? b : a, pas[0]);
-  const paHi   = pas.reduce((a, b) => pa_ft <= b ? b : a, pas[pas.length - 1]);
-  const lo     = interpTemp(wtTable[paLo], oat_c);
-  if (paLo === paHi) return lo;
-  const hi = interpTemp(wtTable[paHi], oat_c);
-  const f  = (pa_ft - paLo) / (paHi - paLo);
-  return { gr: lerp(lo.gr, hi.gr, f), to50ft: lerp(lo.to50ft, hi.to50ft, f) };
+// Weight × PA × temp. `columns` picks the temperature array from a row.
+function interpolate(table, weight_kg, pa_ft, oat_c, columns) {
+  const atTemp = row => {
+    const { lo, hi, f } = bracket(TEMP_COLS, oat_c);
+    const cols = columns(row);
+    return lerp(cols[TEMP_COLS.indexOf(lo)], cols[TEMP_COLS.indexOf(hi)], f);
+  };
+  const atPA = wtTable => {
+    const pas = Object.keys(wtTable).map(Number).sort((a, b) => a - b);
+    const { lo, hi, f } = bracket(pas, pa_ft);
+    return lerp(atTemp(wtTable[lo]), atTemp(wtTable[hi]), f);
+  };
+  const { lo, hi, f } = bracket(WEIGHT_KEYS.filter(w => table[w]), weight_kg);
+  return lerp(atPA(table[lo]), atPA(table[hi]), f);
 }
 
-// Full bilinear interpolation: weight × PA × temp.
-// Returns { gr, to50ft } in metres (unrounded floats for chaining corrections).
-function interpolatePerf(tableData, weight_kg, pa_ft, oat_c) {
-  const wts  = WEIGHT_KEYS.filter(w => tableData[w]);
-  const wLo  = wts.reduce((a, b) => weight_kg >= b ? b : a, wts[0]);
-  const wHi  = wts.reduce((a, b) => weight_kg <= b ? b : a, wts[wts.length - 1]);
-  const lo   = interpPA(tableData[wLo], pa_ft, oat_c);
-  if (wLo === wHi) return lo;
-  const hi = interpPA(tableData[wHi], pa_ft, oat_c);
-  const f  = (weight_kg - wLo) / (wHi - wLo);
-  return { gr: lerp(lo.gr, hi.gr, f), to50ft: lerp(lo.to50ft, hi.to50ft, f) };
+// { gr, to50ft } in metres, unrounded
+function interpolatePerf(table, weight_kg, pa_ft, oat_c) {
+  return {
+    gr:     interpolate(table, weight_kg, pa_ft, oat_c, row => row.gr),
+    to50ft: interpolate(table, weight_kg, pa_ft, oat_c, row => row.to50ft),
+  };
 }
 
-// ---------------------------------------------------------------------------
-// Climb rate interpolation — rates: [oat_n25, oat_0, oat_25, oat_50, isa]
-// ---------------------------------------------------------------------------
-
-function interpClimbRow(row, oat_c) {
-  const t  = clamp(oat_c, TEMP_COLS[0], TEMP_COLS[TEMP_COLS.length - 1]);
-  let lo = TEMP_COLS[0], hi = TEMP_COLS[TEMP_COLS.length - 1];
-  for (let i = 0; i < TEMP_COLS.length - 1; i++) {
-    if (t >= TEMP_COLS[i] && t <= TEMP_COLS[i + 1]) { lo = TEMP_COLS[i]; hi = TEMP_COLS[i + 1]; break; }
-  }
-  const il = TEMP_COLS.indexOf(lo), ih = TEMP_COLS.indexOf(hi);
-  if (il === ih) return row.rates[il];
-  return lerp(row.rates[il], row.rates[ih], (t - lo) / (hi - lo));
-}
-
-function interpClimbPA(wtTable, pa_ft, oat_c) {
-  const pas  = Object.keys(wtTable).map(Number).sort((a, b) => a - b);
-  const paLo = pas.reduce((a, b) => pa_ft >= b ? b : a, pas[0]);
-  const paHi = pas.reduce((a, b) => pa_ft <= b ? b : a, pas[pas.length - 1]);
-  const lo   = interpClimbRow(wtTable[paLo], oat_c);
-  if (paLo === paHi) return lo;
-  return lerp(lo, interpClimbRow(wtTable[paHi], oat_c), (pa_ft - paLo) / (paHi - paLo));
-}
-
-function interpolateClimb(tableData, weight_kg, pa_ft, oat_c) {
-  const wts = WEIGHT_KEYS.filter(w => tableData[w]);
-  const wLo = wts.reduce((a, b) => weight_kg >= b ? b : a, wts[0]);
-  const wHi = wts.reduce((a, b) => weight_kg <= b ? b : a, wts[wts.length - 1]);
-  const lo  = interpClimbPA(tableData[wLo], pa_ft, oat_c);
-  if (wLo === wHi) return Math.round(lo);
-  return Math.round(lerp(lo, interpClimbPA(tableData[wHi], pa_ft, oat_c), (weight_kg - wLo) / (wHi - wLo)));
+// ft/min
+function interpolateClimb(table, weight_kg, pa_ft, oat_c) {
+  return Math.round(interpolate(table, weight_kg, pa_ft, oat_c, row => row.rates));
 }
 
 // ---------------------------------------------------------------------------
@@ -175,18 +144,22 @@ function applyCorrections(raw, corr, headwind_kt, surface, slope_pct) {
 //
 // Returns an object with all computed values, or throws if data is missing.
 export function calcPerformance({ grossLb, landingLb, airport, runway, endId, metar }) {
+  const altimeter   = metar.altimeter_inhg;
+  const oat_c       = metar.oat_c;
+  if (altimeter === null || oat_c === null) {
+    throw new Error('METAR has no temperature or altimeter setting');
+  }
+
   const weight_kg     = lbToKg(grossLb);
   const ldgWeight_kg  = lbToKg(landingLb ?? grossLb);
   const end         = runway.ends[endId];
   const elev_ft     = airport.elev_ft ?? 0;
-  const altimeter   = metar.altimeter_inhg ?? 29.92;
-  const oat_c       = metar.oat_c ?? 15;
   const pa_ft       = calcPA(elev_ft, altimeter);
   const da_ft       = calcDA(pa_ft, oat_c);
 
   const windDir     = metar.wind_dir_deg;
   const windSpeed   = metar.wind_speed_kt ?? 0;
-  const hdg         = end.hdg_mag;
+  const hdg         = windHdg(end);
   const headwind_kt = hdg !== null ? headwindComponent(windDir, windSpeed, hdg) : 0;
   const xwind_kt    = hdg !== null ? crosswindComponent(windDir, windSpeed, hdg) : 0;
 
@@ -199,11 +172,11 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
   const toRaw  = interpolatePerf(P2006T.takeoff.data,  weight_kg, pa_ft, oat_c);
   const toCorr = applyCorrections(toRaw,  P2006T.takeoff.corrections,  headwind_kt, surface, slope_pct);
 
-  // Landing — uses zero-fuel weight (conservative landing weight after fuel burn)
+  // Landing
   const ldgRaw  = interpolatePerf(P2006T.landing.data,  ldgWeight_kg, pa_ft, oat_c);
   const ldgCorr = applyCorrections(ldgRaw, P2006T.landing.corrections, headwind_kt, surface, slope_pct);
 
-  // Accel-stop: (T/O ground roll + landing ground roll) × margin
+  // Accel-stop: training rule of thumb, not a POH figure
   const accelStop_m = Math.round((toCorr.gr + ldgCorr.gr) * ACCEL_STOP_MARGIN);
 
   // Climb rates (ft/min)

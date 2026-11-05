@@ -54,8 +54,7 @@ export function mountWidget(target) {
   perfPanel = mountPerformancePanel(perfMount, {
     getGrossLb:   () => computeGrossLb(stationInput.getState()),
     getLandingLb: () => computeAll(stationInput.getState()).landing.weight_lb,
-    onMetarLoad:   () => renderPrintSummary(printMount, stationInput.getState(), perfPanel?.getMetar(), perfPanel?.getResult()),
-    onResultChange:() => renderPrintSummary(printMount, stationInput.getState(), perfPanel?.getMetar(), perfPanel?.getResult()),
+    onResultChange: () => renderPrintSummary(printMount, stationInput.getState(), perfPanel?.getMetar(), perfPanel?.getResult()),
   });
 
   refresh(stationInput.getState());

@@ -144,7 +144,7 @@ function template() {
 // Mount
 // ---------------------------------------------------------------------------
 
-export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMetarLoad, onResultChange }) {
+export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onResultChange }) {
   const root = document.createElement('div');
   root.innerHTML = template();
   target.replaceChildren(root);
@@ -155,6 +155,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
   let ranked   = [];
   let selected = null;   // { runway, endId }
   let perfResult = null;
+  let fetchSeq   = 0;    // ignores stale weather responses
 
   const $ = id => root.querySelector(`#${id}`);
 
@@ -183,6 +184,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
   loadAirports().then(data => { db = data; }).catch(() => {});
 
   function clearAirport() {
+    fetchSeq++;
     airport = null; metar = null; selected = null; perfResult = null;
     lookupRowEl.hidden  = false;
     metarSection.hidden = true;
@@ -190,6 +192,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
     hideSpinner();
     setStatus(aptStatusEl, '');
     aptIdEl.value = '';
+    onResultChange?.();
   }
 
   $('perf-clear-apt').addEventListener('click', clearAirport);
@@ -213,8 +216,9 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
       lookupRowEl.hidden  = true;
       metarSection.hidden = false;
       resultsEl.hidden    = true;
-      metar = null; selected = null;
+      metar = null; selected = null; perfResult = null;
       renderWxSource();
+      onResultChange?.();
       doFetch(airport.metar_id ?? airport.id);
     } catch (e) {
       hideSpinner();
@@ -229,10 +233,12 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
 
   async function doFetch(stationId) {
     if (!stationId) return;
+    const seq = ++fetchSeq;
     showSpinner('Fetching weather…');
     setStatus(metarStatusEl, '', '');
     try {
       const result = await fetchMETAR(stationId);
+      if (seq !== fetchSeq) return;
       hideSpinner();
       if (!result) {
         setStatus(metarStatusEl,
@@ -241,15 +247,22 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
         return;
       }
       metar = result;
-      altSection.hidden = true;
-      setStatus(metarStatusEl, '');
+      const missing = [
+        metar.oat_c          === null ? 'temperature' : null,
+        metar.altimeter_inhg === null ? 'altimeter'   : null,
+      ].filter(Boolean).join(' or ');
+      altSection.hidden = !missing;
+      setStatus(metarStatusEl, missing
+        ? `${metar.station} report has no ${missing}. Distances not calculated — choose another station.`
+        : '', missing ? 'warn' : '');
       renderResults();
-      onMetarLoad?.();
+      onResultChange?.();
     } catch (e) {
+      if (seq !== fetchSeq) return;
       hideSpinner();
       setStatus(metarStatusEl, `Error: ${e.message}`, 'error');
     } finally {
-      renderWxSource();
+      if (seq === fetchSeq) renderWxSource();
     }
   }
 
@@ -289,9 +302,9 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
     resultsEl.hidden   = false;
     distancesEl.hidden = true;
     selected = null;
+    perfResult = null;
 
     const elev    = airport.elev_ft ?? 0;
-    const pa      = pressureAlt(elev, metar.altimeter_inhg ?? 29.92);
     const windDesc = metar.wind_variable
       ? `Variable ${metar.wind_speed_kt} kt`
       : metar.wind_dir_deg !== null
@@ -303,7 +316,8 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
       ? `${metar.oat_c} °C / ${Math.round(metar.oat_c * 9/5 + 32)} °F` : '—';
     $('perf-altim').textContent = metar.altimeter_inhg !== null
       ? `${metar.altimeter_inhg.toFixed(2)} inHg`  : '—';
-    $('perf-pa').textContent    = fmtFt(pa);
+    $('perf-pa').textContent    = metar.altimeter_inhg !== null
+      ? fmtFt(pressureAlt(elev, metar.altimeter_inhg)) : '—';
     $('perf-wind').textContent  = windDesc;
 
     ranked = rankRunways(
@@ -529,6 +543,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
     } catch {
       perfResult = null;
       distancesEl.hidden = true;
+      onResultChange?.();
       return;
     }
 

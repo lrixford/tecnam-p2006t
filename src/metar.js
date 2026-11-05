@@ -1,6 +1,9 @@
 // METAR parser — extracts fields relevant to performance calculations.
 // Returns null for any field that is absent or unparseable.
 
+const TEMP_RE      = /^(M?\d{2})\/(?:(M?\d{2})|\/{2})?$/;
+const ALTIMETER_RE = /^(A|Q)(\d{4})$/;
+
 export function parseMETAR(raw) {
   const tokens = raw.trim().toUpperCase().split(/\s+/);
   let i = 0;
@@ -89,8 +92,8 @@ export function parseMETAR(raw) {
     const t = tokens[i];
     if (/^(FEW|SCT|BKN|OVC|VV)\d{3}/.test(t)) break;
     if (t === 'SKC' || t === 'CLR' || t === 'CAVOK') break;
-    if (/^M?\d{2}\/M?\d{2}$/.test(t)) break;
-    if (/^[AQ]\d{4}$/.test(t)) break;
+    if (TEMP_RE.test(t)) break;
+    if (ALTIMETER_RE.test(t)) break;
     if (t === 'RMK') break;
     // Visibility not yet captured — try again from here
     if (result.visibility_sm === null) {
@@ -118,45 +121,43 @@ export function parseMETAR(raw) {
     i++;
   }
 
-  // Sky condition layers
-  while (i < tokens.length) {
+  // Sky, temperature, altimeter. Skips groups it can't read.
+  for (; i < tokens.length && tokens[i] !== 'RMK'; i++) {
     const t = tokens[i];
     if (t === 'SKC' || t === 'CLR') {
       result.sky.push({ coverage: t, alt_ft: null, cb: false });
-      i++;
       continue;
     }
-    const sm = t.match(/^(FEW|SCT|BKN|OVC|VV)(\d{3})(CB|TCU)?$/);
+
+    // FEW020, BKN030CB, BKN020///, OVC///
+    const sm = t.match(/^(FEW|SCT|BKN|OVC|VV)(\d{3}|\/{3})(CB|TCU|\/{3})?$/);
     if (sm) {
       result.sky.push({
         coverage: sm[1],
-        alt_ft:   parseInt(sm[2], 10) * 100,
+        alt_ft:   sm[2] === '///' ? null : parseInt(sm[2], 10) * 100,
         cb:       sm[3] === 'CB',
       });
-      i++;
       continue;
     }
-    break;
-  }
 
-  // Temperature / dew point: TT/DD, M-prefix for negative values
-  const tm = tokens[i]?.match(/^(M?\d{2})\/(M?\d{2})$/);
-  if (tm) {
-    result.oat_c = parseTempToken(tm[1]);
-    result.dp_c  = parseTempToken(tm[2]);
-    i++;
-  }
-
-  // Altimeter: A2992 (in Hg ×100) or Q1013 (hPa)
-  const am = tokens[i]?.match(/^(A|Q)(\d{4})$/);
-  if (am) {
-    if (am[1] === 'A') {
-      result.altimeter_inhg = parseInt(am[2], 10) / 100;
-    } else {
-      result.altimeter_hpa  = parseInt(am[2], 10);
-      result.altimeter_inhg = result.altimeter_hpa / 33.8639;
+    // TT/DD, M = negative. Dew point can be missing: 34/ or 34///
+    const tm = t.match(TEMP_RE);
+    if (tm) {
+      result.oat_c = parseTempToken(tm[1]);
+      if (tm[2]) result.dp_c = parseTempToken(tm[2]);
+      continue;
     }
-    i++;
+
+    // Altimeter: A2992 (in Hg ×100) or Q1013 (hPa)
+    const am = t.match(ALTIMETER_RE);
+    if (am) {
+      if (am[1] === 'A') {
+        result.altimeter_inhg = parseInt(am[2], 10) / 100;
+      } else {
+        result.altimeter_hpa  = parseInt(am[2], 10);
+        result.altimeter_inhg = result.altimeter_hpa / 33.8639;
+      }
+    }
   }
 
   // Remarks

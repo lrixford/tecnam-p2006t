@@ -26,6 +26,50 @@ test('parses the wind when the station ID contains digits', () => {
   assert.equal(m.wind_speed_kt, 11);
 });
 
+test('keeps the temperature and altimeter when the dew point is missing', () => {
+  for (const group of ['34/', '34///']) {
+    const m = parseMETAR(`KAAA 051553Z 18010KT 10SM CLR ${group} A2992`);
+    assert.equal(m.oat_c, 34);
+    assert.equal(m.dp_c, null);
+    assert.equal(m.altimeter_inhg, 29.92);
+  }
+});
+
+test('reads past sky groups the station could not fully report', () => {
+  for (const sky of ['BKN020 OVC///', 'BKN020///', '///020 BKN030']) {
+    const m = parseMETAR(`KAAA 051553Z AUTO 18010KT 10SM ${sky} M05/M10 A3010`);
+    assert.equal(m.oat_c, -5);
+    assert.equal(m.dp_c, -10);
+    assert.equal(m.altimeter_inhg, 30.1);
+  }
+});
+
+test('reports a missing temperature or altimeter as null', () => {
+  const noAltimeter = parseMETAR('KAAA 051553Z 18010KT 10SM CLR 34/20 A////');
+  assert.equal(noAltimeter.oat_c, 34);
+  assert.equal(noAltimeter.altimeter_inhg, null);
+
+  const noTemp = parseMETAR('KAAA 051553Z 18010KT 10SM CLR ///// A2992');
+  assert.equal(noTemp.oat_c, null);
+  assert.equal(noTemp.altimeter_inhg, 29.92);
+});
+
+test('does not read remarks as weather', () => {
+  const m = parseMETAR('KAAA 051553Z 18010KT 10SM CLR A2992 RMK 34/20 A3000');
+  assert.equal(m.oat_c, null);
+  assert.equal(m.altimeter_inhg, 29.92);
+  assert.equal(m.remarks, '34/20 A3000');
+});
+
+test('parses sky layers with heights and cloud types', () => {
+  const m = parseMETAR('KAAA 051553Z 18010KT 10SM FEW020 BKN030CB OVC/// 21/12 A2994');
+  assert.deepEqual(m.sky, [
+    { coverage: 'FEW', alt_ft: 2000, cb: false },
+    { coverage: 'BKN', alt_ft: 3000, cb: true },
+    { coverage: 'OVC', alt_ft: null, cb: false },
+  ]);
+});
+
 test('requests the VATSIM JSON endpoint', async () => {
   const urls = stubFetch([{ id: 'KAAA', metar: '051553Z 18011KT 10SM FEW095 21/12 A2994' }]);
   await fetchMETAR('KAAA');
