@@ -62,6 +62,12 @@ const RWY_F = {
   baseTORA:     [703, 708],  // takeoff run available, feet
   baseLDA:      [718, 723],  // landing distance available, feet
 
+  // Controlling object off this end, as seen on approach
+  baseDisplaced: [222, 226],  // displaced threshold, feet from the runway end
+  baseObjHeight: [275, 280],  // feet above the runway end
+  baseObjDist:   [280, 285],  // feet from the threshold, despite what apt_rf.txt says
+  baseObjOffset: [285, 292],  // feet off centerline, e.g. "50R"
+
   // Reciprocal end
   recipId:      [292, 295],  // e.g. "19 ", "36R", "S  "
   recipTrueHdg: [295, 298],  // true heading
@@ -72,7 +78,15 @@ const RWY_F = {
   // Reciprocal end additional data
   recipTORA:    [994, 999],
   recipLDA:     [1009, 1014],
+
+  recipDisplaced: [444, 448],
+  recipObjHeight: [497, 502],
+  recipObjDist:   [502, 507],
+  recipObjOffset: [507, 514],
 } as const;
+
+// Objects further off centerline than this aren't straight ahead.
+const MAX_OBSTACLE_OFFSET_FT = 500;
 
 // A valid runway end ID, e.g. "01", "18L", "N", "NE". Used to catch column shifts.
 const RWY_END_ID = /^(\d{1,2}[LRCW]?|[NSEW]{1,3})$/;
@@ -157,9 +171,30 @@ function intField(line: string, slice: readonly [number, number]): number | null
   return isFinite(n) ? n : null;
 }
 
+function obstacleField(
+  line: string,
+  height: readonly [number, number],
+  dist: readonly [number, number],
+  offset: readonly [number, number],
+  displaced: readonly [number, number],
+): Obstacle | null {
+  const height_ft = intField(line, height);
+  const fromThreshold_ft = intField(line, dist);
+  if (height_ft === null || fromThreshold_ft === null) return null;
+  if ((intField(line, offset) ?? 0) > MAX_OBSTACLE_OFFSET_FT) return null;
+  const dist_ft = fromThreshold_ft - (intField(line, displaced) ?? 0);
+  if (dist_ft < 0) return null;   // alongside the runway, not past it
+  return { height_ft, dist_ft };
+}
+
 // ---------------------------------------------------------------------------
 // Output types
 // ---------------------------------------------------------------------------
+
+interface Obstacle {
+  height_ft: number;   // above the far runway end
+  dist_ft:   number;   // past the far runway end
+}
 
 interface RunwayEnd {
   hdg_mag:      number | null;   // magnetic heading (degrees)
@@ -171,6 +206,7 @@ interface RunwayEnd {
   // Positive = upslope in the takeoff/departure direction from this end.
   // null if either end elevation or length is missing.
   slope_pct:    number | null;
+  obstacle:     Obstacle | null; // straight ahead when departing this end
 }
 
 interface Runway {
@@ -373,6 +409,7 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
         tora_ft:   intField(line, RWY_F.baseTORA),
         lda_ft:    intField(line, RWY_F.baseLDA),
         slope_pct: baseSlope,               // positive = upslope departing this end
+        obstacle:  obstacleField(line, RWY_F.recipObjHeight, RWY_F.recipObjDist, RWY_F.recipObjOffset, RWY_F.recipDisplaced),
       };
 
       const recipEnd: RunwayEnd | null = recipIdRaw ? {
@@ -382,6 +419,7 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
         tora_ft:   intField(line, RWY_F.recipTORA),
         lda_ft:    intField(line, RWY_F.recipLDA),
         slope_pct: baseSlope !== null ? -baseSlope : null,  // opposite sign
+        obstacle:  obstacleField(line, RWY_F.baseObjHeight, RWY_F.baseObjDist, RWY_F.baseObjOffset, RWY_F.baseDisplaced),
       } : null;
 
       const ends: Record<string, RunwayEnd> = {};

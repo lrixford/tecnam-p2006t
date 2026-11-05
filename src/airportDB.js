@@ -2,8 +2,8 @@
 // airports.json is ~6 MB so we use the Cache API rather than localStorage.
 
 const AIRPORTS_URL  = './airport/airports.json';
-const CACHE_NAME    = 'airportdb-v4';   // bump whenever airports.json is rebuilt
-const OLD_CACHES    = ['airportdb-v1', 'airportdb-v2', 'airportdb-v3'];
+const CACHE_NAME    = 'airportdb-v5';   // bump whenever airports.json is rebuilt
+const OLD_CACHES    = ['airportdb-v1', 'airportdb-v2', 'airportdb-v3', 'airportdb-v4'];
 const META_KEY      = 'airportdb_fetched_at';
 const TTL_MS        = 28 * 24 * 60 * 60 * 1000;
 
