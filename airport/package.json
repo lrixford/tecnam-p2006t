@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "parse": "ts-node parse-apt.ts ../docs/airport/APT.txt airports.json ../docs/airport/WXL.txt"
+    "parse": "ts-node parse-apt.ts ../docs/airport/APT.txt airports.json ../docs/airport/WXL.txt",
+    "alts": "node add-metar-alts.mjs ../docs/airport/APT.txt ../docs/airport/WXL.txt airports.json"
   },
   "devDependencies": {
     "@types/node": "^20.19.39",

@@ -1283,6 +1283,40 @@
   color: var(--fg);
 }
 
+.p2006t .perf-wx-source {
+  font-size: 0.82rem;
+  font-style: italic;
+  color: var(--muted);
+  margin: -0.4rem 0 0.35rem;
+}
+
+.p2006t .perf-wx-stations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.p2006t .perf-wx-stations[hidden] { display: none; }
+
+.p2006t .perf-wx-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  color: light-dark(#1f5fa8, #6aa8e8);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.p2006t .perf-wx-link[aria-pressed="true"] {
+  color: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: default;
+}
+
 .p2006t .perf-metar-raw {
   font-size: 0.75rem;
   font-family: monospace;

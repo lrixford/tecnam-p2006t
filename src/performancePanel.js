@@ -57,6 +57,8 @@ function template() {
           <div class="perf-apt-name" id="perf-apt-info"></div>
           <button class="perf-apt-clear" id="perf-clear-apt" aria-label="Clear airport">✕</button>
         </div>
+        <div class="perf-wx-source" id="perf-wx-source" hidden></div>
+        <div class="perf-wx-stations" id="perf-wx-stations" hidden></div>
         <span class="perf-status" id="perf-metar-status" hidden></span>
 
         <div id="perf-alt-section" hidden>
@@ -163,6 +165,8 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
   const metarSection  = $('perf-metar-section');
   const aptInfoEl     = $('perf-apt-info');
   const metarStatusEl = $('perf-metar-status');
+  const wxSourceEl    = $('perf-wx-source');
+  const wxStationsEl  = $('perf-wx-stations');
   const altSection    = $('perf-alt-section');
   const altIdEl       = $('perf-alt-id');
   const fetchAltBtn   = $('perf-fetch-alt');
@@ -210,6 +214,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
       metarSection.hidden = false;
       resultsEl.hidden    = true;
       metar = null; selected = null;
+      renderWxSource();
       doFetch(airport.metar_id ?? airport.id);
     } catch (e) {
       hideSpinner();
@@ -243,7 +248,34 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
     } catch (e) {
       hideSpinner();
       setStatus(metarStatusEl, `Error: ${e.message}`, 'error');
+    } finally {
+      renderWxSource();
     }
+  }
+
+  // Which station the weather came from, and the stations the pilot can switch to.
+  function renderWxSource() {
+    if (!airport) return;
+    const options = [
+      { id: airport.metar_id, nm: airport.metar_nm },
+      ...(airport.metar_alts ?? []),
+    ].filter(s => s.id);
+    const station = metar?.station ?? null;
+    const nm = options.find(s => s.id === station)?.nm ?? null;
+
+    wxSourceEl.hidden = !station || station === airport.id;
+    wxSourceEl.textContent = `Weather from ${station}${nm !== null ? ` (${nm} nm away)` : ''}`;
+
+    wxStationsEl.hidden = options.length < 2;
+    wxStationsEl.replaceChildren(...options.map(s => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'perf-wx-link';
+      btn.textContent = s.nm !== null && s.nm !== undefined ? `${s.id} ${s.nm} nm` : s.id;
+      btn.setAttribute('aria-pressed', String(s.id === station));
+      btn.addEventListener('click', () => doFetch(s.id));
+      return btn;
+    }));
   }
 
   fetchAltBtn.addEventListener('click', () => doFetch(altIdEl.value.trim()));
