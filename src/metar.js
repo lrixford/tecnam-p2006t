@@ -169,27 +169,31 @@ export function parseMETAR(raw) {
 // Fetch
 // ---------------------------------------------------------------------------
 
-const METAR_API    = 'https://aviationweather.gov/api/data/metar';
-const CORS_PROXY   = 'https://corsproxy.io/?';
+const METAR_API    = 'https://metar.vatsim.net';
 const METAR_TTL_MS = 15 * 60 * 1000;
 
 const _cache = new Map();  // id → { ts, data }
 
-// Fetch and parse the latest METAR for a station ID via corsproxy.io.
+// Fetch and parse the latest METAR for a station ID from VATSIM's METAR API.
 // Results are cached for 15 minutes. Returns null if the station has no report.
 export async function fetchMETAR(stationId) {
   const raw = stationId.trim().toUpperCase();
-  // 3-char FAA IDs need K prefix for the aviationweather.gov API
+  // 3-char FAA IDs need K prefix: the API only matches ICAO IDs
   const id = raw.length === 3 ? `K${raw}` : raw;
   const hit = _cache.get(id);
   if (hit && Date.now() - hit.ts < METAR_TTL_MS) return hit.data;
 
-  const src = `${METAR_API}?ids=${encodeURIComponent(id)}&format=json`;
-  const res = await fetch(`${CORS_PROXY}${encodeURIComponent(src)}`);
+  const res = await fetch(`${METAR_API}/${encodeURIComponent(id)}?format=json`);
   if (!res.ok) throw new Error(`METAR fetch failed: ${res.status} ${res.statusText}`);
   const data = await res.json();
-  if (!Array.isArray(data) || data.length === 0) { _cache.delete(id); return null; }
-  const parsed = parseMETAR(data[0].rawOb);
+  const entry = Array.isArray(data) ? data[0] : null;
+  if (!entry?.metar) { _cache.delete(id); return null; }
+  // The JSON format omits the station from the report text; restore it so
+  // metar.raw reads as a complete METAR. A doubled ID would derail the parser.
+  const report = entry.metar.startsWith(`${entry.id} `)
+    ? entry.metar
+    : `${entry.id} ${entry.metar}`;
+  const parsed = parseMETAR(report);
   _cache.set(id, { ts: Date.now(), data: parsed });
   return parsed;
 }
