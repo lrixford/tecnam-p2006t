@@ -50,28 +50,32 @@ const RWY_F = {
   surface:  [32, 44],    // e.g. "ASPH-G      ", "TURF        ", "CONC-ASPH   "
 
   // Base end (lower-numbered / lexically first)
-  baseId:       [65, 68],    // e.g. "01 ", "18L", "N  "
-  baseTrueHdg:  [68, 71],    // true heading, degrees (e.g. "184")
+  baseId:       [70, 73],    // e.g. "01 ", "18L", "N  "
+  baseTrueHdg:  [73, 76],    // true heading, degrees (e.g. "184")
 
   // Base end geographic data
-  baseElev:     [142, 149],  // elevation MSL at physical runway end (feet, e.g. "  19.5")
+  baseElev:     [147, 154],  // elevation MSL at physical runway end (feet, e.g. "  19.5")
 
   // Base end additional data
   // NOTE: E40 gradient fields are defined in spec but not populated in current FAA APT.txt.
-  baseTORA:     [698, 703],  // takeoff run available, feet
-  baseLDA:      [713, 718],  // landing distance available, feet
+  baseTORA:     [703, 708],  // takeoff run available, feet
+  baseLDA:      [718, 723],  // landing distance available, feet
 
   // Reciprocal end
-  recipId:      [287, 290],  // e.g. "19 ", "36R", "S  "
-  recipTrueHdg: [290, 293],  // true heading
+  recipId:      [292, 295],  // e.g. "19 ", "36R", "S  "
+  recipTrueHdg: [295, 298],  // true heading
 
   // Reciprocal end geographic data
-  recipElev:    [364, 371],  // elevation MSL at physical runway end (feet)
+  recipElev:    [369, 376],  // elevation MSL at physical runway end (feet)
 
   // Reciprocal end additional data
-  recipTORA:    [989, 994],
-  recipLDA:     [1004, 1009],
+  recipTORA:    [994, 999],
+  recipLDA:     [1009, 1014],
 } as const;
+
+// A valid runway end ID, e.g. "01", "18L", "N", "NE". Used to catch column shifts.
+const RWY_END_ID = /^(\d{1,2}[LRCW]?|[NSEW]{1,3})$/;
+const MAX_BAD_END_ID_RATIO = 0.05;
 
 // ---------------------------------------------------------------------------
 // Surface classification
@@ -276,6 +280,7 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
   let lineCount = 0;
   let aptCount  = 0;
   let rwyCount  = 0;
+  let badEndIds = 0;
 
   for await (const line of rl) {
     lineCount++;
@@ -324,6 +329,7 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
 
       const baseIdRaw  = field(line, RWY_F.baseId).trim();
       const recipIdRaw = field(line, RWY_F.recipId).trim();
+      if (!RWY_END_ID.test(baseIdRaw)) badEndIds++;
 
       const length    = intField(line, RWY_F.length);
       const baseElev  = numField(line, RWY_F.baseElev);
@@ -370,6 +376,12 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
     }
   }
 
+  // Stop before writing anything if the FAA layout has moved the runway columns.
+  if (badEndIds > rwyCount * MAX_BAD_END_ID_RATIO) {
+    throw new Error(`${badEndIds} of ${rwyCount} runway end IDs look wrong; `
+      + `check RWY_F against the current apt_rf.txt. Nothing was written.`);
+  }
+
   // Assign nearest METAR station to each airport
   for (const [siteNo, apt] of airports) {
     const coords = aptCoords.get(siteNo);
@@ -387,7 +399,7 @@ async function parseAPT(inputPath: string, outputPath: string, wxlPath: string):
 
   console.log(`Lines read:   ${lineCount.toLocaleString()}`);
   console.log(`Airports:     ${aptCount.toLocaleString()}`);
-  console.log(`Runways:      ${rwyCount.toLocaleString()}`);
+  console.log(`Runways:      ${rwyCount.toLocaleString()} (${badEndIds} unusual end IDs)`);
   console.log(`Output keys:  ${Object.keys(output).length.toLocaleString()}`);
   console.log(`Output file:  ${outputPath}`);
 }
