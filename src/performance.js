@@ -8,6 +8,8 @@ import { lbToKg }                                          from './units.js';
 
 export const XWIND_LIMIT_KT    = 17;     // POH §2 demonstrated crosswind
 const ACCEL_STOP_MARGIN        = 1.30;   // 30 % buffer applied to accel-stop
+const MIN_OEI_ROC_FPM          = 50;     // below this, no accel-go distance is given
+const CAUTION_OEI_ROC_FPM      = 100;    // up to and including this, accel-go shows a caution
 
 // ---------------------------------------------------------------------------
 // Runway selection
@@ -213,7 +215,13 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
   const vyse_kt     = P2006T.speeds_kias.vyse;
   const oeiGs_kt    = Math.max(1, vyse_kt - headwind_kt);
   const oeiClimb_m  = (50 / roc_oei_fpm) * (oeiGs_kt * 30.867); // 30.867 m/min per kt
-  const accelGo_m   = roc_oei_fpm >= 25 ? Math.round(toCorr.gr + oeiClimb_m) : null;
+  const canAccelGo  = roc_oei_fpm >= MIN_OEI_ROC_FPM;
+  const accelGo_m   = canAccelGo ? Math.round(toCorr.gr + oeiClimb_m) : null;
+  const accelGoLevel = !canAccelGo ? 'warning'
+    : roc_oei_fpm <= CAUTION_OEI_ROC_FPM ? 'caution'
+    : null;
+  const accelGoMessage = accelGoLevel === null ? null
+    : `Predicted single-engine climb rate is ${roc_oei_fpm} fpm.`;
 
   // TORA/LDA fit checks
   const toraOk   = toCorr.to50ft <= (tora_ft * 0.3048);
@@ -235,7 +243,7 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
     takeoff:     { ...toCorr, tora_ok: toraOk },
     landing:     { ...ldgCorr, lda_ok: ldaOk },
     accel_stop:  { dist_m: accelStop_m, ok: acStopOk },
-    accel_go:    { dist_m: accelGo_m },
+    accel_go:    { dist_m: accelGo_m, level: accelGoLevel, message: accelGoMessage },
     roc_fpm,
     roc_oei_fpm,
   };

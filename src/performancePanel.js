@@ -104,6 +104,7 @@ function template() {
             <div class="perf-accel-card" id="perf-acgo-card">
               <div class="perf-accel-label">Accelerate-Go Distance</div>
               <div class="perf-accel-val" id="perf-acgo"></div>
+              <div class="perf-accel-msg" id="perf-acgo-msg" role="status" hidden></div>
             </div>
           </div>
 
@@ -515,10 +516,14 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onMeta
 
     $('perf-acstop-card').classList.toggle('perf-accel-card--warn', !result.accel_stop.ok);
     $('perf-acstop').innerHTML = `${fmtFt(result.accel_stop.dist_m / 0.3048)} <span class="perf-dist-ft">(${fmtM(result.accel_stop.dist_m)})</span>`;
-    $('perf-acgo').innerHTML   = result.accel_go.dist_m !== null
-      ? `${fmtFt(result.accel_go.dist_m / 0.3048)} <span class="perf-dist-ft">(${fmtM(result.accel_go.dist_m)})</span>`
-      : '<span class="perf-oei-warn">N/A</span>';
-
+    const acGo = result.accel_go;
+    $('perf-acgo-card').classList.toggle('perf-accel-card--warn',    acGo.level === 'warning');
+    $('perf-acgo-card').classList.toggle('perf-accel-card--caution', acGo.level === 'caution');
+    $('perf-acgo').innerHTML = acGo.dist_m !== null
+      ? `${fmtFt(acGo.dist_m / 0.3048)} <span class="perf-dist-ft">(${fmtM(acGo.dist_m)})</span>`
+      : 'N/A';
+    $('perf-acgo-msg').hidden      = !acGo.message;
+    $('perf-acgo-msg').textContent = acGo.message ?? '';
   }
 
   return {

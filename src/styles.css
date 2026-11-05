@@ -1521,8 +1521,8 @@
 }
 
 .p2006t .perf-dist-val--warn { color: var(--warn); }
-.p2006t .perf-oei-warn { color: var(--warn); }
 .p2006t .dt-oei-warn   { color: var(--warn); }
+.p2006t .dt-oei-caution { color: light-dark(#b35a00, #e8a04a); }
 
 .p2006t .perf-dist-note {
   font-size: 0.65rem;
@@ -1572,6 +1572,20 @@
 }
 
 .p2006t .perf-accel-card--warn .perf-accel-val { color: var(--warn); }
+
+.p2006t .perf-accel-card--caution {
+  background: light-dark(#fffbeb, #2a2310);
+  border-color: light-dark(#d4a017, #7a5c00);
+}
+
+.p2006t .perf-accel-msg {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
+.p2006t .perf-accel-card--warn .perf-accel-msg    { color: var(--warn); }
+.p2006t .perf-accel-card--caution .perf-accel-msg { color: light-dark(#5a3e00, #f0c040); }
 
 .p2006t .perf-accel-note {
   font-size: 0.68rem;
