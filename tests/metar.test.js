@@ -1,6 +1,6 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchMETAR } from '../src/metar.js';
+import { fetchMETAR, parseMETAR } from '../src/metar.js';
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
@@ -17,6 +17,14 @@ function stubFetch(body, { ok = true, status = 200, statusText = 'OK' } = {}) {
 
 // fetchMETAR caches per station for the life of the module, so each test
 // uses its own station ID.
+
+test('parses the wind when the station ID contains digits', () => {
+  const m = parseMETAR('K04V 051553Z AUTO 18011KT 10SM CLR 21/12 A2994');
+  assert.equal(m.station, 'K04V');
+  assert.equal(m.time_z, '051553Z');
+  assert.equal(m.wind_dir_deg, 180);
+  assert.equal(m.wind_speed_kt, 11);
+});
 
 test('requests the VATSIM JSON endpoint', async () => {
   const urls = stubFetch([{ id: 'KAAA', metar: '051553Z 18011KT 10SM FEW095 21/12 A2994' }]);

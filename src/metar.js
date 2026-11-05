@@ -32,8 +32,8 @@ export function parseMETAR(raw) {
   // COR may appear before or after station
   if (tokens[i] === 'COR') { result.cor = true; i++; }
 
-  // Station ID — 4-letter ICAO
-  if (/^[A-Z]{4}$/.test(tokens[i])) result.station = tokens[i++];
+  // Station ID — 4-character ICAO, which can include digits (e.g. K04V)
+  if (/^[A-Z][A-Z0-9]{3}$/.test(tokens[i])) result.station = tokens[i++];
 
   // Observation time: DDHHmmZ
   if (/^\d{6}Z$/.test(tokens[i])) result.time_z = tokens[i++];
