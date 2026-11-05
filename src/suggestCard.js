@@ -5,6 +5,7 @@ const ISSUE_TEXT = {
   'forward-cg': 'CG is too far forward at takeoff and landing.',
   'aft-cg':     'CG is too far aft at takeoff.',
   'over-mtow':  'Aircraft is over maximum takeoff weight.',
+  'over-mzfw':  'Zero-fuel weight is over MZFW.',
 };
 
 export function renderSuggestCard(target, state, onApply) {
@@ -28,8 +29,9 @@ export function renderSuggestCard(target, state, onApply) {
     const fuelLine = `Load <strong>${formatNumber(s.fuelL_gal, 1)} gal per tank</strong>`
       + ` (${formatNumber(s.total_gal, 1)} gal / ${formatNumber(galToL(s.total_gal), 0)} L total)`;
 
+    const delta_lb = Math.abs(s.baggage_delta_lb ?? 0);
     const baggageLine = s.baggage_lb !== undefined
-      ? ` and add <strong>${formatNumber(s.baggage_delta_lb, 0)} lb (${formatNumber(lbToKg(s.baggage_delta_lb), 0)} kg)</strong> baggage (${formatNumber(s.baggage_lb, 0)} lb total)`
+      ? ` and ${s.baggage_delta_lb < 0 ? 'remove' : 'add'} <strong>${formatNumber(delta_lb, 0)} lb (${formatNumber(lbToKg(delta_lb), 0)} kg)</strong> baggage (${formatNumber(s.baggage_lb, 0)} lb total)`
       : '';
 
     card.innerHTML = `

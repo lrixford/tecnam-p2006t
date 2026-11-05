@@ -22,12 +22,22 @@ function nearMzfwState(baggage_lb) {
   };
 }
 
-test('zero-fuel weight over MZFW fails the condition and the suggestion', () => {
+test('zero-fuel weight over MZFW fails the condition and removes baggage', () => {
   const state = nearMzfwState(85);
   const conds = computeAll(state);
   assert.equal(conds.takeoff.inEnvelope, true);
   assert.equal(conds.zeroFuel.inEnvelope, false);
 
+  const s = suggest(state);
+  assert.equal(s.status, 'adjust-fuel-and-baggage');
+  assert.equal(s.issue, 'over-mzfw');
+  assert.equal(s.baggage_lb, 82);
+  assert.equal(s.baggage_delta_lb, -3);
+});
+
+test('over MZFW with no baggage to remove has no solution', () => {
+  const state = nearMzfwState(0);
+  state.pilot.weight_lb = 235;
   const s = suggest(state);
   assert.equal(s.status, 'impossible');
   assert.match(s.reason, /2638 lb exceeds MZFW 2635 lb/);
@@ -129,7 +139,7 @@ test('gross weight over MTOW (2712 lb) flags', () => {
   s.baggage.weight_lb = 100;
   s.fuelL.volume_gal = 25;
   s.fuelR.volume_gal = 25;
-  // gross ≈ 1742 + 900 + 50*6.7 = 2977 lb — over MTOW
+  // gross ≈ 1742 + 900 + 50*6.1 = 2947 lb — over MTOW
   const v = computeViolations(s);
   assert.equal(v['totals-gross'].on, true);
   assert.match(v['totals-gross'].message, /MTOW/);

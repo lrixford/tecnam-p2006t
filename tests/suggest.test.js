@@ -194,6 +194,59 @@ test('applying adjust-fuel-and-baggage suggestion gives ok', () => {
   assert.equal(recheck.status, 'ok', `after applying suggestion, expected ok but got ${recheck.status}`);
 });
 
+// ─── removing baggage ─────────────────────────────────────────────────────────
+
+test('minimum fuel over MTOW removes only the baggage needed', () => {
+  // ZFW 2610 lb, 20 gal needed: 122 lb of fuel leaves the aircraft 20 lb over MTOW.
+  const state = baseState({
+    empty:       { weight_lb: 2000, moment_lb_ft: 2500, note: '' },
+    pilot:       { weight_lb: 150 },
+    copilot:     { weight_lb: 150 },
+    rearLH:      { weight_lb: 130 },
+    rearRH:      { weight_lb: 130 },
+    baggage:     { weight_lb: 50 },
+    fuelL:       { volume_gal: 10 },
+    fuelR:       { volume_gal: 10 },
+    fuelTaxi:    { volume_gal: 0 },
+    fuelBurnoff: { volume_gal: 12 },
+    fuelReserve: { volume_gal: 8 },
+  });
+  const s = suggest(state);
+  assert.equal(s.status, 'adjust-fuel-and-baggage');
+  assert.equal(s.issue, 'over-mtow');
+  assert.ok(s.baggage_delta_lb < 0, 'should remove baggage');
+  assert.ok(s.baggage_delta_lb >= -34, 'should keep as much baggage as possible');
+  assert.ok(s.total_gal >= 20, 'should keep the required fuel');
+  assert.equal(applyAndRecheck(state, s).status, 'ok');
+});
+
+test('removing baggage is not offered when it would not help', () => {
+  // Forward-CG limited: less baggage moves the CG further forward.
+  const s = suggest(baseState({
+    empty:       { weight_lb: 2000, moment_lb_ft: 2500, note: '' },
+    pilot:       { weight_lb: 200 },
+    copilot:     { weight_lb: 200 },
+    rearLH:      { weight_lb: 80 },
+    rearRH:      { weight_lb: 80 },
+    baggage:     { weight_lb: 50 },
+    fuelL:       { volume_gal: 10 },
+    fuelR:       { volume_gal: 10 },
+    fuelTaxi:    { volume_gal: 0 },
+    fuelBurnoff: { volume_gal: 12 },
+    fuelReserve: { volume_gal: 8 },
+  }));
+  assert.equal(s.status, 'impossible');
+});
+
+test('fuel is reduced before baggage is touched', () => {
+  const s = suggest(baseState({
+    fuelL: { volume_gal: 25 },
+    fuelR: { volume_gal: 25 },
+  }));
+  assert.equal(s.status, 'adjust-fuel');
+  assert.equal(s.baggage_lb, undefined);
+});
+
 // ─── impossible ───────────────────────────────────────────────────────────────
 
 test('impossible: occupants exceed MTOW headroom for minimum fuel', () => {
