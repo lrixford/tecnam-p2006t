@@ -18,18 +18,21 @@ export async function loadAirports() {
   if ('caches' in window) {
     await Promise.all(OLD_CACHES.map(name => caches.delete(name)));
     const cache = await caches.open(CACHE_NAME);
-    if (!stale) {
-      const hit = await cache.match(AIRPORTS_URL);
-      if (hit) {
-        _db = await hit.json();
-        return _db;
-      }
+    const hit   = await cache.match(AIRPORTS_URL);
+    if (hit && !stale) {
+      _db = await hit.json();
+      return _db;
     }
-    const res = await fetch(AIRPORTS_URL);
-    if (!res.ok) throw new Error(`Failed to load airports: ${res.status}`);
-    await cache.put(AIRPORTS_URL, res.clone());
-    localStorage.setItem(META_KEY, String(Date.now()));
-    _db = await res.json();
+    try {
+      const res = await fetch(AIRPORTS_URL);
+      if (!res.ok) throw new Error(`Failed to load airports: ${res.status}`);
+      await cache.put(AIRPORTS_URL, res.clone());
+      localStorage.setItem(META_KEY, String(Date.now()));
+      _db = await res.json();
+    } catch (e) {
+      if (!hit) throw e;
+      _db = await hit.json();   // stale data beats none; retries on the next load
+    }
   } else {
     const res = await fetch(AIRPORTS_URL);
     if (!res.ok) throw new Error(`Failed to load airports: ${res.status}`);
@@ -43,8 +46,11 @@ export async function loadAirports() {
 export function lookupAirport(db, id) {
   const key = id.trim().toUpperCase();
   if (db[key]) return db[key];
+  // K1C5 means 1C5, for airports with no ICAO code
+  const faaId = key.length === 4 && key.startsWith('K') ? key.slice(1) : null;
+  if (faaId && db[faaId]) return db[faaId];
   for (const apt of Object.values(db)) {
-    if (apt.faa_id === key) return apt;
+    if (apt.faa_id === key || apt.faa_id === faaId) return apt;
   }
   return null;
 }
