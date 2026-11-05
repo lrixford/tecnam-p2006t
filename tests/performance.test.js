@@ -208,6 +208,34 @@ test('crosswind uses the gust midpoint, distances use the steady wind', () => {
   assert.equal(headOn(30).takeoff.gr, headOn(null).takeoff.gr);
 });
 
+test('a gusting tailwind lengthens distances at the midpoint', () => {
+  const calc = gust => calcPerformance({
+    grossLb: 2712,
+    landingLb: 2712,
+    airport: { elev_ft: 0 },
+    runway: { surface: 'turf', length_ft: 9000, ends: { 18: { hdg_mag: 180, slope_pct: 0 } } },
+    endId: '18',
+    metar: { altimeter_inhg: 29.92, oat_c: 25, wind_dir_deg: 360, wind_speed_kt: 10, wind_gust_kt: gust },
+  });
+  assert.equal(calc(null).headwind_kt, -10);
+  assert.equal(calc(null).takeoff.gr, 428);    // 328 + 10 kt × 10 m
+  assert.equal(calc(null).landing.gr, 349);    // 239 + 10 kt × 11 m
+  assert.equal(calc(30).headwind_kt, -20);
+  assert.equal(calc(30).takeoff.gr, 528);
+  assert.equal(calc(30).landing.gr, 459);
+});
+
+test('variable wind applies no wind correction', () => {
+  const r = calcPerformance({
+    grossLb: 2712,
+    airport: { elev_ft: 0 },
+    runway: { surface: 'turf', length_ft: 9000, ends: { 18: { hdg_mag: 180, slope_pct: 0 } } },
+    endId: '18',
+    metar: { altimeter_inhg: 29.92, oat_c: 25, wind_dir_deg: null, wind_speed_kt: 6, wind_gust_kt: 14 },
+  });
+  assert.equal(r.takeoff.gr, 328);
+});
+
 test('crosswind is null without a wind direction or runway heading', () => {
   const calc = (hdg_mag, wind_dir_deg) => calcPerformance({
     grossLb: 2712, airport: { elev_ft: 0 }, endId: '18',

@@ -168,9 +168,12 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
   const windDir     = metar.wind_dir_deg;
   const windSpeed   = metar.wind_speed_kt ?? 0;
   const hdg         = windHdg(end);
-  // Steady wind, so distances take no credit for gusts
-  const headwind_kt = hdg !== null ? headwindComponent(windDir, windSpeed, hdg) : 0;
-  const xwind_kt    = hdg !== null ? crosswindComponent(windDir, componentWind_kt(metar) ?? 0, hdg) : null;
+  const midWind     = componentWind_kt(metar) ?? 0;
+  // Gusts only lengthen distances: headwind stays steady, tailwind uses the midpoint
+  const headwind_kt = hdg !== null
+    ? Math.min(headwindComponent(windDir, windSpeed, hdg), headwindComponent(windDir, midWind, hdg))
+    : 0;
+  const xwind_kt    = hdg !== null ? crosswindComponent(windDir, midWind, hdg) : null;
 
   const surface     = runway.surface;
   const slope_pct   = end.slope_pct;
