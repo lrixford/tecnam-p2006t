@@ -42,13 +42,13 @@ export function defaultState() {
   return defaults;
 }
 
-const SEAT_MAX_LB = 485; // combined front or rear pair limit: 220 kg per POH
+const STATION_MAX_LB = 485; // front or rear row limit: 220 kg, POH loading chart
 
 const WEIGHT_STATIONS = [
-  { id: 'pilot',   label: 'Pilot',     maxLb: SEAT_MAX_LB },
-  { id: 'copilot', label: 'Co-pilot',  maxLb: SEAT_MAX_LB },
-  { id: 'rearLH',  label: 'Rear LH',   maxLb: SEAT_MAX_LB },
-  { id: 'rearRH',  label: 'Rear RH',   maxLb: SEAT_MAX_LB },
+  { id: 'pilot',   label: 'Pilot',     maxLb: STATION_MAX_LB },
+  { id: 'copilot', label: 'Co-pilot',  maxLb: STATION_MAX_LB },
+  { id: 'rearLH',  label: 'Rear LH',   maxLb: STATION_MAX_LB },
+  { id: 'rearRH',  label: 'Rear RH',   maxLb: STATION_MAX_LB },
   { id: 'baggage', label: 'Baggage' },
 ];
 
@@ -342,8 +342,8 @@ export function computeViolations(state) {
 
   const frontLb = state.pilot.weight_lb + state.copilot.weight_lb;
   const rearLb  = state.rearLH.weight_lb + state.rearRH.weight_lb;
-  const frontOver = { on: frontLb > SEAT_MAX_LB, message: `front seats exceed ${SEAT_MAX_LB} lb (220 kg)` };
-  const rearOver  = { on: rearLb  > SEAT_MAX_LB, message: `rear seats exceed ${SEAT_MAX_LB} lb (220 kg)` };
+  const frontOver = { on: frontLb > STATION_MAX_LB, message: `front seats exceed ${STATION_MAX_LB} lb (220 kg)` };
+  const rearOver  = { on: rearLb  > STATION_MAX_LB, message: `rear seats exceed ${STATION_MAX_LB} lb (220 kg)` };
   v.pilot = v.copilot = frontOver;
   v.rearLH = v.rearRH = rearOver;
 
