@@ -2,8 +2,8 @@
 // airports.json is ~6 MB so we use the Cache API rather than localStorage.
 
 const AIRPORTS_URL  = './airport/airports.json';
-const CACHE_NAME    = 'airportdb-v2';   // bump when airports.json gains new fields
-const OLD_CACHE     = 'airportdb-v1';
+const CACHE_NAME    = 'airportdb-v3';   // bump whenever airports.json is rebuilt
+const OLD_CACHES    = ['airportdb-v1', 'airportdb-v2'];
 const META_KEY      = 'airportdb_fetched_at';
 const TTL_MS        = 28 * 24 * 60 * 60 * 1000;
 
@@ -16,7 +16,7 @@ export async function loadAirports() {
   const stale     = !fetchedAt || (Date.now() - Number(fetchedAt)) > TTL_MS;
 
   if ('caches' in window) {
-    await caches.delete(OLD_CACHE);
+    await Promise.all(OLD_CACHES.map(name => caches.delete(name)));
     const cache = await caches.open(CACHE_NAME);
     if (!stale) {
       const hit = await cache.match(AIRPORTS_URL);
