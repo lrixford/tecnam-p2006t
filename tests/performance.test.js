@@ -252,6 +252,26 @@ test('wind components fall back to the magnetic heading', () => {
   assert.equal(rankRunways([runway], 180, 10)[0].headwind_kt, 10);
 });
 
+test('accel-stop longer than the runway warns and keeps the distance', () => {
+  const stop = length_ft => calcPerformance({
+    grossLb: 2712,
+    landingLb: 2712,
+    airport: { elev_ft: 0 },
+    runway: { surface: 'turf', length_ft, ends: { 18: { hdg_mag: 180, slope_pct: 0 } } },
+    endId: '18',
+    metar: { altimeter_inhg: 29.92, oat_c: 25, wind_dir_deg: 180, wind_speed_kt: 0 },
+  }).accel_stop;
+
+  const short = stop(2000);
+  assert.equal(short.dist_m, Math.round((328 + 239) * 1.3));
+  assert.equal(short.ok, false);
+  assert.equal(short.message, 'Longer than the 2,000 ft runway.');
+
+  assert.equal(stop(3000).ok, true);
+  assert.equal(stop(3000).message, null);
+  assert.equal(stop(null).ok, true);
+});
+
 test('accel-stop is takeoff roll plus landing roll at landing weight, plus 30%', () => {
   const r = calcPerformance({
     grossLb: 2712,

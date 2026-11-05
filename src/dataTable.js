@@ -134,7 +134,7 @@ export function renderPrintSummary(target, state, metar = null, perf = null) {
           <thead><tr><th>Performance</th><th>GR / Dist</th><th>50 ft / OEI</th></tr></thead>
           <tbody>
             <tr><td>Takeoff</td><td>${fmtFtM(perf.takeoff.gr)}</td><td>${fmtFtM(perf.takeoff.to50ft)}</td></tr>
-            <tr><td>Accelerate-Stop</td><td colspan="2">${fmtFtM(perf.accel_stop.dist_m)}</td></tr>
+            <tr><td>Accelerate-Stop</td><td colspan="2"><span class="${perf.accel_stop.ok ? '' : 'dt-oei-warn'}">${fmtFtM(perf.accel_stop.dist_m)}</span></td></tr>
             <tr><td>Accelerate-Go</td><td>${perf.accel_go.dist_m !== null ? fmtFtM(perf.accel_go.dist_m) : '<span class="dt-oei-warn">N/A</span>'}</td><td><span class="${{ warning: 'dt-oei-warn', caution: 'dt-oei-caution' }[perf.accel_go.level] ?? ''}">${fmtFpmM(perf.roc_oei_fpm)}</span></td></tr>
             <tr><td>Landing</td><td>${fmtFtM(perf.landing.gr)}</td><td>${fmtFtM(perf.landing.to50ft)}</td></tr>
             <tr><td>Rate of Climb</td><td>${fmtFpmM(perf.roc_fpm)}</td><td>${fmtFpmM(perf.roc_oei_fpm)}</td></tr>

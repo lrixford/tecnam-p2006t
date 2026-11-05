@@ -216,7 +216,7 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
   // TORA/LDA fit checks
   const toraOk   = toCorr.to50ft <= (tora_ft * 0.3048);
   const ldaOk    = ldgCorr.to50ft <= (lda_ft  * 0.3048);
-  const acStopOk = accelStop_m    <= (tora_ft * 0.3048);
+  const acStopOk = !tora_ft || accelStop_m <= (tora_ft * 0.3048);
 
   return {
     end_id:      endId,
@@ -233,7 +233,11 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
     lda_ft,
     takeoff:     { ...toCorr, tora_ok: toraOk },
     landing:     { ...ldgCorr, lda_ok: ldaOk },
-    accel_stop:  { dist_m: accelStop_m, ok: acStopOk },
+    accel_stop:  {
+      dist_m:  accelStop_m,
+      ok:      acStopOk,
+      message: acStopOk ? null : `Longer than the ${tora_ft.toLocaleString()} ft runway.`,
+    },
     accel_go:    { dist_m: accelGo_m, level: accelGoLevel, message: accelGoMessage },
     roc_fpm,
     roc_oei_fpm,
