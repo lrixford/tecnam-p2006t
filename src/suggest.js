@@ -2,7 +2,7 @@ import { P2006T } from './data/p2006t.js';
 
 // Pure W&B suggestion engine.
 // Immutable: passenger weights, taxi fuel, enroute (burnoff) fuel.
-// Mutable:   fuel load (add/remove), baggage (add, or remove as the last lever).
+// Mutable:   baggage first, then fuel, which never goes below the need.
 // Solves for a takeoff_fuel_lb that satisfies CG envelope at TO and LDG, and MTOW.
 
 const ARMS    = P2006T.arms_ft;
@@ -53,10 +53,17 @@ function tfRange(bw, bm, burnoff_lb, taxi_lb, mtow_lb, reserve_lb) {
   return { tf_lo, tf_hi, to_fwd_lo, to_aft_hi, feasible: tf_lo <= tf_hi };
 }
 
-function splitFuel(tf_lb, taxi_lb) {
-  const total_gal = (tf_lb + taxi_lb) / DENSITY;
-  // Floor to 0.1 gal so rounding never pushes us back over a limit.
-  const perTank = Math.floor(Math.min(total_gal / 2, P2006T.fuel.perTank_max_gal) * 10) / 10;
+// Tolerance absorbs floating-point error, so exactly minimum fuel passes.
+function fuelFits(tf_lb, range) {
+  return tf_lb >= range.tf_lo - 1e-6 && tf_lb <= range.tf_hi + 1e-6;
+}
+
+function splitFuel(tf_lb, taxi_lb, roundUp) {
+  const tenths = (tf_lb + taxi_lb) / DENSITY / 2 * 10;
+  const perTank = Math.min(
+    (roundUp ? Math.ceil(tenths - 1e-6) : Math.floor(tenths + 1e-6)) / 10,
+    Math.floor(P2006T.fuel.perTank_max_gal * 10) / 10,
+  );
   return {
     fuelL_gal: perTank,
     fuelR_gal: perTank,
@@ -64,20 +71,25 @@ function splitFuel(tf_lb, taxi_lb) {
   };
 }
 
+function takeoffFuel(split, taxi_lb) {
+  return (split.fuelL_gal + split.fuelR_gal) * DENSITY - taxi_lb;
+}
+
+// Fuel split closest to `want` inside the range, or null if none fits.
+function fitFuel(range, want, taxi_lb) {
+  if (!range.feasible) return null;
+  const tf = Math.min(Math.max(want, range.tf_lo), range.tf_hi);
+  for (const roundUp of [true, false]) {
+    const split = splitFuel(tf, taxi_lb, roundUp);
+    if (fuelFits(takeoffFuel(split, taxi_lb), range)) return split;
+  }
+  return null;
+}
+
 function issueLabel(currentTf, range) {
   if (currentTf < range.tf_lo) return 'forward-cg';
   if (currentTf > range.to_aft_hi) return 'aft-cg';
   return 'over-mtow';
-}
-
-// Fuel split for a baggage load, or null if no usable fuel fits.
-function fuelFor(state, bag, burnoff_lb, taxi_lb, mtow_lb, reserve_lb) {
-  const { weight, moment } = baseWeightMoment(state, bag);
-  const range = tfRange(weight, moment, burnoff_lb, taxi_lb, mtow_lb, reserve_lb);
-  if (!range.feasible) return null;
-  const split = splitFuel(range.tf_hi, taxi_lb);
-  const roundedTf = (split.fuelL_gal + split.fuelR_gal) * DENSITY - taxi_lb;
-  return roundedTf >= range.tf_lo && roundedTf <= range.tf_hi ? split : null;
 }
 
 // Public API — returns one of:
@@ -94,65 +106,76 @@ export function suggest(state) {
   const mtow_lb    = state.mtow?.weight_lb || P2006T.mtow_lb;
   const reserve_lb = (state.fuelReserve?.volume_gal ?? 8) * DENSITY;
 
-  const { weight: bw, moment: bm } = baseWeightMoment(state);
-  const range = tfRange(bw, bm, burnoff_lb, taxi_lb, mtow_lb, reserve_lb);
-  const overMzfw = bw > P2006T.mzfw_lb;
-
-  // Last lever: keep as much baggage as the required fuel allows.
-  const removeBaggageOr = (reason) => {
-    const currentBag = state.baggage.weight_lb;
-    for (let bag = Math.ceil(currentBag) - 1; bag >= 0; bag--) {
-      if (bw - currentBag + bag > P2006T.mzfw_lb) continue;
-      const split = fuelFor(state, bag, burnoff_lb, taxi_lb, mtow_lb, reserve_lb);
-      if (!split) continue;
-      return {
-        status:           'adjust-fuel-and-baggage',
-        issue:            overMzfw ? 'over-mzfw' : range.tf_hi === range.to_aft_hi ? 'aft-cg' : 'over-mtow',
-        baggage_lb:       bag,
-        baggage_delta_lb: bag - currentBag,
-        ...split,
-      };
-    }
-    return { status: 'impossible', reason };
+  const rangeAt = (bag) => {
+    const { weight, moment } = baseWeightMoment(state, bag);
+    return tfRange(weight, moment, burnoff_lb, taxi_lb, mtow_lb, reserve_lb);
   };
 
-  if (overMzfw) {
-    return removeBaggageOr(`Zero-fuel weight ${Math.round(bw)} lb exceeds MZFW ${P2006T.mzfw_lb} lb.`);
-  }
+  const { weight: bw } = baseWeightMoment(state);
+  const currentBag = state.baggage.weight_lb;
+  const bwNoBag    = bw - currentBag;
+  const range      = rangeAt(currentBag);
+  const overMzfw   = bw > P2006T.mzfw_lb;
 
-  if (range.feasible) {
-    if (currentTf >= range.tf_lo && currentTf <= range.tf_hi) return { status: 'ok' };
-    const suggestedTf = range.tf_hi;
-    const split = splitFuel(suggestedTf, taxi_lb);
-    // Verify the floor-rounded split actually lands inside the feasible window.
-    const roundedTf = (split.fuelL_gal + split.fuelR_gal) * DENSITY - taxi_lb;
-    if (roundedTf >= range.tf_lo && roundedTf <= range.tf_hi) {
-      return { status: 'adjust-fuel', issue: issueLabel(currentTf, range), ...split };
+  if (!overMzfw && range.feasible) {
+    if (fuelFits(currentTf, range)) return { status: 'ok' };
+    if (currentTf < range.tf_lo) {
+      const split = fitFuel(range, range.tf_lo, taxi_lb);
+      if (split) return { status: 'adjust-fuel', issue: issueLabel(currentTf, range), ...split };
     }
-    // Window too narrow for 0.1-gal precision — fall through to baggage search.
   }
 
-  // No feasible fuel at usable precision — try adding baggage.
+  // Remove baggage before giving up fuel. Stops at the forward CG limit, then
+  // settles for the most fuel that fits.
+  let best = null;
+  for (let bag = currentBag; bag >= 0; bag = Math.ceil(bag) - 1) {
+    if (bwNoBag + bag > P2006T.mzfw_lb) continue;
+    const { weight, moment } = baseWeightMoment(state, bag);
+    if (bag < currentBag && moment / weight < FWD) break;
+    const split = fitFuel(rangeAt(bag), currentTf, taxi_lb);
+    if (!split) continue;
+    const tf = takeoffFuel(split, taxi_lb);
+    if (!best || tf > best.tf + 1e-6) best = { bag, split, tf };
+    if (tf >= currentTf - 1e-6) break;
+  }
+
+  if (best?.bag === currentBag) {
+    return { status: 'adjust-fuel', issue: issueLabel(currentTf, range), ...best.split };
+  }
+  if (best) {
+    return {
+      status:           'adjust-fuel-and-baggage',
+      issue:            overMzfw ? 'over-mzfw' : currentTf > range.to_aft_hi ? 'aft-cg' : 'over-mtow',
+      baggage_lb:       best.bag,
+      baggage_delta_lb: best.bag - currentBag,
+      ...best.split,
+    };
+  }
+
+  if (overMzfw) {
+    return {
+      status: 'impossible',
+      reason: `Zero-fuel weight ${Math.round(bw)} lb exceeds MZFW ${P2006T.mzfw_lb} lb.`,
+    };
+  }
+
+  // Forward CG with no fuel solution — try adding baggage.
   // Baggage arm (5.533 ft) is very aft; adding it rotates CG aft, reducing
   // the required fuel to satisfy the forward-CG constraint.
   // Cap the baggage search: too much baggage eats into MTOW headroom and can
   // prevent meeting the minimum fuel requirement (burnoff + landing reserve).
-  const maxBag     = P2006T.baggage.max_lb;
-  const currentBag = state.baggage.weight_lb;
-  const bwNoBag    = bw - currentBag;
   const effectiveMaxBag = Math.min(
-    maxBag,
+    P2006T.baggage.max_lb,
     mtow_lb - bwNoBag - taxi_lb - burnoff_lb - reserve_lb,
     P2006T.mzfw_lb - bwNoBag,
   );
 
   if (effectiveMaxBag < currentBag) {
-    return removeBaggageOr('Aircraft cannot meet minimum fuel requirements within MTOW.');
+    return { status: 'impossible', reason: 'Aircraft cannot meet minimum fuel requirements within MTOW.' };
   }
 
-  const { weight: bwEff, moment: bmEff } = baseWeightMoment(state, effectiveMaxBag);
-  if (!tfRange(bwEff, bmEff, burnoff_lb, taxi_lb, mtow_lb, reserve_lb).feasible) {
-    return removeBaggageOr('CG cannot be resolved within MTOW and envelope limits.');
+  if (!rangeAt(effectiveMaxBag).feasible) {
+    return { status: 'impossible', reason: 'CG cannot be resolved within MTOW and envelope limits.' };
   }
 
   // Binary search for the minimum baggage that opens a feasible tf window.
@@ -160,16 +183,14 @@ export function suggest(state) {
   let lo = currentBag, hi = effectiveMaxBag;
   for (let i = 0; i < 30; i++) {
     const mid = (lo + hi) / 2;
-    const { weight: bwM, moment: bmM } = baseWeightMoment(state, mid);
-    if (tfRange(bwM, bmM, burnoff_lb, taxi_lb, mtow_lb, reserve_lb).feasible) hi = mid; else lo = mid;
+    if (rangeAt(mid).feasible) hi = mid; else lo = mid;
   }
 
-  // Bump baggage by 1 lb at a time until the 0.1-gal floored fuel lands inside
-  // the feasible window (same precision validation as the fuel-only branch).
+  // Bump baggage by 1 lb at a time until the rounded fuel lands inside the window.
   for (let bump = 0; bump <= 10; bump++) {
     const bag = Math.ceil(hi) + bump;
     if (bag > effectiveMaxBag) break;
-    const split = fuelFor(state, bag, burnoff_lb, taxi_lb, mtow_lb, reserve_lb);
+    const split = fitFuel(rangeAt(bag), currentTf, taxi_lb);
     if (split) {
       return {
         status:           'adjust-fuel-and-baggage',
@@ -181,5 +202,5 @@ export function suggest(state) {
     }
   }
 
-  return removeBaggageOr('CG cannot be resolved within W&B precision limits.');
+  return { status: 'impossible', reason: 'CG cannot be resolved within W&B precision limits.' };
 }

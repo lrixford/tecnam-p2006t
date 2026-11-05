@@ -68,17 +68,24 @@ The zero-fuel condition falls forward of the 16.5% limit, so it is flagged. Fuel
 
 ### Suggestion engine
 
-When a load is out of limits, the app looks for a fix. It treats passengers, taxi fuel and enroute fuel as fixed. Fuel on board can change, but it has an absolute minimum: taxi, enroute and reserve. Baggage is the last lever.
+When a load is out of limits, the app looks for a fix. It treats passengers, taxi fuel and enroute fuel as fixed. The guiding principle is that fuel is the last thing to give up, because nobody regrets the fuel they brought. Baggage is the most movable variable.
+
+Because fuel has a single arm, each CG limit reduces to a simple bound on takeoff fuel. The engine combines those bounds with MTOW, tank capacity and the fuel need to find a usable range. The need is taxi, enroute and reserve, or more if the forward CG limit at landing requires it.
 
 The engine works in this order:
 
-1. **Adjust fuel.** Because fuel has a single arm, each CG limit reduces to a simple bound on takeoff fuel. The engine combines those bounds with MTOW, tank capacity and required fuel to find a usable range.
-2. **Add baggage.** If the CG is too far forward for any usable fuel load, it finds the least baggage that opens a range, because baggage moves the CG aft.
-3. **Remove baggage.** If the required fuel cannot be carried, it removes only as much baggage as needed.
+1. **Raise fuel to the need.** If the loaded fuel is below the need, it suggests the need.
+2. **Remove baggage.** It keeps the loaded fuel and removes only as much baggage as required, and never past the forward CG limit in any condition.
+3. **Reduce fuel.** If the baggage is gone, or the forward CG limit stops the removal, it keeps the most fuel that fits. Fuel never goes below the need.
+4. **Add baggage.** If the CG is too far forward for any usable fuel load, it finds the least baggage that opens a range, because baggage moves the CG aft.
 
-If none of these works, the load is reported as having no solution. A load over MZFW goes straight to step 3, because fuel cannot fix it.
+If none of these works, the load is reported as having no solution.
 
-Suggested fuel is rounded down to 0.1 gal and rechecked, so rounding cannot push the load back out of limits. Added baggage is capped so the suggestion cannot exceed MZFW.
+The aircraft is sensitive to forward loading, so a flight sometimes needs baggage added to work. With heavy front seats, baggage is what holds the CG aft, and that is the one case where fuel gives way while baggage stays or grows.
+
+Suggested fuel is rounded to 0.1 gal per tank and rechecked, so rounding cannot leave the load short of fuel or out of limits. Added baggage is capped so the suggestion cannot exceed MZFW.
+
+The advisory states the fuel and baggage figures and makes no recommendation.
 
 The engine solves for the takeoff and landing conditions only. It does not try to bring the zero-fuel CG inside the envelope, so a load can show no advisory while the zero-fuel row is flagged, as in the example above.
 
