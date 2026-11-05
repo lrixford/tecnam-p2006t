@@ -37,6 +37,10 @@ fuel: {
 
 All fuel weight calculations throughout the app derive from this one value.
 
+## Methodology
+
+See [METHODOLOGY.md](METHODOLOGY.md) for how each figure is calculated, what data it uses, and why. It also separates POH data from estimates.
+
 ## Adding to a Website
 
 No build step or dependencies required. Copy the repository files to your web server and embed the widget with a single script tag:
@@ -105,6 +109,7 @@ tests/
   suggest.test.js
   ...
 index.html
+METHODOLOGY.md
 ```
 
 ## Disclaimer
