@@ -17,7 +17,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 /* ---------- saved progress ---------- */
 
 function loadStore() {
-  const fresh = { v: 1, cards: {}, opts: { inOrder: false, answerFirst: false }, session: null, quiz: null };
+  const fresh = { v: 1, cards: {}, opts: { inOrder: false, answerFirst: false, mei: true }, session: null, quiz: null };
   try {
     const parsed = JSON.parse(localStorage.getItem(STORE_KEY));
     if (parsed && parsed.v === 1) {
@@ -46,6 +46,11 @@ const statusOf = (id) => store.cards[id]?.s || 'new';
 const isStarred = (id) => !!store.cards[id]?.star;
 const masteryOf = (id) => Math.max(0, Math.min(MASTER_AT, store.cards[id]?.m | 0));
 const isMastered = (id) => masteryOf(id) >= MASTER_AT;
+
+/* Instructor-only decks can be switched off; their cards then sit out of every run, list and count. */
+const isInPlay = (card) => store.opts.mei || !card.deck.mei;
+const inPlay = () => ALL.filter(isInPlay);
+
 /* What the progress bars show: mastery outranks the flashcard sort. */
 const levelOf = (id) => (isMastered(id) ? 'master' : statusOf(id));
 
@@ -75,6 +80,11 @@ function answerHTML(card) {
   if (card.bullets) html += `<ul>${card.bullets.map((b) => `<li>${fmt(b)}</li>`).join('')}</ul>`;
   return html;
 }
+
+const whyHTML = (card) =>
+  card.why
+    ? `<div class="why"><p class="why__label">Why</p><ul>${card.why.map((line) => `<li>${fmt(line)}</li>`).join('')}</ul></div>`
+    : '';
 
 /* The deck's answers as a reference table, with this card's cell marked. */
 function deckTableHTML(card) {
@@ -118,7 +128,7 @@ function answerSize(card) {
 }
 
 const searchText = (card) =>
-  plain([card.q, card.hint, card.a, ...(card.bullets || []), card.note].filter(Boolean).join(' ')).toLowerCase();
+  plain([card.q, card.hint, card.a, ...(card.bullets || []), ...(card.why || []), card.note].filter(Boolean).join(' ')).toLowerCase();
 
 function shuffled(list) {
   const out = list.slice();
@@ -135,15 +145,35 @@ const pipsHTML = (n) =>
 /* ---------- scopes: what a study run or quiz covers ---------- */
 
 function scope(key) {
-  if (key === 'all') return { title: 'All cards', cards: ALL };
-  if (key === 'learning') return { title: 'Still learning', cards: ALL.filter((c) => statusOf(c.id) === 'learn') };
-  if (key === 'starred') return { title: 'Starred', cards: ALL.filter((c) => isStarred(c.id)) };
+  const cards = inPlay();
+  if (key === 'all') return { title: 'All cards', cards };
+  if (key === 'learning') return { title: 'Still learning', cards: cards.filter((c) => statusOf(c.id) === 'learn') };
+  if (key === 'starred') return { title: 'Starred', cards: cards.filter((c) => isStarred(c.id)) };
   if (key.startsWith('group-')) {
     const group = GROUPS.find((g) => g.id === key.slice(6));
-    return group ? { title: group.title, cards: ALL.filter((c) => c.deck.group === group.id) } : null;
+    return group ? { title: group.title, cards: cards.filter((c) => c.deck.group === group.id) } : null;
   }
   const deck = DECKS.find((d) => d.id === key);
-  return deck ? { title: deck.title, cards: ALL.filter((c) => c.deck === deck) } : null;
+  return deck && (store.opts.mei || !deck.mei) ? { title: deck.title, cards: cards.filter((c) => c.deck === deck) } : null;
+}
+
+/* Take cards that are no longer in play out of the flashcard run and quiz in progress. */
+function dropOutOfPlay() {
+  const stays = (id) => BY_ID.has(id) && isInPlay(BY_ID.get(id));
+  const s = store.session;
+  if (s && Array.isArray(s.order)) {
+    const i = s.order.slice(0, s.i).filter(stays).length;
+    const order = s.order.filter(stays);
+    store.session = order.length ? { ...s, order, i } : null;
+    history = [];
+  }
+  const q = store.quiz;
+  if (q && Array.isArray(q.ids)) {
+    // Questions already answered keep their place in the results.
+    const ids = q.ids.filter((id, n) => n < q.results.length || stays(id));
+    store.quiz = ids.length ? { ...q, ids } : null;
+    quizView = null;
+  }
 }
 
 /* ---------- flashcard sessions ---------- */
@@ -212,8 +242,9 @@ const storageNotice = () =>
 
 function renderHome() {
   document.title = 'Multi-engine study cards';
-  const total = tally(ALL);
-  const starred = ALL.filter((c) => isStarred(c.id)).length;
+  const cards = inPlay();
+  const total = tally(cards);
+  const starred = cards.filter((c) => isStarred(c.id)).length;
 
   const resumes = [];
   const s = store.session;
@@ -234,6 +265,19 @@ function renderHome() {
       .map((deck) => {
         const t = tally(ALL.filter((c) => c.deck === deck));
         const name = esc(plain(deck.title));
+        const include = deck.mei
+          ? `<button class="switch" role="switch" data-action="include-mei" aria-checked="${store.opts.mei}" aria-label="Include the ${name} cards"><span class="switch__track" aria-hidden="true"></span>Include</button>`
+          : '';
+        if (deck.mei && !store.opts.mei) {
+          return `
+        <li class="deck deck--off">
+          <div class="deck__info">
+            <h3 class="deck__title">${fmt(deck.title)} <span class="tag">Instructor</span></h3>
+            <p class="deck__blurb">Left out of study runs, quizzes, lists and counts. Saved progress on these ${t.total} cards is kept.</p>
+          </div>
+          <div class="deck__actions">${include}</div>
+        </li>`;
+        }
         return `
         <li class="deck">
           <div class="deck__info">
@@ -243,6 +287,7 @@ function renderHome() {
             <p class="deck__count">${countText(t)}</p>
           </div>
           <div class="deck__actions">
+            ${include}
             <a class="btn btn--small btn--study" href="#/study/${deck.id}" aria-label="Study ${name}">Study</a>
             <a class="btn btn--small" href="#/quiz/${deck.id}" aria-label="Take the ${name} quiz">Quiz</a>
             <a class="btn btn--small btn--quiet" href="#/browse/${deck.id}" aria-label="List the ${name} cards">List</a>
@@ -250,7 +295,7 @@ function renderHome() {
         </li>`;
       })
       .join('');
-    const gt = tally(ALL.filter((c) => c.deck.group === group.id));
+    const gt = tally(cards.filter((c) => c.deck.group === group.id));
     return `
     <section class="group">
       <header class="group__head">
@@ -275,12 +320,12 @@ function renderHome() {
     <header class="masthead">
       <a class="crumb" href="../">Weight and balance calculator</a>
       <h1>Multi-engine study cards</h1>
-      <p class="lede">Tecnam P2006T systems and multi-engine aerodynamics, with the instructor-only questions. Flip through the cards, then take the quiz. Progress saves in this browser.</p>
+      <p class="lede">Tecnam P2006T systems and multi-engine aerodynamics${store.opts.mei ? ', with the instructor-only questions' : ''}. Flip through the cards, then take the quiz. Progress saves in this browser.</p>
     </header>
     ${storageNotice()}
     <section class="overview" aria-label="Overall progress">
       <dl class="stats">${stat('master')}${stat('know')}${stat('learn')}${stat('new')}</dl>
-      ${cardTape(ALL.map((c) => c.id))}
+      ${cardTape(cards.map((c) => c.id))}
       <p class="overview__how">Answer a question right ${MASTER_AT} times in quizzes to master it. A wrong answer takes one back.</p>
       <div class="actions">
         <a class="btn btn--primary" href="#/study/all">Study all ${total.total} cards</a>
@@ -293,7 +338,7 @@ function renderHome() {
     </section>
     ${groups}
     <footer class="foot">
-      <p>Answers follow the course quiz packet. Cards with a note flag where the packet is blank or unclear. The wrong choices in quizzes are made up. The POH and your instructor have the final word.</p>
+      <p>Answers follow the course quiz packet. Cards with a note flag where the packet is blank or unclear. The "Why" explanations and the wrong choices in quizzes are not from the packet. The POH and your instructor have the final word.</p>
       <button class="btn btn--quiet btn--danger" data-action="reset">Erase saved progress</button>
     </footer>
   </div>`;
@@ -319,6 +364,7 @@ function faceHTML(card, side) {
         <div class="answer answer--${answerSize(card)}">${answerHTML(card)}</div>
         ${card.deck.table ? deckTableHTML(card) : ''}
         ${drawingsHTML(card.figure)}${drawingsHTML(card.diagram)}
+        ${whyHTML(card)}
         ${card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
       </div></div>`;
 }
@@ -554,22 +600,30 @@ function attachCard(card) {
 /* The correct choice for a card: its quiz wording, or its own short answer. */
 const rightChoice = (card) => QUIZ[card.id]?.right || card.a;
 const quizPrompt = (card) => QUIZ[card.id]?.q || card.q;
+/* A select-all-that-apply question lists every correct choice under `all`. */
+const isMulti = (card) => Array.isArray(QUIZ[card.id]?.all);
+const rightText = (card) => (isMulti(card) ? QUIZ[card.id].all.join('; ') : rightChoice(card));
 
 function choicesFor(card) {
+  if (isMulti(card)) {
+    const { all, wrong: others } = QUIZ[card.id];
+    return shuffled([...all.map((text) => ({ text, right: true })), ...others.map((text) => ({ text, right: false }))]);
+  }
   const right = rightChoice(card);
   let wrong = QUIZ[card.id]?.wrong;
   if (!wrong) {
     // Borrow the correct answers of the other cards in this deck.
-    const pool = new Set(card.deck.cards.map((c) => rightChoice(c)));
+    const pool = new Set(card.deck.cards.filter((c) => !isMulti(c)).map((c) => rightChoice(c)));
     pool.delete(right);
     wrong = shuffled([...pool]).slice(0, 3);
   }
   return shuffled([{ text: right, right: true }, ...wrong.map((text) => ({ text, right: false }))]);
 }
 
-// The question on screen: { id, choices, selected, out, picked, lastTap }.
-// `selected` is the choice waiting to be submitted, `out` the choices the
-// reader has ruled out, and `picked` the choice that was graded.
+// The question on screen: { id, multi, choices, selected, out, graded, ok, lastTap }.
+// `selected` holds the choices waiting to be submitted (one, unless `multi`),
+// `out` the choices the reader has ruled out. Once `graded`, `selected` is
+// what was submitted and `ok` whether it was right.
 let quizView = null;
 
 function startQuiz(key) {
@@ -594,9 +648,9 @@ function renderQuiz(key) {
   if (q.i >= q.ids.length) return renderQuizResults(key, info, q);
 
   const card = BY_ID.get(q.ids[q.i]);
-  if (!quizView || quizView.id !== card.id) quizView = { id: card.id, choices: choicesFor(card), selected: null, out: new Set(), picked: null, lastTap: null };
-  const { choices, picked } = quizView;
-  const answered = picked !== null;
+  if (!quizView || quizView.id !== card.id) quizView = { id: card.id, multi: isMulti(card), choices: choicesFor(card), selected: new Set(), out: new Set(), graded: false, ok: false, lastTap: null };
+  const { choices, selected, multi } = quizView;
+  const answered = quizView.graded;
   const last = q.i === q.ids.length - 1;
   const correctSoFar = q.results.filter((r) => r.ok).length;
   const m = masteryOf(card.id);
@@ -604,10 +658,13 @@ function renderQuiz(key) {
   const levels = q.ids.map((id, i) => (q.results[i] ? (q.results[i].ok ? 'right' : 'wrong') : 'new'));
   const options = choices
     .map((c, i) => {
+      const chosen = selected.has(i);
+      // On a select-all question, a correct choice the reader left out is marked as missed.
+      const missed = multi && c.right && !chosen;
       let state = '';
-      if (answered) state = c.right ? ' option--right' : i === picked ? ' option--wrong' : ' option--dim';
-      const tell = answered && c.right ? '<span class="visually-hidden"> (correct answer)</span>' : '';
-      return `<li><button class="option${state}" data-action="choose" data-i="${i}" aria-pressed="false" ${answered ? 'disabled' : ''}><span class="option__key" aria-hidden="true">${'ABCD'[i]}</span><span class="option__text">${fmt(c.text)}${tell}</span><span class="visually-hidden option__out-note"></span></button></li>`;
+      if (answered) state = c.right ? (missed ? ' option--right option--missed' : ' option--right') : chosen ? ' option--wrong' : ' option--dim';
+      const tell = answered && c.right ? `<span class="visually-hidden"> (${missed ? 'correct, not selected' : 'correct answer'})</span>` : '';
+      return `<li><button class="option${state}" data-action="choose" data-i="${i}" aria-pressed="false" ${answered ? 'disabled' : ''}><span class="option__key" aria-hidden="true">${'ABCDEF'[i]}</span><span class="option__text">${fmt(c.text)}${tell}</span><span class="visually-hidden option__out-note"></span></button></li>`;
     })
     .join('');
 
@@ -616,7 +673,7 @@ function renderQuiz(key) {
       <button class="btn btn--primary" id="quiz-submit" data-action="quiz-submit" disabled>Submit answer</button>
     </div>`;
   if (answered) {
-    const ok = choices[picked].right;
+    const ok = quizView.ok;
     const progress = isMastered(card.id)
       ? 'Mastered. This question is retired from quizzes.'
       : `${m} of ${MASTER_AT} toward mastered.`;
@@ -643,8 +700,10 @@ function renderQuiz(key) {
       <h1 class="quiz__q">${fmt(quizPrompt(card))}</h1>
       ${drawingsHTML(card.figure)}
       ${card.hint && !QUIZ[card.id]?.q ? `<p class="hint">${fmt(card.hint)}</p>` : ''}
-      <ol class="options">${options}</ol>
+      ${multi ? '<p class="quiz__multi">Select all that apply.</p>' : ''}
+      <ol class="options${multi ? ' options--multi' : ''}">${options}</ol>
       ${feedback}
+      ${answered ? whyHTML(card) : ''}
       ${answered && card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
     </main>
   </div>`;
@@ -658,58 +717,64 @@ function renderQuiz(key) {
   }
 }
 
-/* Show which choice is selected and which are ruled out, without redrawing. */
+/* Show which choices are selected and which are ruled out, without redrawing. */
 function paintChoices() {
-  if (!quizView || quizView.picked !== null) return;
+  if (!quizView || quizView.graded) return;
   for (const btn of app.querySelectorAll('.option')) {
     const i = Number(btn.dataset.i);
     const out = quizView.out.has(i);
-    btn.classList.toggle('option--selected', quizView.selected === i);
+    btn.classList.toggle('option--selected', quizView.selected.has(i));
     btn.classList.toggle('option--out', out);
-    btn.setAttribute('aria-pressed', String(quizView.selected === i));
+    btn.setAttribute('aria-pressed', String(quizView.selected.has(i)));
     btn.querySelector('.option__out-note').textContent = out ? ' (ruled out)' : '';
   }
   const submit = document.getElementById('quiz-submit');
-  if (submit) submit.disabled = quizView.selected === null;
+  if (submit) submit.disabled = quizView.selected.size === 0;
 }
 
-/* One tap selects a choice. A second tap on the same choice within a moment
-   rules it out instead, or brings it back, and undoes the selection the first
-   tap made. A ruled-out choice has to be brought back before it can be selected. */
+/* One tap selects a choice; on a select-all question it adds the choice or
+   takes it back off. A second tap on the same choice within a moment rules it
+   out instead, or brings it back, and undoes what the first tap did. A
+   ruled-out choice has to be brought back before it can be selected. */
 function choose(i, { viaKey = false } = {}) {
-  if (!quizView || quizView.picked !== null || !quizView.choices[i]) return;
+  if (!quizView || quizView.graded || !quizView.choices[i]) return;
   const now = Date.now();
   const last = quizView.lastTap;
   if (!viaKey && last && last.i === i && now - last.t <= DOUBLE_TAP_MS) {
     quizView.lastTap = null;
     if (quizView.out.has(i)) quizView.out.delete(i);
     else quizView.out.add(i);
-    quizView.selected = last.before === i ? null : last.before;
+    quizView.selected = new Set(last.before);
+    quizView.selected.delete(i);
   } else {
-    quizView.lastTap = viaKey ? null : { i, t: now, before: quizView.selected };
-    if (!quizView.out.has(i)) quizView.selected = i;
+    quizView.lastTap = viaKey ? null : { i, t: now, before: new Set(quizView.selected) };
+    if (!quizView.out.has(i)) {
+      if (!quizView.multi) quizView.selected = new Set([i]);
+      else if (!quizView.selected.delete(i)) quizView.selected.add(i);
+    }
   }
   paintChoices();
 }
 
 function submitAnswer() {
   const q = store.quiz;
-  if (!q || !quizView || quizView.picked !== null || quizView.selected === null) return;
-  const i = quizView.selected;
+  if (!q || !quizView || quizView.graded || !quizView.selected.size) return;
   const id = quizView.id;
-  const ok = quizView.choices[i].right;
+  // Right means every correct choice selected and nothing else.
+  const ok = quizView.choices.every((c, i) => c.right === quizView.selected.has(i));
   const before = masteryOf(id);
   const m = ok ? Math.min(MASTER_AT, before + 1) : Math.max(0, before - 1);
   store.cards[id] = { ...store.cards[id], m };
   q.results.push({ id, ok, mastered: m >= MASTER_AT });
-  quizView.picked = i;
+  quizView.graded = true;
+  quizView.ok = ok;
   save();
   render();
 }
 
 function quizNext() {
   const q = store.quiz;
-  if (!q || !quizView || quizView.picked === null) return;
+  if (!q || !quizView || !quizView.graded) return;
   q.i = q.results.length;
   quizView = null;
   save();
@@ -734,9 +799,10 @@ function renderQuizIntro(info) {
       <p>${count} multiple-choice ${plural}${drawn}.${mastered ? ` ${mastered} of ${total} already mastered.` : ''}</p>
       <ul class="intro__rules">
         <li><strong>Select, then submit.</strong> Tap an answer to select it, then tap Submit answer. Nothing is graded until you submit.</li>
+        <li><strong>Select all that apply.</strong> Some questions have more than one right answer and say so. Tap each one you want. They count as right only with every correct answer selected and no wrong one.</li>
         <li><strong>Rule answers out.</strong> Double-tap an answer to dim it. Double-tap again to bring it back.</li>
         <li><strong>Mastering a question.</strong> A right answer adds one, a wrong answer takes one away. At ${MASTER_AT} the question is mastered and stops appearing in quizzes.</li>
-        <li class="intro__keys"><strong>On a keyboard.</strong> 1 to 4 select an answer and Enter submits.</li>
+        <li class="intro__keys"><strong>On a keyboard.</strong> The number keys select an answer and Enter submits.</li>
       </ul>
       <div class="actions">
         <button class="btn btn--primary" id="quiz-start" data-action="quiz-start">Start quiz</button>
@@ -770,7 +836,7 @@ function renderQuizResults(key, info, q) {
   const missedRows = missed
     .map((r) => {
       const card = BY_ID.get(r.id);
-      return `<li class="miss"><p class="miss__q">${fmt(quizPrompt(card))}</p><p class="miss__a">${fmt(rightChoice(card))}</p></li>`;
+      return `<li class="miss"><p class="miss__q">${fmt(quizPrompt(card))}</p><p class="miss__a">${fmt(rightText(card))}</p></li>`;
     })
     .join('');
 
@@ -811,6 +877,7 @@ function renderBrowse(key) {
             ${showDeck ? `<p class="row__deck">${fmt(card.deck.title)}</p>` : ''}
             <div class="answer answer--sm">${answerHTML(card)}</div>
             ${drawingsHTML(card.figure)}${drawingsHTML(card.diagram)}
+            ${whyHTML(card)}
             ${card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
             ${m ? `<p class="row__quiz">${pipsHTML(m)}Quiz: ${m} of ${MASTER_AT} toward mastered</p>` : ''}
             <button class="btn btn--quiet btn--small" data-action="row-star" data-id="${card.id}" aria-pressed="${isStarred(card.id)}">${isStarred(card.id) ? 'Starred' : 'Star this card'}</button>
@@ -937,6 +1004,13 @@ app.addEventListener('click', (e) => {
       go(`#/study/${key}`);
       break;
     }
+    case 'include-mei':
+      store.opts.mei = !store.opts.mei;
+      dropOutOfPlay();
+      save();
+      render();
+      document.querySelector('[data-action="include-mei"]')?.focus({ preventScroll: true });
+      break;
     case 'reset':
       if (confirm('Erase all saved progress, mastery and stars? This cannot be undone.')) {
         store.cards = {};
@@ -959,12 +1033,12 @@ document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
 
   if (view === 'quiz') {
-    const i = k.length === 1 ? Math.max('1234'.indexOf(k), 'abcd'.indexOf(k)) : -1;
+    const i = k.length === 1 ? Math.max('123456'.indexOf(k), 'abcdef'.indexOf(k)) : -1;
     if (i >= 0) choose(i, { viaKey: true });
     else if (e.key === 'Enter' && !(onControl && e.target.closest('.btn, .iconbtn'))) {
       // Enter submits the selected choice, then moves on.
       e.preventDefault();
-      if (quizView?.picked === null) submitAnswer();
+      if (quizView && !quizView.graded) submitAnswer();
       else quizNext();
     }
     return;

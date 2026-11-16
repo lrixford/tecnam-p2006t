@@ -524,6 +524,66 @@ button {
   vertical-align: 0.12em;
 }
 
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.25rem;
+  padding: 0 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.switch__track {
+  position: relative;
+  width: 2.5rem;
+  height: 1.45rem;
+  border-radius: 999px;
+  background: var(--tick);
+  transition: background-color 0.15s;
+}
+
+.switch__track::after {
+  content: '';
+  position: absolute;
+  top: 0.175rem;
+  left: 0.175rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s;
+}
+
+.switch[aria-checked='true'] {
+  color: var(--ink);
+}
+
+.switch[aria-checked='true'] .switch__track {
+  background: var(--blue);
+}
+
+.switch[aria-checked='true'] .switch__track::after {
+  transform: translateX(1.05rem);
+}
+
+.deck--off .deck__title {
+  color: var(--muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .switch__track,
+  .switch__track::after {
+    transition: none;
+  }
+}
+
 .foot {
   margin-top: 3rem;
   color: var(--muted);
@@ -982,6 +1042,35 @@ button {
   line-height: 1.4;
 }
 
+.why {
+  margin-top: 1.1rem;
+  padding: 0.6rem 0.85rem 0.65rem;
+  border-left: 3px solid var(--blue);
+  border-radius: 0 6px 6px 0;
+  background: var(--blue-soft);
+  color: var(--ink);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+}
+
+.why__label {
+  margin: 0 0 0.25rem;
+  color: var(--blue);
+  font-weight: 700;
+}
+
+.why ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.why li + li {
+  margin-top: 0.3rem;
+}
+
 .chip {
   flex: none;
   padding: 0.1rem 0.55rem;
@@ -1234,6 +1323,26 @@ button {
 .option--wrong .option__text {
   text-decoration: line-through;
   text-decoration-thickness: 1.5px;
+}
+
+/* Select-all questions: square keys, and a dashed outline on a correct choice that was left out. */
+.options--multi .option__key {
+  border-radius: 0.45rem;
+}
+
+.option--missed {
+  border-style: dashed;
+}
+
+.quiz__multi {
+  margin-top: 0.9rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.quiz__multi + .options {
+  margin-top: 0.7rem;
 }
 
 .option--dim {

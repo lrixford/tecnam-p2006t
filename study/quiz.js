@@ -9,6 +9,9 @@
 //   right  the correct choice (defaults to the card's own answer)
 //   wrong  three wrong choices; when omitted, the quiz borrows the correct
 //          answers of other cards in the same deck
+//   all    used in place of `right` for a select-all-that-apply question:
+//          every correct choice. The reader must pick all of them and none
+//          of `wrong`, which may then hold any number of choices.
 //
 // Decks with no entries at all (V-speeds) work entirely by borrowing.
 
@@ -80,12 +83,11 @@ export const QUIZ = {
 
   /* Engines and cooling */
   'eng.describe': {
-    q: 'How are the Rotax 912 S3 engines cooled and lubricated?',
-    right: 'Liquid-cooled cylinder heads, air-cooled cylinders, dry-sump oil',
+    q: 'Which of these describe the Rotax 912 S3 engines?',
+    all: ['Liquid-cooled cylinder heads', 'Air-cooled cylinders', 'Dry-sump oil system'],
     wrong: [
-      'Air-cooled cylinder heads and cylinders, wet-sump oil',
-      'Liquid-cooled cylinder heads and cylinders, wet-sump oil',
-      'Air-cooled cylinder heads, liquid-cooled cylinders, dry-sump oil',
+      'Direct drive to the propeller',
+      'Wet-sump oil system',
     ],
   },
   'eng.power': {
@@ -191,8 +193,13 @@ export const QUIZ = {
 
   /* Fuel */
   'fuel.types': {
-    right: 'MoGas (minimum RON 95) or AvGas 100LL',
-    wrong: ['AvGas 100LL only', 'Jet A or AvGas 100LL', 'MoGas (minimum RON 87) only'],
+    q: 'Which fuels can be used in the P2006T?',
+    all: ['MoGas, minimum RON 95', 'AvGas 100LL'],
+    wrong: [
+      'Jet A',
+      'MoGas, RON 87',
+      'Diesel',
+    ],
   },
   'fuel.mogas': {
     right: 'Improved engine wear over time',
@@ -233,11 +240,11 @@ export const QUIZ = {
     ],
   },
   'fuel.feed': {
-    right: 'Engine-driven pumps, plus electric auxiliary pumps in critical phases',
+    q: 'What moves fuel from the tanks to the engines?',
+    all: ['Engine-driven fuel pumps', 'Electric auxiliary pumps in critical phases'],
     wrong: [
-      'Gravity feed from the high wing, with no pumps',
-      'Electric pumps only, running at all times',
-      'Gravity feed, plus engine-driven pumps for takeoff',
+      'Gravity feed alone, with no pumps',
+      'One electric pump shared by both engines',
     ],
   },
   'fuel.sensor': {
@@ -280,7 +287,8 @@ export const QUIZ = {
     wrong: ['Low pitch, high RPM', 'They stay at the last selected pitch', 'A mid-pitch position held by the start locks'],
   },
   'prop.oil-loss-why': {
-    right: 'To reduce drag and prepare the engine to be secured',
+    q: 'Why are the blades built to feather when the hub loses oil pressure?',
+    all: ['To reduce drag', 'To prepare the engine to be secured'],
     wrong: [
       'To keep RPM high for a restart attempt',
       'To protect the reduction gearbox from overspeed',
@@ -304,11 +312,11 @@ export const QUIZ = {
     ],
   },
   'elec.buses': {
-    right: 'Five: Battery, L and R Generator, L and R Avionics',
+    q: 'Which of these are buses in the P2006T electrical system?',
+    all: ['Battery Bus', 'L and R Generator Buses', 'L and R Avionics Buses'],
     wrong: [
-      'Three: Battery, Main and Avionics',
-      'Four: L and R Generator, L and R Avionics',
-      'Six: Battery, Essential, L and R Generator, L and R Avionics',
+      'Essential Bus',
+      'Main Bus',
     ],
   },
   'elec.normal': {
@@ -346,7 +354,8 @@ export const QUIZ = {
     ],
   },
   'elec.regulator': {
-    right: 'Holds a constant output voltage and gives over-voltage protection',
+    q: 'What does the integrated generator regulator do?',
+    all: ['Holds a constant output voltage', 'Gives automatic over-voltage protection'],
     wrong: [
       'Shares the load evenly between two batteries',
       'Steps generator output up to 28 volts for the avionics',
@@ -441,8 +450,13 @@ export const QUIZ = {
 
   /* Flight controls */
   'fc.primary': {
-    right: 'Stabilator, ailerons and rudder',
-    wrong: ['Elevator, ailerons and rudder', 'Stabilator, ailerons and flaps', 'Elevator, flaperons and rudder'],
+    q: 'Which of these are primary flight controls on the P2006T?',
+    all: ['Stabilator', 'Ailerons', 'Rudder'],
+    wrong: [
+      'Elevator',
+      'Flaps',
+      'Rudder trim',
+    ],
   },
   'fc.mechanism': {
     right: 'Push-pull rods',
@@ -505,8 +519,12 @@ export const QUIZ = {
     ],
   },
   'pre.fluids': {
-    right: 'Oil, fuel and coolant',
-    wrong: ['Oil and fuel only', 'Oil, fuel and hydraulic fluid', 'Oil, fuel and brake fluid'],
+    q: 'Which fluid levels must pilots check during preflight?',
+    all: ['Oil', 'Fuel', 'Coolant'],
+    wrong: [
+      'Hydraulic fluid',
+      'Brake fluid',
+    ],
   },
   'pre.oil-murmur': {
     right: 'A murmur from the open oil tank',
@@ -518,11 +536,12 @@ export const QUIZ = {
   },
   'pre.gear-pressure': { wrong: ['10 bar', '30 bar', '12 bar'] },
   'pre.towing': {
-    right: 'Master switch on, and no more than 20° of nose gear deflection',
+    q: 'What must be done before towing the P2006T?',
+    all: ['Master switch on', 'Keep the nose gear within 20° left or right'],
     wrong: [
-      'Master switch off, and no more than 20° of nose gear deflection',
-      'Master switch on, and no more than 45° of nose gear deflection',
-      'Gear pins installed, and tow only from the main gear',
+      'Master switch off',
+      'Install the landing gear pins',
+      'Keep the nose gear within 45° left or right',
     ],
   },
 
@@ -561,11 +580,12 @@ export const QUIZ = {
     wrong: ['Day VFR only', 'Day and night VFR only', 'Day and night VFR, IFR and known icing'],
   },
   'gen.icing': {
-    right: 'No. It has pitot heat and defrost only',
+    q: 'The P2006T is not rated for icing conditions. Which ice protection does it have?',
+    all: ['Pitot heat', 'Defrost'],
     wrong: [
-      'Yes. It has de-ice boots and pitot heat',
-      'No. It has no anti-ice equipment at all',
-      'Yes. It has TKS fluid and heated propellers',
+      'De-ice boots',
+      'TKS fluid',
+      'Heated propellers',
     ],
   },
   'gen.max-altitude': { wrong: ['10,000 ft', '12,500 ft', '18,000 ft'] },
@@ -605,11 +625,12 @@ export const QUIZ = {
     ],
   },
   'vmc.demo': {
-    right: 'To show control at low speed on one engine, and recovery from a loss of directional control',
+    q: 'What does the V_MC demo show?',
+    all: ['Control at low speed on one engine', 'Recovery from a momentary loss of directional control'],
     wrong: [
-      'To show that the airplane can climb at V_MC on one engine',
-      'To demonstrate a full stall and recovery on one engine',
-      'To show how configuration changes affect drag on one engine',
+      'That the airplane can climb at V_MC on one engine',
+      'A full stall and recovery on one engine',
+      'How configuration changes affect drag on one engine',
     ],
   },
   'vmc.changes': {
@@ -643,9 +664,12 @@ export const QUIZ = {
     ],
   },
   'ce.past': {
-    q: 'In PAST, what does the A stand for?',
-    right: 'Accelerated slipstream',
-    wrong: ['Asymmetric thrust', 'Aft CG', 'Adverse yaw'],
+    q: 'Which factors determine the critical engine?',
+    all: ['P-factor', 'Accelerated slipstream', 'Spiraling slipstream', 'Torque'],
+    wrong: [
+      'Adverse yaw',
+      'Aft CG',
+    ],
   },
   'ce.past-p': {
     q: 'With one engine inoperative, what does P-factor do, and why is losing the left engine worse?',

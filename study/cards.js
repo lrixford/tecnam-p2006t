@@ -10,6 +10,7 @@
 //   a        answer text; blank lines separate paragraphs
 //   bullets  answer as a list (may be combined with `a`)
 //   note     caveat shown under the answer
+//   why      the reasoning behind the answer, as short lines (filled in from WHY)
 //   label    short name for the card's cell in its deck's reference table
 //   figure   key of a drawing in diagrams.js, shown with the question
 //   diagram  key or keys of drawings in diagrams.js, shown with the answer
@@ -30,6 +31,129 @@ export const GROUPS = [
 
 const NOT_IN_KEY =
   'The packet leaves this table blank. This is the standard answer; confirm it with your instructor.';
+
+// The reasoning behind an answer, keyed by card id and shown under the answer
+// as "Why". These explanations are additions; they are not in the packet.
+const WHY = {
+  'eng.direct-drive': [
+    'The Rotax makes its power at high crankshaft speed, up to 5800 rpm.',
+    'A propeller turning that fast would be inefficient and loud, with its tips near the speed of sound.',
+    'The 2.43:1 gearbox brings 5800 rpm down to about 2388 rpm at the propeller.',
+  ],
+  'oil.describe': [
+    'Dry sump means the oil lives in a separate tank, not in the bottom of the engine.',
+    'Crankcase pressure pushes the used oil back to that tank.',
+    'That is why the oil level is checked only after turning the propeller by hand.',
+  ],
+  'fuel.mogas': [
+    'The Rotax is designed for unleaded fuel.',
+    'The lead in 100LL leaves deposits on the spark plugs and valves and in the oil, which also lubricates the reduction gearbox.',
+    'Running mostly on 100LL means more frequent oil changes.',
+  ],
+  'fuel.crossfeed': [
+    'With one engine shut down, the fuel on that side would otherwise be dead weight.',
+    'Cross-feed lets the operating engine burn it, which extends range and keeps the wings balanced.',
+  ],
+  'prop.single-vs-multi': [
+    'A twin with a failed engine needs that propeller feathered. A windmilling propeller is a lot of drag on one side.',
+    'So the hub is built to drive the blades toward feather, and oil pressure holds them out of it. Lose the oil and the propeller feathers by itself.',
+    'A single has no second engine, so it needs thrust, not feather. Its blades default to low pitch (high RPM), and oil pressure is used to coarsen them.',
+  ],
+  'gear.main-not-locked': [
+    'A main gear that is not locked can collapse on touchdown.',
+    'With one main gear holding and the other collapsed, a wing drops and the airplane swings off the runway.',
+    'Landing with all the landing gear up keeps the airplane level and tracking straight.',
+  ],
+  'fc.anti-servo': [
+    'A stabilator pivots as one piece, so it takes very little force to move and gives little natural feel.',
+    'Without help it would be easy to over-control in pitch.',
+    'The tab moves the same way as the stabilator, only further, so the control force grows the more you deflect it.',
+  ],
+  'pre.rotate-prop': [
+    'After shutdown some oil settles in the crankcase, so the tank reads low.',
+    'Turning the propeller by hand builds crankcase pressure that pushes that oil back to the tank.',
+    'The gurgle from the open tank is air arriving behind the oil. The crankcase is empty and the reading is now good.',
+    'Ignition off, and turn only in the normal direction of rotation.',
+  ],
+  'gen.atomatoflames': [
+    '14 CFR 91.205 requires a temperature gauge for each liquid-cooled engine.',
+    'Most trainers are air cooled, so that item does not apply to them. On the P2006T it does.',
+  ],
+  'vmc.combats': [
+    'These are the conditions the manufacturer uses to set the red line (14 CFR 23.149).',
+    'Most are the worst case for control, so they give the highest V_MC: full power at sea level, critical engine windmilling, aft CG, light weight.',
+    'The bank is the exception. Banking 5° toward the operating engine lowers V_MC, so with the wings level the real figure is higher than the red line.',
+  ],
+  'vf.power': [
+    'More thrust on one side is more yaw for the rudder to stop, so it takes more airspeed to hold heading.',
+    'More thrust also means more climb.',
+  ],
+  'vf.temp': [
+    'Warmer air is thinner, so a normally aspirated engine makes less power.',
+    'Less power on the operating engine is less yaw to counter, and less climb.',
+  ],
+  'vf.pressure': [
+    'Lower pressure is thinner air, so the engine makes less power.',
+    'Less asymmetric thrust lowers V_MC. Less thrust lowers performance.',
+  ],
+  'vf.da': [
+    'Density altitude combines temperature and pressure. Higher means thinner air and less power.',
+    'V_MC falls but stall speed does not, so up high the airplane can stall before it reaches V_MC.',
+  ],
+  'vf.bank0': [
+    'With the wings level the rudder has to stop the yaw by itself, so it runs out sooner.',
+    'The airplane also flies in a sideslip, and that drag costs climb.',
+  ],
+  'vf.bank23': [
+    'Banking toward the operating engine tilts lift sideways to help the rudder.',
+    'At about 2 to 3° the sideslip is zero, which is the least drag and the best climb.',
+  ],
+  'vf.windmill': [
+    'A windmilling propeller is a big disc of drag on the inoperative side.',
+    'It adds to the yaw the rudder must stop and takes away climb.',
+  ],
+  'vf.feather': [
+    'Feathered blades sit edge-on to the airflow, so the drag on the inoperative side nearly disappears.',
+    'Less yaw to stop, and more climb.',
+  ],
+  'vf.aft-cg': [
+    'The rudder works around the CG. An aft CG shortens its arm, so it has less leverage against the yaw.',
+    'Performance improves a little: the tail carries less down-load, so the wing makes less lift and less induced drag.',
+  ],
+  'vf.weight': [
+    'In a bank, a heavier airplane is making more lift, so the sideways part of that lift is larger and helps the rudder more.',
+    'More weight always costs climb.',
+  ],
+  'vf.flaps': [
+    'Flaps add drag. The flap behind the operating engine sits in its propeller wash and drags the most, which opposes the yaw.',
+    'The extra drag costs climb.',
+  ],
+  'vf.gear': [
+    'Extended landing gear adds drag low on the airframe and acts like a keel, which steadies the airplane against yaw.',
+    'The drag costs climb.',
+    'How much this helps varies by airplane.',
+  ],
+  'vf.ground-effect': [
+    'Close to the ground the wing makes less induced drag, so the airplane performs better.',
+    'V_MC is usually taught as slightly lower here too.',
+    'Do not count on either: both are gone as soon as you climb out of ground effect.',
+  ],
+  'ce.sideslip': [
+    'With the wings level and the ball centered, the airplane is actually slipping sideways toward the inoperative engine.',
+    'That sideslip adds drag and makes the rudder work harder, which raises V_MC.',
+    'A 2 to 3° bank toward the operating engine, with the ball about half out toward that side, gives zero sideslip.',
+  ],
+  'ce.manifold': [
+    'A normally aspirated engine that has stopped making power still has outside air in its intake.',
+    'Its gauge shows roughly ambient pressure, much like the operating engine at full throttle.',
+    'So manifold pressure cannot tell you which engine failed. Use "dead foot, dead engine".',
+  ],
+  'ce.stall-altitude': [
+    'Indicated stall speed depends on weight, configuration and load factor, not on engine power.',
+    'V_MC depends on power, so it falls as you climb.',
+    'At some altitude the two meet. Above it the airplane stalls before it loses directional control, and a stall with asymmetric power can become a spin.',
+  ],
+};
 
 export const DECKS = [
   {
@@ -911,3 +1035,9 @@ export const DECKS = [
     ],
   },
 ];
+
+for (const deck of DECKS) {
+  for (const card of deck.cards) {
+    if (WHY[card.id]) card.why = WHY[card.id];
+  }
+}
