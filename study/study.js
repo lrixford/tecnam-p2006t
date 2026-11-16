@@ -1,5 +1,6 @@
 import { GROUPS, DECKS } from './cards.js';
 import { QUIZ } from './quiz.js';
+import { DIAGRAMS } from './diagrams.js';
 
 const STORE_KEY = 'p2006t-study:v1';
 const SWIPE_DISTANCE = 90;
@@ -14,7 +15,7 @@ const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 /* ---------- saved progress ---------- */
 
 function loadStore() {
-  const fresh = { v: 1, cards: {}, opts: { shuffle: false, answerFirst: false }, session: null, quiz: null };
+  const fresh = { v: 1, cards: {}, opts: { inOrder: false, answerFirst: false }, session: null, quiz: null };
   try {
     const parsed = JSON.parse(localStorage.getItem(STORE_KEY));
     if (parsed && parsed.v === 1) {
@@ -73,6 +74,39 @@ function answerHTML(card) {
   return html;
 }
 
+/* The deck's answers as a reference table, with this card's cell marked. */
+function deckTableHTML(card) {
+  const ROWS = 5;
+  const cards = card.deck.cards;
+  const cols = Math.ceil(cards.length / ROWS);
+  let rows = '';
+  for (let r = 0; r < ROWS; r++) {
+    let cells = '';
+    for (let c = 0; c < cols; c++) {
+      const item = cards[c * ROWS + r];
+      if (!item) {
+        cells += '<th></th><td></td>';
+        continue;
+      }
+      const here = item.id === card.id ? ' class="is-here"' : '';
+      const line = item.id === 'vs.vmc' ? ' data-line="red"' : item.id === 'vs.vyse' ? ' data-line="blue"' : '';
+      cells += `<th scope="row"${here}${line}>${fmt(item.label || item.q)}</th><td${here}>${fmt(item.a.replace(/ kt$/, ''))}</td>`;
+    }
+    rows += `<tr>${cells}</tr>`;
+  }
+  return `<table class="reftable"><caption>${fmt(card.deck.title)}, ${fmt(card.deck.blurb.toLowerCase())}</caption><tbody>${rows}</tbody></table>`;
+}
+
+/* Drawings for a card: `figure` goes with the question, `diagram` with the answer. */
+function drawingsHTML(keys) {
+  return []
+    .concat(keys || [])
+    .map((key) => DIAGRAMS[key])
+    .filter(Boolean)
+    .map((d) => `<figure class="diagram">${d.svg}<figcaption>${fmt(d.caption)}</figcaption></figure>`)
+    .join('');
+}
+
 function answerSize(card) {
   const len = (card.a || '').length + (card.bullets || []).join(' ').length;
   if (len <= 18 && !card.bullets) return 'xl';
@@ -117,7 +151,8 @@ let busy = false;
 
 function startSession(key, ids) {
   const order = ids || scope(key).cards.map((c) => c.id);
-  store.session = { key, order: store.opts.shuffle ? shuffled(order) : order, i: 0 };
+  // Runs are shuffled unless the reader turns shuffle off.
+  store.session = { key, order: store.opts.inOrder ? order : shuffled(order), i: 0 };
   history = [];
   save();
 }
@@ -271,14 +306,17 @@ function faceHTML(card, side) {
     return `
       <div class="face__top"><span>${fmt(card.deck.title)}</span>${chip}</div>
       <div class="face__body"><div class="face__content">
-        <p class="prompt prompt--${card.q.length <= 16 ? 'xl' : card.q.length <= 70 ? 'lg' : 'md'}">${fmt(card.q)}</p>
+        <p class="prompt prompt--${card.figure ? 'sm' : card.q.length <= 16 ? 'xl' : card.q.length <= 70 ? 'lg' : 'md'}">${fmt(card.q)}</p>
         ${card.hint ? `<p class="hint">${fmt(card.hint)}</p>` : ''}
+        ${drawingsHTML(card.figure)}
       </div></div>`;
   }
   return `
       <div class="face__top face__top--q"><span>${fmt(card.q)}</span></div>
       <div class="face__body"><div class="face__content">
         <div class="answer answer--${answerSize(card)}">${answerHTML(card)}</div>
+        ${card.deck.table ? deckTableHTML(card) : ''}
+        ${drawingsHTML(card.figure)}${drawingsHTML(card.diagram)}
         ${card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
       </div></div>`;
 }
@@ -314,7 +352,7 @@ function renderStudy(key) {
       <a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a>
       <div class="bar__title"><span>${fmt(info.title)}</span><span class="bar__count">${s.i + 1} of ${s.order.length}</span></div>
       <button class="iconbtn" data-action="answer-first" aria-pressed="${store.opts.answerFirst}" aria-label="Show answers first" title="Show answers first">${ICON.swap}</button>
-      <button class="iconbtn" data-action="shuffle" aria-pressed="${store.opts.shuffle}" aria-label="Shuffle" title="Shuffle">${ICON.shuffle}</button>
+      <button class="iconbtn" data-action="shuffle" aria-pressed="${!store.opts.inOrder}" aria-label="Shuffle" title="Shuffle">${ICON.shuffle}</button>
     </header>
     ${cardTape(s.order, s.i)}
     ${storageNotice()}
@@ -567,6 +605,7 @@ function renderQuiz(key) {
     <main class="quiz__main">
       <p class="quiz__deck">${fmt(card.deck.title)}</p>
       <h1 class="quiz__q">${fmt(quizPrompt(card))}</h1>
+      ${drawingsHTML(card.figure)}
       ${card.hint && !QUIZ[card.id]?.q ? `<p class="hint">${fmt(card.hint)}</p>` : ''}
       <ol class="options">${options}</ol>
       ${answered && card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
@@ -664,6 +703,7 @@ function renderBrowse(key) {
           <div class="row__a">
             ${showDeck ? `<p class="row__deck">${fmt(card.deck.title)}</p>` : ''}
             <div class="answer answer--sm">${answerHTML(card)}</div>
+            ${drawingsHTML(card.figure)}${drawingsHTML(card.diagram)}
             ${card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
             ${m ? `<p class="row__quiz">${pipsHTML(m)}Quiz: ${m} of ${MASTER_AT} toward mastered</p>` : ''}
             <button class="btn btn--quiet btn--small" data-action="row-star" data-id="${card.id}" aria-pressed="${isStarred(card.id)}">${isStarred(card.id) ? 'Starred' : 'Star this card'}</button>
@@ -746,7 +786,7 @@ app.addEventListener('click', (e) => {
       el.textContent = isStarred(el.dataset.id) ? 'Starred' : 'Star this card';
       break;
     case 'shuffle':
-      store.opts.shuffle = !store.opts.shuffle;
+      store.opts.inOrder = !store.opts.inOrder;
       startSession(key);
       render();
       break;

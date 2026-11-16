@@ -754,6 +754,11 @@ button {
   line-height: 1.28;
 }
 
+.prompt--sm {
+  font-size: clamp(1.05rem, 4.2vw, 1.3rem);
+  line-height: 1.3;
+}
+
 .hint {
   margin-top: 0.9rem;
   color: var(--muted);
@@ -808,6 +813,153 @@ button {
 .answer--sm {
   font-size: 1rem;
   line-height: 1.5;
+}
+
+/* Reference table on the back of a card, laid out like the printed quiz. */
+.reftable {
+  width: 100%;
+  margin-top: 1.25rem;
+  border-collapse: collapse;
+  font-size: clamp(0.72rem, 3.1vw, 0.95rem);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.reftable caption {
+  padding-bottom: 0.4rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.reftable th,
+.reftable td {
+  padding: 0.5em 0.45em;
+  border: 1px solid var(--ink);
+}
+
+.reftable th {
+  background: color-mix(in srgb, var(--ink) 12%, var(--surface));
+  font-weight: 800;
+  text-align: right;
+}
+
+.reftable td {
+  width: 15%;
+  text-align: left;
+}
+
+.reftable th[data-line='red'] {
+  color: var(--red);
+}
+
+.reftable th[data-line='blue'] {
+  color: var(--blue);
+}
+
+.reftable th.is-here,
+.reftable td.is-here {
+  background: var(--blue);
+  color: var(--on-accent);
+}
+
+.reftable td.is-here {
+  font-weight: 800;
+}
+
+/* Schematic diagrams (diagrams.js). */
+.diagram {
+  max-width: 26rem;
+  margin: 1.1rem 0 0;
+}
+
+.diagram svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.diagram + .diagram {
+  margin-top: 1.5rem;
+}
+
+.quiz .diagram {
+  margin-top: 0.75rem;
+}
+
+.diagram figcaption {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.d-air {
+  fill: color-mix(in srgb, var(--ink) 20%, var(--surface));
+}
+
+.d-ink,
+.d-force,
+.d-warn,
+.d-leader {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.d-ink {
+  stroke: var(--ink);
+}
+
+.d-dead {
+  fill: none;
+  stroke: var(--muted);
+  stroke-linecap: round;
+  opacity: 0.55;
+}
+
+.d-disc {
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+
+.d-force {
+  stroke: var(--blue);
+}
+
+.d-warn {
+  stroke: var(--red);
+}
+
+.d-flow {
+  stroke-dasharray: 7 5;
+}
+
+.d-leader {
+  stroke: var(--muted);
+  stroke-width: 1.2;
+  stroke-dasharray: 2 3;
+}
+
+.d-fill-force {
+  fill: var(--blue);
+}
+
+.d-fill-warn {
+  fill: var(--red);
+}
+
+.d-fill-ink {
+  fill: var(--ink);
+}
+
+.d-text {
+  fill: var(--muted);
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.d-text-warn {
+  fill: var(--red);
 }
 
 .note {

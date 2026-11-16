@@ -10,6 +10,12 @@
 //   a        answer text; blank lines separate paragraphs
 //   bullets  answer as a list (may be combined with `a`)
 //   note     caveat shown under the answer
+//   label    short name for the card's cell in its deck's reference table
+//   figure   key of a drawing in diagrams.js, shown with the question
+//   diagram  key or keys of drawings in diagrams.js, shown with the answer
+//
+// A deck with `table: true` shows all of its answers as a reference table on
+// the back of each flashcard, filled column by column, five rows per column.
 //
 // Text markup: V_MC renders as V with a subscript; **text** renders bold.
 
@@ -27,6 +33,7 @@ export const DECKS = [
     group: 'tecnam',
     title: 'V-speeds',
     blurb: 'Knots, at max takeoff weight',
+    table: true,
     cards: [
       { id: 'vs.vso', q: 'V_SO', hint: 'Stall speed, landing configuration', a: '54 kt' },
       { id: 'vs.vmc', q: 'V_MC', hint: 'Minimum control speed, the red line', a: '62 kt' },
@@ -36,13 +43,13 @@ export const DECKS = [
       { id: 'vs.vxse', q: 'V_XSE', hint: 'Best angle of climb, one engine inoperative', a: '83 kt' },
       { id: 'vs.vy', q: 'V_Y', hint: 'Best rate of climb', a: '84 kt' },
       { id: 'vs.vyse', q: 'V_YSE', hint: 'Best rate of climb, one engine inoperative, the blue line', a: '84 kt' },
-      { id: 'vs.vfe-full', q: 'V_FE, full flaps', hint: 'Maximum flaps-extended speed', a: '93 kt' },
-      { id: 'vs.vfe-to', q: 'V_FE, takeoff flaps', hint: 'Maximum flaps-extended speed', a: '122 kt' },
-      { id: 'vs.vlo-vle', q: 'V_LO and V_LE', hint: 'Landing gear operating and extended speeds', a: '122 kt' },
-      { id: 'vs.va-vo', q: 'V_A and V_O', hint: 'Maneuvering and operating maneuvering speeds', a: '122 kt' },
+      { id: 'vs.vfe-full', label: 'V_FE (full)', q: 'V_FE, full flaps', hint: 'Maximum flaps-extended speed', a: '93 kt' },
+      { id: 'vs.vfe-to', label: 'V_FE (t/o)', q: 'V_FE, takeoff flaps', hint: 'Maximum flaps-extended speed', a: '122 kt' },
+      { id: 'vs.vlo-vle', label: 'V_LO, V_LE', q: 'V_LO and V_LE', hint: 'Landing gear operating and extended speeds', a: '122 kt' },
+      { id: 'vs.va-vo', label: 'V_A & V_O', q: 'V_A and V_O', hint: 'Maneuvering and operating maneuvering speeds', a: '122 kt' },
       { id: 'vs.vno', q: 'V_NO', hint: 'Maximum structural cruising speed', a: '138 kt' },
       { id: 'vs.vne', q: 'V_NE', hint: 'Never-exceed speed', a: '171 kt' },
-      { id: 'vs.xw', q: 'Maximum crosswind', a: '17 kt' },
+      { id: 'vs.xw', label: 'Max XW', q: 'Maximum crosswind', a: '17 kt' },
     ],
   },
   {
@@ -609,6 +616,86 @@ export const DECKS = [
         id: 'ce.stall-altitude',
         q: 'With normally aspirated engines, V_MC decreases with altitude. What happens to stall speed (V_S)?',
         a: 'It remains the same.',
+      },
+    ],
+  },
+  {
+    id: 'past',
+    group: 'aero',
+    title: 'PAST in pictures',
+    blurb: 'Yaw or roll, and why the left engine is critical',
+    cards: [
+      {
+        id: 'ce.past-p',
+        diagram: ['p-left', 'p-right'],
+        q: 'P-factor: does it yaw or roll the airplane, and why does it make the left engine critical?',
+        a: '**Yaw.** At a high angle of attack the descending blade makes more thrust, so each engine pulls from the right side of its propeller disc.\n\nThe right engine\'s descending blade is farther from the centerline than the left engine\'s. Lose the left engine and the remaining thrust has the longer arm, so it yaws the airplane harder toward the dead engine.',
+      },
+      {
+        id: 'ce.past-a',
+        diagram: ['a-left', 'a-right'],
+        q: 'Accelerated slipstream: does it yaw or roll the airplane, and why does it make the left engine critical?',
+        a: '**Roll.** Each propeller pushes accelerated air over the wing behind it, which adds lift there. The descending blade pushes hardest, so the extra lift sits to the right of each engine.\n\nOn the right wing that puts it farther out from the centerline. Lose the left engine and the right wing\'s extra lift has the longer arm, so it rolls the airplane harder toward the dead engine.',
+      },
+      {
+        id: 'ce.past-s',
+        diagram: ['s-left', 's-right'],
+        q: 'Spiraling slipstream: does it yaw or roll the airplane, and why does it make the left engine critical?',
+        a: '**Yaw.** The slipstream spirals back from each propeller. The left engine\'s slipstream strikes the left side of the vertical tail, which pushes the nose left and opposes a yaw to the right.\n\nThe right engine\'s slipstream spirals away from the tail. Lose the left engine and nothing from the slipstream opposes the yaw toward the dead engine.',
+      },
+      {
+        id: 'ce.past-t',
+        diagram: ['t-left', 't-right'],
+        q: 'Torque: does it yaw or roll the airplane, and why does it make the left engine critical?',
+        a: '**Roll.** For every action there is an equal and opposite reaction: propellers turning clockwise try to roll the airplane counterclockwise, to the left.\n\nLose the left engine and the airplane already rolls left, toward the dead engine, so torque adds to it. Lose the right engine and torque opposes the roll.',
+      },
+      {
+        id: 'past.p-left',
+        figure: 'p-left',
+        q: 'Left engine failed. Which PAST factor does this show, and does it yaw or roll the airplane?',
+        a: '**P-factor: yaw.** The right engine is still running. Its thrust comes from the descending blade, far from the centerline, so the long arm yaws the airplane hard toward the dead left engine.',
+      },
+      {
+        id: 'past.p-right',
+        figure: 'p-right',
+        q: 'Right engine failed. Which PAST factor does this show, and does it yaw or roll the airplane?',
+        a: '**P-factor: yaw.** The left engine is still running. Its descending blade is close to the centerline, so the short arm gives less yaw toward the dead right engine.',
+      },
+      {
+        id: 'past.a-left',
+        figure: 'a-left',
+        q: 'Left engine failed. Which PAST factor does this show, and does it yaw or roll the airplane?',
+        a: '**Accelerated slipstream: roll.** The right propeller adds lift on the wing behind its descending blade, far from the centerline. The long arm rolls the airplane hard toward the dead left engine.',
+      },
+      {
+        id: 'past.a-right',
+        figure: 'a-right',
+        q: 'Right engine failed. Which PAST factor does this show, and does it yaw or roll the airplane?',
+        a: '**Accelerated slipstream: roll.** The left propeller adds lift on the wing behind its descending blade, close to the centerline. The short arm gives less roll toward the dead right engine.',
+      },
+      {
+        id: 'past.s-left',
+        figure: 's-left',
+        q: 'Left engine failed. Which PAST factor does this show, and does it yaw or roll the airplane?',
+        a: '**Spiraling slipstream: yaw.** The right engine\'s slipstream spirals away from the vertical tail, so nothing from it opposes the yaw toward the dead left engine.',
+      },
+      {
+        id: 'past.s-right',
+        figure: 's-right',
+        q: 'Right engine failed. Which PAST factor does this show, and does it yaw or roll the airplane?',
+        a: '**Spiraling slipstream: yaw.** The left engine\'s slipstream strikes the left side of the vertical tail. That pushes the nose left and opposes the yaw toward the dead right engine.',
+      },
+      {
+        id: 'past.t-left',
+        figure: 't-left',
+        q: 'Left engine failed. Which PAST factor does this show, and does it yaw or roll the airplane?',
+        a: '**Torque: roll.** The clockwise propeller makes the airframe react by rolling left. That is toward the dead left engine, so torque adds to the roll.',
+      },
+      {
+        id: 'past.t-right',
+        figure: 't-right',
+        q: 'Right engine failed. Which PAST factor does this show, and does it yaw or roll the airplane?',
+        a: '**Torque: roll.** The clockwise propeller makes the airframe react by rolling left. That is away from the dead right engine, so torque opposes the roll.',
       },
     ],
   },

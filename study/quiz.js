@@ -48,8 +48,33 @@ const factorEntries = Object.fromEntries(
   ]),
 );
 
+// Picture cards: name the PAST factor in the drawing and the motion it causes.
+const PAST = {
+  p: ['P-factor', 'yaw'],
+  a: ['Accelerated slipstream', 'roll'],
+  s: ['Spiraling slipstream', 'yaw'],
+  t: ['Torque', 'roll'],
+};
+// For each factor: the look-alike drawn from the same view, then one from the other view.
+const PAST_DECOYS = { p: ['s', 't'], a: ['t', 'p'], s: ['p', 'a'], t: ['a', 's'] };
+
+const pastChoice = (k, flip = false) => {
+  const [name, motion] = PAST[k];
+  return `${name}: ${flip ? (motion === 'yaw' ? 'roll' : 'yaw') : motion}`;
+};
+
+const pictureEntries = Object.fromEntries(
+  Object.keys(PAST).flatMap((k) =>
+    ['left', 'right'].map((side) => [
+      `past.${k}-${side}`,
+      { right: pastChoice(k), wrong: [pastChoice(k, true), ...PAST_DECOYS[k].map((d) => pastChoice(d))] },
+    ]),
+  ),
+);
+
 export const QUIZ = {
   ...factorEntries,
+  ...pictureEntries,
 
   'vs.xw': { wrong: ['12 kt', '15 kt', '20 kt'] },
 
@@ -620,6 +645,42 @@ export const QUIZ = {
     q: 'In PAST, what does the A stand for?',
     right: 'Accelerated slipstream',
     wrong: ['Asymmetric thrust', 'Aft CG', 'Adverse yaw'],
+  },
+  'ce.past-p': {
+    q: 'With one engine inoperative, what does P-factor do, and why is losing the left engine worse?',
+    right: "Yaw: the right engine's descending blade is farther from the centerline",
+    wrong: [
+      "Roll: the right engine's descending blade is farther from the centerline",
+      "Yaw: the left engine's descending blade is farther from the centerline",
+      'Roll: clockwise propellers twist the airframe to the left',
+    ],
+  },
+  'ce.past-a': {
+    q: 'With one engine inoperative, what does accelerated slipstream do, and why is losing the left engine worse?',
+    right: "Roll: the right engine's extra wing lift is farther from the centerline",
+    wrong: [
+      "Yaw: the right engine's extra wing lift is farther from the centerline",
+      "Roll: the left engine's extra wing lift is farther from the centerline",
+      "Yaw: the right engine's slipstream pushes on the vertical tail",
+    ],
+  },
+  'ce.past-s': {
+    q: 'With one engine inoperative, what does spiraling slipstream do, and why is losing the left engine worse?',
+    right: "Yaw: only the left engine's slipstream reaches the tail to oppose the yaw",
+    wrong: [
+      "Roll: only the left engine's slipstream reaches the tail to oppose the roll",
+      "Yaw: only the right engine's slipstream reaches the tail to oppose the yaw",
+      "Roll: the right engine's slipstream adds lift farther out on the wing",
+    ],
+  },
+  'ce.past-t': {
+    q: 'With one engine inoperative, what does torque do, and why is losing the left engine worse?',
+    right: 'Roll: clockwise propellers roll the airplane left, toward a failed left engine',
+    wrong: [
+      'Yaw: clockwise propellers yaw the airplane left, toward a failed left engine',
+      'Roll: clockwise propellers roll the airplane right, toward a failed right engine',
+      "Yaw: the right engine's descending blade is farther from the centerline",
+    ],
   },
   'ce.sideslip': {
     q: 'What is used to counter the sideslip with one engine inoperative?',
