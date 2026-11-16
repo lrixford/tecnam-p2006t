@@ -928,6 +928,11 @@
   text-align: left;
 }
 
+/* Second printed page: departure performance inputs and results */
+.p2006t .print-page2 {
+  display: none;
+}
+
 /* ── Mobile ──────────────────────────────────────── */
 @media (max-width: 480px) {
   .p2006t .fuel-plan {
@@ -1011,6 +1016,39 @@
   .p2006t .print-summary__grid > * {
     flex: 1 1 0;
     min-width: 0;
+  }
+
+  .p2006t .print-page2 {
+    display: block;
+    break-before: page;
+  }
+
+  .p2006t .print-page2__grid {
+    display: flex;
+    flex-direction: row;
+    gap: 2rem;
+    align-items: start;
+    margin-top: 0.75rem;
+  }
+
+  .p2006t .print-page2__grid > * {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .p2006t .print-page2__grid .dt-table {
+    width: 100%;
+  }
+
+  .p2006t .print-page2__grid .dt-table td:last-child {
+    text-align: right;
+  }
+
+  .p2006t .print-page2__notes {
+    margin: 0.6rem 0 0;
+    padding-left: 1rem;
+    font-size: 0.6rem;
+    line-height: 1.5;
   }
 
   .p2006t #nomograph-mount {

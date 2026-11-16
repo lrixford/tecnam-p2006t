@@ -218,15 +218,31 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
   const ldaOk    = ldgCorr.to50ft <= (lda_ft  * 0.3048);
   const acStopOk = !tora_ft || accelStop_m <= (tora_ft * 0.3048);
 
+  const wxStation = metar.station ?? null;
+  const wxSource  = [{ id: airport.metar_id, nm: airport.metar_nm }, ...(airport.metar_alts ?? [])]
+    .find(s => s.id && s.id === wxStation);
+
   return {
+    airport_id:   airport.id ?? null,
+    airport_name: airport.name ?? null,
+    elev_ft,
+    wx_station:   wxStation,
+    wx_station_nm: wxSource?.nm ?? null,
+    runway_id:   runway.id ?? null,
+    runway_length_ft: runway.length_ft ?? null,
+    runway_width_ft:  runway.width_ft ?? null,
     end_id:      endId,
+    weight_lb:   Math.round(grossLb),
     weight_kg:   Math.round(weight_kg),
+    landing_weight_lb: Math.round(landingLb ?? grossLb),
+    landing_weight_kg: Math.round(ldgWeight_kg),
     pa_ft,
     da_ft,
     oat_c,
     headwind_kt,
     xwind_kt,
     xwind_ok:    Math.abs(xwind_kt) <= XWIND_LIMIT_KT,
+    xwind_limit_kt: XWIND_LIMIT_KT,
     surface,
     slope_pct,
     tora_ft,

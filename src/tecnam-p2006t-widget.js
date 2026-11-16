@@ -1,7 +1,7 @@
 import { mountStationInput } from './stationInput.js';
 import { renderNomograph } from './nomograph.js';
 import { renderCgEnvelope } from './cgEnvelope.js';
-import { renderPrintSummary } from './dataTable.js';
+import { renderPrintSummary, renderPerformancePage } from './dataTable.js';
 import { renderSuggestCard } from './suggestCard.js';
 import { mountPerformancePanel } from './performancePanel.js';
 import { computeGrossLb } from './stationInput.js';
@@ -23,6 +23,7 @@ export function mountWidget(target) {
       <h2 class="section-h2" id="graphs-h2">Graphs</h2>
       <div id="nomograph-mount"></div>
       <div id="cg-envelope-mount" class="cg-envelope"></div>
+      <div id="print-page2-mount"></div>
     </div>
   `;
   target.replaceChildren(el);
@@ -33,8 +34,16 @@ export function mountWidget(target) {
   const printMount       = el.querySelector('#print-summary-mount');
   const nomographMount   = el.querySelector('#nomograph-mount');
   const cgEnvelopeMount  = el.querySelector('#cg-envelope-mount');
+  const printPage2Mount  = el.querySelector('#print-page2-mount');
 
   let perfPanel = null;
+
+  function renderPrint(state) {
+    const metar = perfPanel?.getMetar();
+    const perf  = perfPanel?.getResult();
+    renderPrintSummary(printMount, state, metar, perf);
+    renderPerformancePage(printPage2Mount, state, metar, perf);
+  }
 
   function refresh(state) {
     renderSuggestCard(suggestMount, state, (suggestion) => {
@@ -45,7 +54,7 @@ export function mountWidget(target) {
       stationInput.patch(patch);
     });
     perfPanel?.refresh();
-    renderPrintSummary(printMount, state, perfPanel?.getMetar(), perfPanel?.getResult());
+    renderPrint(state);
     renderNomograph(nomographMount, state);
     renderCgEnvelope(cgEnvelopeMount, state);
   }
@@ -54,7 +63,7 @@ export function mountWidget(target) {
   perfPanel = mountPerformancePanel(perfMount, {
     getGrossLb:   () => computeGrossLb(stationInput.getState()),
     getLandingLb: () => computeAll(stationInput.getState()).landing.weight_lb,
-    onResultChange: () => renderPrintSummary(printMount, stationInput.getState(), perfPanel?.getMetar(), perfPanel?.getResult()),
+    onResultChange: () => renderPrint(stationInput.getState()),
   });
 
   refresh(stationInput.getState());

@@ -290,3 +290,32 @@ test('takeoff and landing distances are still given when accel-go is unavailable
   assert.ok(r.landing.gr > 0);
   assert.ok(r.accel_stop.dist_m > 0);
 });
+
+test('the result carries the inputs the figures were computed from', () => {
+  const runway = {
+    id: '18/36', surface: 'paved', length_ft: 4000, width_ft: 60,
+    ends: { '18': { hdg_true: 180, tora_ft: 4000, lda_ft: 3800, slope_pct: 0.2, obstacle: null } },
+  };
+  const airport = {
+    id: 'KXYZ', name: 'EXAMPLE FIELD', elev_ft: 500,
+    metar_id: 'KABC', metar_nm: 12, metar_alts: [{ id: 'KDEF', nm: 19 }],
+  };
+  const metar = {
+    station: 'KDEF', oat_c: 20, altimeter_inhg: 29.92,
+    wind_dir_deg: 180, wind_speed_kt: 10, wind_gust_kt: null, wind_variable: false,
+  };
+  const r = calcPerformance({ grossLb: 2600, landingLb: 2450, airport, runway, endId: '18', metar });
+
+  assert.equal(r.airport_id, 'KXYZ');
+  assert.equal(r.airport_name, 'EXAMPLE FIELD');
+  assert.equal(r.elev_ft, 500);
+  assert.equal(r.wx_station, 'KDEF');
+  assert.equal(r.wx_station_nm, 19);
+  assert.equal(r.runway_id, '18/36');
+  assert.equal(r.runway_length_ft, 4000);
+  assert.equal(r.runway_width_ft, 60);
+  assert.equal(r.weight_lb, 2600);
+  assert.equal(r.landing_weight_lb, 2450);
+  assert.equal(r.landing_weight_kg, 1111);
+  assert.equal(r.xwind_limit_kt, 17);
+});
