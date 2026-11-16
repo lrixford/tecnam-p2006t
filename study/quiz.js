@@ -1,0 +1,689 @@
+// Multiple-choice material for the graded quiz.
+//
+// The flashcard answers in cards.js are often too long to be an answer choice,
+// so each entry here gives a short correct choice and three wrong ones. The
+// wrong choices are invented distractors, not packet content.
+//
+// Entry shape, keyed by card id:
+//   q      optional quiz wording, when the flashcard prompt is too open-ended
+//   right  the correct choice (defaults to the card's own answer)
+//   wrong  three wrong choices; when omitted, the quiz borrows the correct
+//          answers of other cards in the same deck
+//
+// Decks with no entries at all (V-speeds) work entirely by borrowing.
+
+const FACTOR_CHOICES = {
+  uu: 'V_MC goes up, performance goes up',
+  ud: 'V_MC goes up, performance goes down',
+  du: 'V_MC goes down, performance goes up',
+  dd: 'V_MC goes down, performance goes down',
+};
+
+// Which way actual V_MC and performance go, per card in the "factors" deck.
+const FACTORS = {
+  'vf.power': 'uu',
+  'vf.temp': 'dd',
+  'vf.pressure': 'dd',
+  'vf.da': 'dd',
+  'vf.bank0': 'ud',
+  'vf.bank23': 'du',
+  'vf.windmill': 'ud',
+  'vf.feather': 'du',
+  'vf.aft-cg': 'uu',
+  'vf.weight': 'dd',
+  'vf.flaps': 'dd',
+  'vf.gear': 'dd',
+  'vf.ground-effect': 'du',
+};
+
+const factorEntries = Object.fromEntries(
+  Object.entries(FACTORS).map(([id, code]) => [
+    id,
+    {
+      right: FACTOR_CHOICES[code],
+      wrong: Object.keys(FACTOR_CHOICES)
+        .filter((k) => k !== code)
+        .map((k) => FACTOR_CHOICES[k]),
+    },
+  ]),
+);
+
+export const QUIZ = {
+  ...factorEntries,
+
+  'vs.xw': { wrong: ['12 kt', '15 kt', '20 kt'] },
+
+  /* Engines and cooling */
+  'eng.describe': {
+    q: 'How are the Rotax 912 S3 engines cooled and lubricated?',
+    right: 'Liquid-cooled heads, air-cooled cylinders, dry-sump oil',
+    wrong: [
+      'Air-cooled heads and cylinders, wet-sump oil',
+      'Liquid-cooled heads and cylinders, wet-sump oil',
+      'Air-cooled heads, liquid-cooled cylinders, dry-sump oil',
+    ],
+  },
+  'eng.power': {
+    q: "What is each engine's maximum power, and for how long?",
+    right: '98.6 hp at 5800 rpm, 5 minutes maximum',
+    wrong: [
+      '98.6 hp at 5500 rpm, continuous',
+      '115 hp at 5800 rpm, 5 minutes maximum',
+      '92.5 hp at 5800 rpm, 3 minutes maximum',
+    ],
+  },
+  'eng.how-rotax-works': {
+    q: 'Per the packet, how does a Rotax engine manage its fuel mixture?',
+    right: 'Dual-path engine control units control the fuel injection',
+    wrong: [
+      'Magnetos and a manual mixture lever meter the fuel',
+      'A single float carburetor that the pilot leans by hand',
+      'A turbocharger wastegate controller sets the mixture',
+    ],
+  },
+  'eng.coolant': {
+    q: 'Which parts of the engine are liquid cooled?',
+    right: 'The cylinder heads; the cylinders are air cooled',
+    wrong: [
+      'The cylinders; the cylinder heads are air cooled',
+      'Both the cylinder heads and the cylinders',
+      'Only the oil; heads and cylinders are air cooled',
+    ],
+  },
+  'eng.overflow': {
+    right: 'Takes excess coolant from the expansion tank, then returns it as the system cools',
+    wrong: [
+      'Holds reserve coolant that the pilot adds in flight with a hand pump',
+      'Vents excess coolant overboard when expansion tank pressure is too high',
+      'Separates air bubbles from the coolant before it reaches the radiator',
+    ],
+  },
+  'eng.carb-or-fi': {
+    right: 'Carbureted, with constant-depression carburetors',
+    wrong: [
+      'Fuel injected, with a mechanical fuel servo',
+      'Carbureted, with one float carburetor and manual mixture',
+      'Fuel injected, with electronic injectors on each cylinder',
+    ],
+  },
+  'eng.carb-count': { right: 'Two', wrong: ['One', 'Four', 'None, it is fuel injected'] },
+  'eng.max-ct': { wrong: ['130 °C (266 °F)', '110 °C (230 °F)', '150 °C (302 °F)'] },
+  'eng.direct-drive': {
+    right: 'No, a reduction gearbox lowers propeller RPM',
+    wrong: [
+      'Yes, the propeller turns at crankshaft speed',
+      'No, a belt drive raises propeller RPM',
+      'Yes, with a torsional damper on the crankshaft',
+    ],
+  },
+
+  /* Oil */
+  'oil.describe': {
+    right: 'Dry-sump, with an engine-driven oil pump',
+    wrong: [
+      'Wet-sump, with an engine-driven oil pump',
+      'Dry-sump, with an electric oil pump',
+      'Wet-sump, splash lubricated with no pump',
+    ],
+  },
+  'oil.transit': {
+    q: 'How does oil move through the system?',
+    right: 'The engine-driven pump pulls it from the reservoir, some passes through the radiator, and it returns to the reservoir',
+    wrong: [
+      'It drains by gravity from the crankcase sump, through the radiator, and back to the sump',
+      'An electric pump pushes it from the sump to the propeller hub, and it returns through the gearbox',
+      'The engine-driven pump pulls it from the crankcase sump and all of it passes through the radiator',
+    ],
+  },
+  'oil.capacity': {
+    q: 'How do you know the oil quantity is acceptable?',
+    right: 'The level is between MIN and MAX, per the reservoir door placard',
+    wrong: [
+      'The dipstick shows at least 6 quarts',
+      'The sight gauge on the cowling shows full',
+      'The level is within an inch of the filler neck',
+    ],
+  },
+  'oil.temps': {
+    q: 'What is the normal oil temperature range?',
+    right: '90 to 110 °C (190 to 230 °F)',
+    wrong: ['50 to 90 °C (122 to 190 °F)', '110 to 130 °C (230 to 266 °F)', '70 to 100 °C (158 to 212 °F)'],
+  },
+  'oil.pressure': {
+    q: 'What is the normal oil pressure range?',
+    right: '2 to 5 bar (29 to 72.5 psi)',
+    wrong: ['0.8 to 2 bar (11.6 to 29 psi)', '5 to 7 bar (72.5 to 102 psi)', '1 to 3 bar (14.5 to 43.5 psi)'],
+  },
+  'oil.type': {
+    right: 'Oil with RON 424 classification',
+    wrong: [
+      'Straight 100-weight aviation mineral oil',
+      'Any SAE 20W-50 aviation oil',
+      'Two-stroke oil premixed with the fuel',
+    ],
+  },
+
+  /* Fuel */
+  'fuel.types': {
+    right: 'MoGas (minimum RON 95) or AvGas 100LL',
+    wrong: ['AvGas 100LL only', 'Jet A or AvGas 100LL', 'MoGas (minimum RON 87) only'],
+  },
+  'fuel.mogas': {
+    right: 'Improved engine wear over time',
+    wrong: ['Higher power output', 'Longer range per gallon', 'Lower risk of vapor lock'],
+  },
+  'fuel.capacity': {
+    q: 'What is the total fuel capacity?',
+    right: '200 liters, 194 usable (52.8 gallons)',
+    wrong: [
+      '100 liters, 97 usable (26.4 gallons)',
+      '200 liters, all usable (52.8 gallons)',
+      '240 liters, 230 usable (63.4 gallons)',
+    ],
+  },
+  'fuel.drains': {
+    right: 'Four: a gascolator drain and a wing tank drain per side',
+    wrong: [
+      'Two: one wing tank drain per side',
+      'Six: two wing tank drains and a gascolator drain per side',
+      'Three: one per wing tank and one cross-feed drain',
+    ],
+  },
+  'fuel.crossfeed': {
+    q: 'What does engine cross-feed do?',
+    right: 'Supplies an engine from the opposite-side tank',
+    wrong: [
+      'Pumps fuel from one tank into the other',
+      'Supplies both engines from both tanks at once',
+      'Returns unused fuel to the opposite-side tank',
+    ],
+  },
+  'fuel.selectors': {
+    right: 'Each selector has left, right and off',
+    wrong: [
+      'Each selector has on, cross-feed and off',
+      'Each selector has left, right, both and off',
+      'Each selector has on and off only',
+    ],
+  },
+  'fuel.feed': {
+    right: 'Engine-driven pumps, plus electric auxiliary pumps in critical phases',
+    wrong: [
+      'Gravity feed from the high wing, with no pumps',
+      'Electric pumps only, running at all times',
+      'Gravity feed, plus engine-driven pumps for takeoff',
+    ],
+  },
+  'fuel.sensor': {
+    right: 'On the inboard side of each tank',
+    wrong: ['On the outboard side of each tank', 'In each gascolator', 'In the fuselage, at the fuel selectors'],
+  },
+  'fuel.transfer': {
+    right: 'No, cross-feed only',
+    wrong: [
+      'Yes, with an electric transfer pump',
+      'Yes, by gravity through a balance line',
+      'Yes, but only on the ground',
+    ],
+  },
+
+  /* Propellers */
+  'prop.describe': {
+    q: 'Which describes the P2006T propellers?',
+    right: 'MT, two-blade, wood/composite, constant speed, full feathering',
+    wrong: [
+      'Hartzell, two-blade, aluminum, constant speed, full feathering',
+      'MT, three-blade, wood/composite, constant speed, non-feathering',
+      'Sensenich, two-blade, composite, ground-adjustable pitch',
+    ],
+  },
+  'prop.lever': {
+    right: 'The prop lever (blue)',
+    wrong: ['The throttle', 'The carburetor heat lever', 'The choke lever'],
+  },
+  'prop.pitch-control': {
+    right: 'The prop lever sets spring tension, which meters oil to and from the hub',
+    wrong: [
+      'The prop switch drives an electric pitch motor in the hub',
+      'Counterweights alone set pitch; the lever moves a mechanical stop',
+      'Manifold pressure acts directly on the piston in the hub',
+    ],
+  },
+  'prop.oil-loss': {
+    right: 'High pitch, feathered',
+    wrong: ['Low pitch, high RPM', 'They stay at the last selected pitch', 'A mid-pitch position held by the start locks'],
+  },
+  'prop.oil-loss-why': {
+    right: 'To reduce drag and prepare the engine to be secured',
+    wrong: [
+      'To keep RPM high for a restart attempt',
+      'To protect the reduction gearbox from overspeed',
+      'To keep the generator on that engine turning',
+    ],
+  },
+  'prop.single-vs-multi': {
+    q: 'On a multi-engine constant-speed propeller, what does high oil pressure do?',
+    right: 'Moves the blades to low pitch',
+    wrong: ['Moves the blades to high pitch', 'Feathers the blades', 'Locks the blades at their current pitch'],
+  },
+
+  /* Electrical */
+  'elec.components': {
+    q: 'What provides primary DC power?',
+    right: 'Two engine-driven generators operating in parallel',
+    wrong: [
+      'One engine-driven alternator on the left engine',
+      'Two batteries, charged by a single generator',
+      'Two generators, one on line and one on standby',
+    ],
+  },
+  'elec.buses': {
+    right: 'Five: Battery, L and R Generator, L and R Avionics',
+    wrong: [
+      'Three: Battery, Main and Avionics',
+      'Four: L and R Generator, L and R Avionics',
+      'Six: Battery, Essential, L and R Generator, L and R Avionics',
+    ],
+  },
+  'elec.normal': {
+    right: 'In parallel, by both generators and the battery',
+    wrong: [
+      'Each side is isolated on its own generator',
+      'By the battery, which the generators only recharge',
+      'By the left generator, with the right on standby',
+    ],
+  },
+  'elec.cross-bus': {
+    right: 'Isolate the L or R side from the rest of the electrical system',
+    wrong: [
+      'Connect the avionics buses directly to the battery',
+      'Swap the generators between the left and right buses',
+      'Let a running generator crank the opposite starter',
+    ],
+  },
+  'elec.battery-time': { right: '30 minutes', wrong: ['15 minutes', '45 minutes', '60 minutes'] },
+  'elec.ac-dc': {
+    right: 'DC',
+    wrong: ['AC', 'AC, rectified to DC for the avionics', 'DC, inverted to AC for the main buses'],
+  },
+  'elec.battery': { right: '12 V and 38 Ah', wrong: ['24 V and 38 Ah', '12 V and 18 Ah', '24 V and 11 Ah'] },
+  'elec.avionics': {
+    right: 'By their respective generator bus',
+    wrong: ['Directly by the battery bus', 'By the opposite-side generator bus', 'By a dedicated standby battery'],
+  },
+  'elec.field': {
+    right: 'Let the respective generator supply the electrical system',
+    wrong: [
+      'Connect the battery to the battery bus',
+      'Tie the left and right generator buses together',
+      'Supply power to the avionics buses',
+    ],
+  },
+  'elec.regulator': {
+    right: 'Holds a constant output voltage and gives over-voltage protection',
+    wrong: [
+      'Shares the load evenly between two batteries',
+      'Steps generator output up to 28 volts for the avionics',
+      'Disconnects the battery once it is fully charged',
+    ],
+  },
+  'elec.starters': {
+    right: 'Yes, on external DC power, which feeds the Battery Bus directly',
+    wrong: [
+      'No, the starter relays are always powered through the master switch',
+      'Yes, the starters are wired straight to the battery terminals',
+      'No, unless both cross-bus switches are on',
+    ],
+  },
+
+  /* Landing gear */
+  'gear.describe': {
+    right: 'A reversible electric pump pressurizes hydraulic up or down lines',
+    wrong: [
+      'Electric motors drive a jackscrew at each gear leg',
+      'An engine-driven hydraulic pump on the left engine',
+      'A manual hand pump, with an electric pump as backup',
+    ],
+  },
+  'gear.pump': { right: 'Electrically', wrong: ['By the left engine', 'By the right engine', 'By hand'] },
+  'gear.held-up': {
+    right: 'By hydraulic pressure',
+    wrong: ['By mechanical uplocks', 'By over-center springs', 'By electric brakes on the actuators'],
+  },
+  'gear.backup': {
+    right: 'An emergency system pushes hydraulic fluid into the top of each gear cylinder',
+    wrong: [
+      'A dump valve releases pressure and the gear free-falls',
+      'A hand crank between the seats winds the gear down',
+      'A manual hand pump under the right seat',
+    ],
+  },
+  'gear.green': {
+    right: 'That gear is down and locked',
+    wrong: ['That gear is up and locked', 'The gear pump is running', 'That gear is in transit'],
+  },
+  'gear.red': {
+    right: 'The gear are not all down and locked, nor all up',
+    wrong: ['All gear are up and locked', 'The gear pump has failed', 'Hydraulic pressure is low'],
+  },
+  'gear.amber': {
+    right: 'The gear pump is powered, so the gear is in transit',
+    wrong: [
+      'One gear is not down and locked',
+      'Emergency accumulator pressure is low',
+      'The aircraft weight is on the wheels',
+    ],
+  },
+  'gear.horn': {
+    right: 'Flaps lowered to FULL with the gear not down and locked',
+    wrong: [
+      'Airspeed below V_MC with the gear up',
+      'Any time the gear is in transit',
+      'Flaps at takeoff with the gear down',
+    ],
+  },
+  'gear.main-not-locked': {
+    right: 'Land gear up, and shut down the engines when landing is assured',
+    wrong: [
+      'Land on the locked gear and hold the other wing up as long as possible',
+      'Recycle the gear until fuel is nearly gone, then land gear down',
+      'Land gear up, keeping both engines at idle for a go-around',
+    ],
+  },
+  'gear.emergency-control': {
+    q: 'Where is the emergency landing gear control?',
+    right: 'Left seat floorboard',
+    wrong: ['Center console, between the seats', 'Overhead panel, by the fuel selectors', 'Right seat floorboard'],
+  },
+  'gear.exception': {
+    right: 'Emergency extension uses a pressurized accumulator to force the gear down',
+    wrong: [
+      'Emergency extension relies on free fall alone',
+      'Retraction is powered by engine-driven pumps',
+      'The main gear is fixed and only the nose gear retracts',
+    ],
+  },
+  'gear.accumulator': { wrong: ['10 bar', '30 bar', '5 bar'] },
+  'gear.squat': {
+    right: 'Right main gear; it prevents gear retraction on the ground',
+    wrong: [
+      'Nose gear; it prevents gear retraction on the ground',
+      'Left main gear; it silences the stall warning on the ground',
+      'Right main gear; it shuts off the hydraulic pump after landing',
+    ],
+  },
+
+  /* Flight controls */
+  'fc.primary': {
+    right: 'Stabilator, ailerons and rudder',
+    wrong: ['Elevator, ailerons and rudder', 'Stabilator, ailerons and flaps', 'Elevator, flaperons and rudder'],
+  },
+  'fc.mechanism': {
+    right: 'Push-pull rods',
+    wrong: ['Cables and pulleys', 'Hydraulic actuators', 'Electric servos'],
+  },
+  'fc.secondary': {
+    q: 'How are the three trims operated?',
+    right: 'Rudder electric; pitch manual with an electric option; aileron ground-adjustable',
+    wrong: [
+      'Rudder electric; pitch electric only; aileron electric',
+      'Rudder manual; pitch manual with an electric option; aileron electric',
+      'Rudder ground-adjustable; pitch manual only; aileron electric',
+    ],
+  },
+  'fc.pitch-trim': {
+    right: 'The trim wheel or switch moves the anti-servo tab',
+    wrong: [
+      'The trim wheel changes the incidence of a fixed stabilizer',
+      'The trim switch changes the tension of a bungee spring',
+      'The trim wheel moves a servo tab on the elevator',
+    ],
+  },
+  'fc.stabilator': {
+    right: 'A movable horizontal stabilizer; the whole surface moves',
+    wrong: [
+      'A fixed stabilizer with a hinged elevator behind it',
+      'A V-tail surface that combines rudder and elevator',
+      'A fixed stabilizer whose incidence changes only for trim',
+    ],
+  },
+  'fc.anti-servo': {
+    right: 'A tab that moves the same way as the stabilator, opposing its movement',
+    wrong: [
+      'A tab that moves opposite to the stabilator, lightening control forces',
+      'A fixed tab that is bent on the ground to correct trim',
+      'A spring that returns the control column to center',
+    ],
+  },
+  'fc.rudder-trim': {
+    right: 'Electrically',
+    wrong: ['Manually, with a trim wheel', 'With a ground-adjustable tab', 'It has no rudder trim'],
+  },
+  'fc.aileron-trim': {
+    right: 'A ground-adjustable tab on the left aileron',
+    wrong: [
+      'An electric tab on the right aileron',
+      'A manual trim wheel on the center console',
+      'A ground-adjustable tab on each aileron',
+    ],
+  },
+  'fc.flaps': { right: 'Electrically', wrong: ['Manually, with a lever', 'Hydraulically', 'Pneumatically'] },
+
+  /* Preflight, towing and fueling */
+  'pre.rotate-prop': {
+    right: 'It forces oil through the system so the quantity reads accurately',
+    wrong: [
+      'It checks the compression of each cylinder',
+      'It primes the carburetors with fuel',
+      'It confirms the propeller is not feathered',
+    ],
+  },
+  'pre.fluids': {
+    right: 'Oil, fuel and coolant',
+    wrong: ['Oil and fuel only', 'Oil, fuel and hydraulic fluid', 'Oil, fuel and brake fluid'],
+  },
+  'pre.oil-murmur': {
+    right: 'A murmur from the open oil tank',
+    wrong: [
+      'A rise on the oil pressure gauge',
+      'Oil appearing at the breather line',
+      'The dipstick reading above MAX',
+    ],
+  },
+  'pre.gear-pressure': { wrong: ['10 bar', '30 bar', '12 bar'] },
+  'pre.towing': {
+    right: 'Master switch on, and no more than 20° of nose gear deflection',
+    wrong: [
+      'Master switch off, and no more than 20° of nose gear deflection',
+      'Master switch on, and no more than 45° of nose gear deflection',
+      'Gear pins installed, and tow only from the main gear',
+    ],
+  },
+
+  /* Limitations and general */
+  'gen.pitot-static': {
+    q: 'How many pitot tubes and static ports does the P2006T have?',
+    right: 'Two pitot tubes and two static ports, plus alternate static',
+    wrong: [
+      'One pitot tube and two static ports, plus alternate static',
+      'Two pitot tubes and one static port, with no alternate static',
+      'One pitot tube and one static port, plus alternate static',
+    ],
+  },
+  'gen.atomatoflames': {
+    right: 'The temperature gauge, because the engine is liquid cooled',
+    wrong: [
+      'The manifold pressure gauge, because of the reduction gearbox',
+      'The oil pressure gauge, because of the dry sump',
+      'The fuel gauge, because of cross-feed',
+    ],
+  },
+  'gen.door-lock': {
+    right: 'An oil pressure sensor locks the door while the engines run',
+    wrong: [
+      'A squat switch locks the door once airborne',
+      'An airspeed switch locks the door above 40 knots',
+      'The master switch locks the door whenever it is on',
+    ],
+  },
+  'gen.metric': {
+    right: 'Metric units',
+    wrong: ['Reduction-gearbox RPM', 'Liquid cooling', 'The high-wing fuel system'],
+  },
+  'gen.operations': {
+    right: 'Day and night VFR and IFR',
+    wrong: ['Day VFR only', 'Day and night VFR only', 'Day and night VFR, IFR and known icing'],
+  },
+  'gen.icing': {
+    right: 'No. It has pitot heat and defrost only',
+    wrong: [
+      'Yes. It has de-ice boots and pitot heat',
+      'No. It has no anti-ice equipment at all',
+      'Yes. It has TKS fluid and heated propellers',
+    ],
+  },
+  'gen.max-altitude': { wrong: ['10,000 ft', '12,500 ft', '18,000 ft'] },
+  'gen.load-factors': {
+    q: 'What are the flaps-up load factor limits?',
+    right: '+3.8 G and -1.78 G',
+    wrong: ['+4.4 G and -1.76 G', '+3.8 G and -1.52 G', '+2 G and 0 G'],
+  },
+  'gen.mtow': { wrong: ['2,600 lb (1,180 kg)', '2,950 lb (1,338 kg)', '2,550 lb (1,157 kg)'] },
+  'gen.restart': {
+    q: 'When should a pilot probably not attempt to restart a failed engine?',
+    right: 'When severe damage or fire is present or suspected',
+    wrong: [
+      'When the airspeed is below V_YSE',
+      "When the failure happened above 3,000' AGL",
+      'When the propeller is still windmilling',
+    ],
+  },
+
+  /* Minimum control speed */
+  'vmc.define': {
+    right: 'The slowest speed at which directional control can be maintained with one engine inoperative',
+    wrong: [
+      'The slowest speed at which the airplane can still climb with one engine inoperative',
+      'The speed that gives the best rate of climb with one engine inoperative',
+      'The speed at which the airplane stalls with one engine inoperative',
+    ],
+  },
+  'vmc.who': { right: 'The manufacturer', wrong: ['The FAA', 'The pilot in command', 'The flight school'] },
+  'vmc.combats': {
+    q: 'In COMBATS, what does the B stand for?',
+    right: 'Bank of up to 5° towards the good engine',
+    wrong: [
+      'Bank of up to 5° towards the dead engine',
+      'Ball centered with the wings level',
+      'Both engines at max takeoff power',
+    ],
+  },
+  'vmc.demo': {
+    right: 'To show control at low speed on one engine, and recovery from a loss of directional control',
+    wrong: [
+      'To show that the airplane can climb at V_MC on one engine',
+      'To demonstrate a full stall and recovery on one engine',
+      'To show how configuration changes affect drag on one engine',
+    ],
+  },
+  'vmc.changes': {
+    right: 'Yes, with weight, configuration and performance',
+    wrong: ['No, it is fixed at certification', 'Only with outside air temperature', 'Only if the propellers are changed'],
+  },
+  'vmc.slower': {
+    right: 'Good: more rudder is available and it is more effective',
+    wrong: [
+      'Bad: less rudder is available',
+      'Good: the airplane stalls at a lower speed',
+      'Bad: single-engine climb performance drops',
+    ],
+  },
+  'vmc.faster': {
+    right: 'Bad: less rudder is available, or it is less effective',
+    wrong: [
+      'Good: more rudder is available',
+      'Good: the airplane carries more energy',
+      'Bad: the stall speed rises with it',
+    ],
+  },
+
+  /* Critical engine and performance */
+  'ce.define': {
+    right: 'The engine whose failure most adversely affects performance and controllability',
+    wrong: [
+      'The engine that produces the most thrust at takeoff power',
+      'The engine that drives the hydraulic pump and generator',
+      'The engine most likely to fail first, by the maintenance record',
+    ],
+  },
+  'ce.past': {
+    q: 'In PAST, what does the A stand for?',
+    right: 'Accelerated slipstream',
+    wrong: ['Asymmetric thrust', 'Aft CG', 'Adverse yaw'],
+  },
+  'ce.sideslip': {
+    q: 'What is used to counter the sideslip with one engine inoperative?',
+    right: 'Rudder, and bank towards the good engine',
+    wrong: [
+      'Rudder, and bank towards the dead engine',
+      'Rudder only, with wings level and the ball centered',
+      'Aileron only, towards the good engine',
+    ],
+  },
+  'ce.service-ceiling': {
+    q: 'What climb rates define service ceiling?',
+    right: '100 FPM on two engines, or 50 FPM on one',
+    wrong: [
+      '50 FPM on two engines, or 0 FPM on one',
+      '500 FPM on two engines, or 100 FPM on one',
+      '100 FPM on two engines, or 100 FPM on one',
+    ],
+  },
+  'ce.accel-stop': {
+    right: 'Accelerate to V_R / V_LOF, lose an engine, then stop',
+    wrong: [
+      'Accelerate to V_MC, lose an engine, then stop',
+      'Accelerate to V_R / V_LOF, lose an engine, then climb to 50 feet',
+      'Accelerate to V_YSE, lose an engine, then stop',
+    ],
+  },
+  'ce.accel-go': {
+    right: 'Accelerate to V_R / V_LOF, lose an engine, continue and climb to 50 feet',
+    wrong: [
+      'Accelerate to V_R / V_LOF, lose an engine, then bring the aircraft to a stop',
+      'Accelerate to V_YSE, lose an engine, continue and climb to 400 feet',
+      'Accelerate to V_MC, lose an engine, continue and climb to 35 feet',
+    ],
+  },
+  'ce.manifold': {
+    right: 'Close to ambient pressure for the current altitude',
+    wrong: ['Close to zero', 'Unchanged from before the failure', 'About half that of the operating engine'],
+  },
+  'ce.part23': {
+    right: 'None. It must only be determined',
+    wrong: ['At least 50 FPM', 'At least 100 FPM', 'A positive rate of 0.027 × V_SO²'],
+  },
+  'ce.stall-altitude': {
+    right: 'It remains the same',
+    wrong: ['It increases with altitude', 'It decreases at the same rate as V_MC', 'It decreases, but more slowly than V_MC'],
+  },
+
+  /* MEI only */
+  'mei.shutdown-alt': {
+    right: "3,000' AGL, unless the POH says higher",
+    wrong: ["1,500' AGL, unless the POH says higher", "5,000' AGL in all cases", "3,000' MSL in all cases"],
+  },
+  'mei.low-alt-failure': { wrong: ["200' AGL", "500' AGL", "1,000' AGL"] },
+  'mei.reject-speed': {
+    right: 'Half of published V_MC',
+    wrong: ['Published V_MC', 'V_R', 'V_MC plus 5 knots'],
+  },
+  'mei.drag-demo': {
+    right: 'To show how configuration changes affect drag and handling on one engine',
+    wrong: [
+      'To show the loss of directional control as speed nears V_MC',
+      'To show stall behavior with gear and flaps extended',
+      'To show how to feather and secure a failed engine',
+    ],
+  },
+};

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#e9edf1" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0e151c" media="(prefers-color-scheme: dark)" />
+
+    <title>Multi-engine study cards</title>
+    <meta name="description" content="Flashcards and graded quizzes for the Tecnam P2006T systems quiz and the multi-engine aerodynamics quiz, including the MEI-only questions. Progress is saved in your browser." />
+    <meta property="og:title" content="Multi-engine study cards" />
+    <meta property="og:description" content="Flashcards and graded quizzes for the Tecnam P2006T systems quiz and the multi-engine aerodynamics quiz." />
+    <meta property="og:type" content="website" />
+
+    <script>
+      // Some static servers (npx serve, for one) serve this folder as /study with
+      // no trailing slash, which would make the relative URLs below resolve
+      // against the site root. Putting the slash back first keeps them local.
+      // A last segment of "index" or one with a dot is a file, so it is left alone.
+      (function () {
+        var last = location.pathname.split('/').pop();
+        if (last && last !== 'index' && last.indexOf('.') < 0) {
+          history.replaceState(null, '', location.pathname + '/' + location.search + location.hash);
+        }
+      })();
+    </script>
+    <link rel="stylesheet" href="./study.css" />
+  </head>
+  <body>
+    <div id="app">
+      <noscript>These flashcards need JavaScript turned on.</noscript>
+    </div>
+    <script type="module" src="./study.js"></script>
+  </body>
+</html>

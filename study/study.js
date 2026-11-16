@@ -1,0 +1,846 @@
+import { GROUPS, DECKS } from './cards.js';
+import { QUIZ } from './quiz.js';
+
+const STORE_KEY = 'p2006t-study:v1';
+const SWIPE_DISTANCE = 90;
+const MASTER_AT = 3; // correct quiz answers, net of misses, that retire a question
+const QUIZ_LENGTH = 20; // most questions in one quiz
+
+const ALL = DECKS.flatMap((deck) => deck.cards.map((card) => ({ ...card, deck })));
+const BY_ID = new Map(ALL.map((c) => [c.id, c]));
+const app = document.getElementById('app');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+/* ---------- saved progress ---------- */
+
+function loadStore() {
+  const fresh = { v: 1, cards: {}, opts: { shuffle: false, answerFirst: false }, session: null, quiz: null };
+  try {
+    const parsed = JSON.parse(localStorage.getItem(STORE_KEY));
+    if (parsed && parsed.v === 1) {
+      return { ...fresh, ...parsed, opts: { ...fresh.opts, ...parsed.opts }, cards: parsed.cards || {} };
+    }
+  } catch {
+    /* unreadable or blocked storage: start fresh */
+  }
+  return fresh;
+}
+
+const store = loadStore();
+let storageOk = true;
+
+function save() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(store));
+    storageOk = true;
+  } catch {
+    storageOk = false;
+  }
+}
+save();
+
+const statusOf = (id) => store.cards[id]?.s || 'new';
+const isStarred = (id) => !!store.cards[id]?.star;
+const masteryOf = (id) => Math.max(0, Math.min(MASTER_AT, store.cards[id]?.m | 0));
+const isMastered = (id) => masteryOf(id) >= MASTER_AT;
+/* What the progress bars show: mastery outranks the flashcard sort. */
+const levelOf = (id) => (isMastered(id) ? 'master' : statusOf(id));
+
+function tally(cards) {
+  const t = { master: 0, know: 0, learn: 0, new: 0, total: cards.length };
+  for (const c of cards) t[levelOf(c.id)]++;
+  return t;
+}
+
+const LEVEL_LABEL = { master: 'Mastered', know: 'Known', learn: 'Still learning', new: 'Not seen' };
+
+/* ---------- text helpers ---------- */
+
+const esc = (s) =>
+  String(s).replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[ch]);
+
+const fmt = (s) =>
+  esc(s)
+    .replace(/\bV_([A-Z0-9]+)/g, 'V<sub>$1</sub>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+const plain = (s) => String(s).replace(/\bV_([A-Z0-9]+)/g, 'V$1').replace(/\*\*/g, '');
+
+function answerHTML(card) {
+  let html = '';
+  if (card.a) html += card.a.split('\n\n').map((p) => `<p>${fmt(p)}</p>`).join('');
+  if (card.bullets) html += `<ul>${card.bullets.map((b) => `<li>${fmt(b)}</li>`).join('')}</ul>`;
+  return html;
+}
+
+function answerSize(card) {
+  const len = (card.a || '').length + (card.bullets || []).join(' ').length;
+  if (len <= 18 && !card.bullets) return 'xl';
+  if (len <= 110) return 'lg';
+  if (len <= 320) return 'md';
+  return 'sm';
+}
+
+const searchText = (card) =>
+  plain([card.q, card.hint, card.a, ...(card.bullets || []), card.note].filter(Boolean).join(' ')).toLowerCase();
+
+function shuffled(list) {
+  const out = list.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+const pipsHTML = (n) =>
+  `<span class="pips" aria-hidden="true">${Array.from({ length: MASTER_AT }, (_, i) => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</span>`;
+
+/* ---------- scopes: what a study run or quiz covers ---------- */
+
+function scope(key) {
+  if (key === 'all') return { title: 'All cards', cards: ALL };
+  if (key === 'learning') return { title: 'Still learning', cards: ALL.filter((c) => statusOf(c.id) === 'learn') };
+  if (key === 'starred') return { title: 'Starred', cards: ALL.filter((c) => isStarred(c.id)) };
+  if (key.startsWith('group-')) {
+    const group = GROUPS.find((g) => g.id === key.slice(6));
+    return group ? { title: group.title, cards: ALL.filter((c) => c.deck.group === group.id) } : null;
+  }
+  const deck = DECKS.find((d) => d.id === key);
+  return deck ? { title: deck.title, cards: ALL.filter((c) => c.deck === deck) } : null;
+}
+
+/* ---------- flashcard sessions ---------- */
+
+let history = [];
+let busy = false;
+
+function startSession(key, ids) {
+  const order = ids || scope(key).cards.map((c) => c.id);
+  store.session = { key, order: store.opts.shuffle ? shuffled(order) : order, i: 0 };
+  history = [];
+  save();
+}
+
+function currentSession(key) {
+  const s = store.session;
+  if (s && s.key === key && Array.isArray(s.order)) {
+    s.order = s.order.filter((id) => BY_ID.has(id));
+    s.i = Math.min(Math.max(0, s.i | 0), s.order.length);
+    if (s.order.length) return s;
+  }
+  startSession(key);
+  return store.session;
+}
+
+/* ---------- shared pieces ---------- */
+
+const ICON = {
+  close: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  back: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>',
+  shuffle:
+    '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c4.5 0 6 10 10.5 10H21M3 17h3.5c1.6 0 2.8-1.2 3.8-2.8M21 7h-4c-1.6 0-2.8 1.2-3.8 2.8M18 4l3 3-3 3M18 14l3 3-3 3"/></svg>',
+  swap: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4L3.5 7.5 7 11M3.5 7.5H17M17 13l3.5 3.5L17 20M20.5 16.5H7"/></svg>',
+  undo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5L4 9l4 4M4 9h10a6 6 0 010 12h-3"/></svg>',
+  star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.05 5.850L12 16.850 6.750 19.650 7.8 13.8 3.5 9.7l5.9-.8z"/></svg>',
+};
+
+function tapeHTML(levels, current = -1) {
+  const dense = levels.length > 60 ? ' tape--dense' : '';
+  const ticks = levels.map((lv, i) => `<i class="tick tick--${lv}${i === current ? ' tick--here' : ''}"></i>`).join('');
+  return `<div class="tape${dense}" aria-hidden="true">${ticks}</div>`;
+}
+
+const cardTape = (ids, current) => tapeHTML(ids.map(levelOf), current);
+
+function meterHTML(t) {
+  const seg = (name) => `<i class="meter__${name}" style="width:${((t[name] / t.total) * 100).toFixed(2)}%"></i>`;
+  return `<span class="meter" aria-hidden="true">${seg('master')}${seg('know')}${seg('learn')}</span>`;
+}
+
+function countText(t) {
+  const parts = [];
+  if (t.master) parts.push(`${t.master} mastered`);
+  if (t.know) parts.push(`${t.know} known`);
+  if (t.learn) parts.push(`${t.learn} still learning`);
+  return parts.length ? `${t.total} cards: ${parts.join(', ')}` : `${t.total} cards`;
+}
+
+const storageNotice = () =>
+  storageOk
+    ? ''
+    : '<p class="notice" role="status">This browser is blocking storage, so progress will be lost when you close the page. Private browsing is the usual cause.</p>';
+
+/* ---------- home ---------- */
+
+function renderHome() {
+  document.title = 'Multi-engine study cards';
+  const total = tally(ALL);
+  const starred = ALL.filter((c) => isStarred(c.id)).length;
+
+  const resumes = [];
+  const s = store.session;
+  if (s && s.i > 0 && s.i < s.order.length && scope(s.key)) {
+    resumes.push(
+      `<a class="btn" href="#/study/${esc(s.key)}">Resume ${fmt(scope(s.key).title)}, card ${s.i + 1} of ${s.order.length}</a>`,
+    );
+  }
+  const q = store.quiz;
+  if (q && q.results.length && q.results.length < q.ids.length && scope(q.key)) {
+    resumes.push(
+      `<a class="btn" href="#/quiz/${esc(q.key)}">Resume quiz, question ${q.results.length + 1} of ${q.ids.length}</a>`,
+    );
+  }
+
+  const groups = GROUPS.map((group) => {
+    const rows = DECKS.filter((d) => d.group === group.id)
+      .map((deck) => {
+        const t = tally(ALL.filter((c) => c.deck === deck));
+        const name = esc(plain(deck.title));
+        return `
+        <li class="deck">
+          <div class="deck__info">
+            <h3 class="deck__title">${fmt(deck.title)}${deck.mei ? ' <span class="tag">Instructor</span>' : ''}</h3>
+            ${deck.blurb ? `<p class="deck__blurb">${fmt(deck.blurb)}</p>` : ''}
+            ${meterHTML(t)}
+            <p class="deck__count">${countText(t)}</p>
+          </div>
+          <div class="deck__actions">
+            <a class="btn btn--small btn--study" href="#/study/${deck.id}" aria-label="Study ${name}">Study</a>
+            <a class="btn btn--small" href="#/quiz/${deck.id}" aria-label="Take the ${name} quiz">Quiz</a>
+            <a class="btn btn--small btn--quiet" href="#/browse/${deck.id}" aria-label="List the ${name} cards">List</a>
+          </div>
+        </li>`;
+      })
+      .join('');
+    const gt = tally(ALL.filter((c) => c.deck.group === group.id));
+    return `
+    <section class="group">
+      <header class="group__head">
+        <div>
+          <h2>${esc(group.title)}</h2>
+          <p class="group__count">${countText(gt)}</p>
+        </div>
+        <div class="group__actions">
+          <a class="btn btn--small btn--study" href="#/study/group-${group.id}" aria-label="Study all of ${esc(group.title)}">Study</a>
+          <a class="btn btn--small" href="#/quiz/group-${group.id}" aria-label="Take a quiz on ${esc(group.title)}">Quiz</a>
+        </div>
+      </header>
+      <ul class="decks">${rows}</ul>
+    </section>`;
+  }).join('');
+
+  const stat = (level) =>
+    `<div class="stat stat--${level}"><dt><span class="key key--${level}"></span>${LEVEL_LABEL[level]}</dt><dd>${total[level]}</dd></div>`;
+
+  app.innerHTML = `
+  <div class="home">
+    <header class="masthead">
+      <a class="crumb" href="../">Weight and balance calculator</a>
+      <h1>Multi-engine study cards</h1>
+      <p class="lede">Tecnam P2006T systems and multi-engine aerodynamics, with the instructor-only questions. Flip through the cards, then take the quiz. Progress saves in this browser.</p>
+    </header>
+    ${storageNotice()}
+    <section class="overview" aria-label="Overall progress">
+      <dl class="stats">${stat('master')}${stat('know')}${stat('learn')}${stat('new')}</dl>
+      ${cardTape(ALL.map((c) => c.id))}
+      <p class="overview__how">Answer a question right ${MASTER_AT} times in quizzes to master it. A wrong answer takes one back.</p>
+      <div class="actions">
+        <a class="btn btn--primary" href="#/study/all">Study all ${total.total} cards</a>
+        <a class="btn btn--quiz" href="#/quiz/all">Take a quiz</a>
+        ${resumes.join('')}
+        ${total.learn ? `<a class="btn" href="#/study/learning">Review ${total.learn} still learning</a>` : ''}
+        ${starred ? `<a class="btn" href="#/study/starred">Study ${starred} starred</a>` : ''}
+        <a class="btn btn--quiet" href="#/browse/all">Search all cards</a>
+      </div>
+    </section>
+    ${groups}
+    <footer class="foot">
+      <p>Answers follow the course quiz packet. Cards with a note flag where the packet is blank or unclear. The wrong choices in quizzes are made up. The POH and your instructor have the final word.</p>
+      <button class="btn btn--quiet btn--danger" data-action="reset">Erase saved progress</button>
+    </footer>
+  </div>`;
+}
+
+/* ---------- flashcards ---------- */
+
+function faceHTML(card, side) {
+  const level = levelOf(card.id);
+  const chip = level === 'new' ? '' : `<span class="chip chip--${level}">${LEVEL_LABEL[level]}</span>`;
+  if (side === 'q') {
+    return `
+      <div class="face__top"><span>${fmt(card.deck.title)}</span>${chip}</div>
+      <div class="face__body"><div class="face__content">
+        <p class="prompt prompt--${card.q.length <= 16 ? 'xl' : card.q.length <= 70 ? 'lg' : 'md'}">${fmt(card.q)}</p>
+        ${card.hint ? `<p class="hint">${fmt(card.hint)}</p>` : ''}
+      </div></div>`;
+  }
+  return `
+      <div class="face__top face__top--q"><span>${fmt(card.q)}</span></div>
+      <div class="face__body"><div class="face__content">
+        <div class="answer answer--${answerSize(card)}">${answerHTML(card)}</div>
+        ${card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
+      </div></div>`;
+}
+
+function renderStudy(key) {
+  const info = scope(key);
+  if (!info) return go('#/');
+  document.title = `${plain(info.title)} | Study cards`;
+
+  if (!info.cards.length && !(store.session?.key === key && store.session.order.length)) {
+    const why =
+      key === 'learning'
+        ? 'No cards are marked still learning. Mark a card "Still learning" while you study and it shows up here.'
+        : 'No cards are starred. Tap the star while you study to collect the ones you want to drill.';
+    app.innerHTML = `
+      <div class="study study--empty">
+        <header class="bar"><a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a><div class="bar__title"><span>${esc(info.title)}</span></div></header>
+        <div class="finish"><h1>Nothing to study here yet</h1><p>${why}</p><div class="actions"><a class="btn btn--primary" href="#/study/all">Study all cards</a><a class="btn" href="#/">Back to decks</a></div></div>
+      </div>`;
+    return;
+  }
+
+  const s = currentSession(key);
+  if (s.i >= s.order.length) return renderFinish(key, info, s);
+
+  const card = BY_ID.get(s.order[s.i]);
+  const [front, back] = store.opts.answerFirst ? ['a', 'q'] : ['q', 'a'];
+  const starred = isStarred(card.id);
+
+  app.innerHTML = `
+  <div class="study">
+    <header class="bar">
+      <a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a>
+      <div class="bar__title"><span>${fmt(info.title)}</span><span class="bar__count">${s.i + 1} of ${s.order.length}</span></div>
+      <button class="iconbtn" data-action="answer-first" aria-pressed="${store.opts.answerFirst}" aria-label="Show answers first" title="Show answers first">${ICON.swap}</button>
+      <button class="iconbtn" data-action="shuffle" aria-pressed="${store.opts.shuffle}" aria-label="Shuffle" title="Shuffle">${ICON.shuffle}</button>
+    </header>
+    ${cardTape(s.order, s.i)}
+    ${storageNotice()}
+    <main class="stage">
+      <div class="card" id="card" role="button" tabindex="0" aria-label="Flashcard. Press space to flip.">
+        <div class="card__inner">
+          <div class="face face--front">${faceHTML(card, front)}<p class="face__foot"><span class="with-touch">Tap to flip, swipe to sort</span><span class="with-keys">Click or press space to flip. Arrow keys sort.</span></p></div>
+          <div class="face face--back" aria-hidden="true">${faceHTML(card, back)}</div>
+        </div>
+        <span class="stamp stamp--learn" aria-hidden="true">Still learning</span>
+        <span class="stamp stamp--know" aria-hidden="true">Know it</span>
+      </div>
+    </main>
+    <footer class="controls">
+      <button class="mark mark--learn" data-action="learn">Still learning</button>
+      <button class="iconbtn" data-action="undo" aria-label="Go back one card" title="Go back one card" ${s.i === 0 ? 'disabled' : ''}>${ICON.undo}</button>
+      <button class="iconbtn iconbtn--star" data-action="star" aria-pressed="${starred}" aria-label="Star this card" title="Star this card">${ICON.star}</button>
+      <button class="mark mark--know" data-action="know">Know it</button>
+    </footer>
+  </div>`;
+
+  attachCard(document.getElementById('card'));
+}
+
+function renderFinish(key, info, s) {
+  const cards = s.order.map((id) => BY_ID.get(id));
+  const known = cards.filter((c) => statusOf(c.id) === 'know').length;
+  const learn = cards.filter((c) => statusOf(c.id) === 'learn').length;
+  const allKnown = known === cards.length;
+  app.innerHTML = `
+  <div class="study study--done">
+    <header class="bar"><a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a><div class="bar__title"><span>${fmt(info.title)}</span><span class="bar__count">Done</span></div></header>
+    ${cardTape(s.order)}
+    <div class="finish">
+      <h1>${allKnown ? `All ${cards.length} known` : `${known} of ${cards.length} known`}</h1>
+      <p>${allKnown ? 'Every card in this run is marked known. The quiz is how you master them.' : `${learn} ${learn === 1 ? 'card is' : 'cards are'} still learning. Review until the red is gone.`}</p>
+      <div class="actions">
+        ${learn ? `<button class="btn btn--primary" data-action="review-missed">Review ${learn} still learning</button>` : ''}
+        <a class="btn ${learn ? 'btn--quiz' : 'btn--primary'}" href="#/quiz/${esc(key)}">Take the quiz</a>
+        <button class="btn" data-action="restart">Start ${fmt(info.title)} again</button>
+        <a class="btn" href="#/">Back to decks</a>
+      </div>
+    </div>
+  </div>`;
+}
+
+function flip() {
+  const card = document.getElementById('card');
+  if (!card) return;
+  const flipped = card.classList.toggle('is-flipped');
+  card.querySelector('.face--front').setAttribute('aria-hidden', String(flipped));
+  card.querySelector('.face--back').setAttribute('aria-hidden', String(!flipped));
+}
+
+function mark(status) {
+  const s = store.session;
+  if (busy || !s || s.i >= s.order.length) return;
+  const id = s.order[s.i];
+  const prev = store.cards[id] ? { ...store.cards[id] } : null;
+  history.push({ id, prev });
+  store.cards[id] = { ...prev, s: status, n: (prev?.n || 0) + 1 };
+  s.i++;
+  save();
+
+  const card = document.getElementById('card');
+  if (card && !reduceMotion.matches) {
+    busy = true;
+    card.classList.add(status === 'know' ? 'is-leaving-right' : 'is-leaving-left');
+    setTimeout(() => {
+      busy = false;
+      render();
+    }, 190);
+  } else {
+    render();
+  }
+}
+
+function undo() {
+  const s = store.session;
+  if (busy || !s || s.i === 0) return;
+  s.i--;
+  const last = history.pop();
+  if (last && last.id === s.order[s.i]) {
+    // Only the flashcard sort is rolled back; stars and quiz mastery stay.
+    const restored = { ...store.cards[last.id], s: last.prev?.s, n: last.prev?.n };
+    if (restored.s === undefined) delete restored.s;
+    if (restored.n === undefined) delete restored.n;
+    store.cards[last.id] = restored;
+  }
+  save();
+  render();
+}
+
+function toggleStar(id) {
+  store.cards[id] = { ...store.cards[id], star: !isStarred(id) };
+  save();
+}
+
+/* Tap flips the card; dragging it sideways past the threshold sorts it. */
+function attachCard(card) {
+  let startX = 0;
+  let startY = 0;
+  let dx = 0;
+  let dragging = false;
+  let pointer = null;
+  let suppressClick = false;
+
+  const setDrag = (x) => {
+    card.style.setProperty('--dx', `${x}px`);
+    card.style.setProperty('--rot', `${x / 28}deg`);
+    card.style.setProperty('--know', Math.max(0, Math.min(1, x / SWIPE_DISTANCE)));
+    card.style.setProperty('--learn', Math.max(0, Math.min(1, -x / SWIPE_DISTANCE)));
+  };
+
+  card.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || busy) return;
+    pointer = e.pointerId;
+    startX = e.clientX;
+    startY = e.clientY;
+    dx = 0;
+    dragging = false;
+  });
+
+  card.addEventListener('pointermove', (e) => {
+    if (e.pointerId !== pointer) return;
+    const mx = e.clientX - startX;
+    const my = e.clientY - startY;
+    if (!dragging) {
+      if (Math.abs(mx) < 12 || Math.abs(mx) < Math.abs(my) * 1.2) return;
+      dragging = true;
+      card.classList.add('is-dragging');
+      try {
+        card.setPointerCapture(pointer);
+      } catch {
+        /* pointer already gone */
+      }
+    }
+    dx = mx;
+    setDrag(dx);
+  });
+
+  const release = (e) => {
+    if (e.pointerId !== pointer) return;
+    pointer = null;
+    if (!dragging) return;
+    dragging = false;
+    suppressClick = true;
+    setTimeout(() => (suppressClick = false), 0);
+    card.classList.remove('is-dragging');
+    if (e.type === 'pointerup' && Math.abs(dx) >= SWIPE_DISTANCE) {
+      mark(dx > 0 ? 'know' : 'learn');
+    } else {
+      setDrag(0);
+    }
+  };
+  card.addEventListener('pointerup', release);
+  card.addEventListener('pointercancel', release);
+
+  card.addEventListener('click', () => {
+    if (suppressClick) return;
+    if (String(getSelection?.() || '').length) return;
+    flip();
+  });
+}
+
+/* ---------- quiz ---------- */
+
+/* The correct choice for a card: its quiz wording, or its own short answer. */
+const rightChoice = (card) => QUIZ[card.id]?.right || card.a;
+const quizPrompt = (card) => QUIZ[card.id]?.q || card.q;
+
+function choicesFor(card) {
+  const right = rightChoice(card);
+  let wrong = QUIZ[card.id]?.wrong;
+  if (!wrong) {
+    // Borrow the correct answers of the other cards in this deck.
+    const pool = new Set(card.deck.cards.map((c) => rightChoice(c)));
+    pool.delete(right);
+    wrong = shuffled([...pool]).slice(0, 3);
+  }
+  return shuffled([{ text: right, right: true }, ...wrong.map((text) => ({ text, right: false }))]);
+}
+
+let quizView = null; // the question on screen: { id, choices, picked }
+
+function startQuiz(key) {
+  const pool = scope(key).cards.filter((c) => !isMastered(c.id)).map((c) => c.id);
+  store.quiz = { key, ids: shuffled(pool).slice(0, QUIZ_LENGTH), i: 0, results: [] };
+  quizView = null;
+  save();
+}
+
+function renderQuiz(key) {
+  const info = scope(key);
+  if (!info) return go('#/');
+  document.title = `Quiz: ${plain(info.title)} | Study cards`;
+
+  let q = store.quiz;
+  if (!q || q.key !== key || !Array.isArray(q.ids) || !q.ids.every((id) => BY_ID.has(id))) {
+    if (!info.cards.some((c) => !isMastered(c.id))) return renderQuizEmpty(key, info);
+    startQuiz(key);
+    q = store.quiz;
+  }
+  // A reload after answering but before "Next" lands on the following question.
+  if (!quizView && q.results.length > q.i) q.i = q.results.length;
+  if (q.i >= q.ids.length) return renderQuizResults(key, info, q);
+
+  const card = BY_ID.get(q.ids[q.i]);
+  if (!quizView || quizView.id !== card.id) quizView = { id: card.id, choices: choicesFor(card), picked: null };
+  const { choices, picked } = quizView;
+  const answered = picked !== null;
+  const last = q.i === q.ids.length - 1;
+  const correctSoFar = q.results.filter((r) => r.ok).length;
+  const m = masteryOf(card.id);
+
+  const levels = q.ids.map((id, i) => (q.results[i] ? (q.results[i].ok ? 'right' : 'wrong') : 'new'));
+  const options = choices
+    .map((c, i) => {
+      let state = '';
+      if (answered) state = c.right ? ' option--right' : i === picked ? ' option--wrong' : ' option--dim';
+      const tell = answered && c.right ? '<span class="visually-hidden"> (correct answer)</span>' : '';
+      return `<li><button class="option${state}" data-action="pick" data-i="${i}" ${answered ? 'disabled' : ''}><span class="option__key" aria-hidden="true">${'ABCD'[i]}</span><span class="option__text">${fmt(c.text)}${tell}</span></button></li>`;
+    })
+    .join('');
+
+  let feedback = '';
+  if (answered) {
+    const ok = choices[picked].right;
+    const progress = isMastered(card.id)
+      ? 'Mastered. This question is retired from quizzes.'
+      : `${m} of ${MASTER_AT} toward mastered.`;
+    feedback = `
+    <div class="feedback feedback--${ok ? 'right' : 'wrong'}">
+      <div class="feedback__text" role="status">
+        <p class="feedback__verdict">${ok ? 'Correct' : 'Not quite'}</p>
+        <p class="feedback__progress">${pipsHTML(m)}${progress}</p>
+      </div>
+      <button class="btn btn--primary" id="quiz-next" data-action="quiz-next">${last ? 'See results' : 'Next question'}</button>
+    </div>`;
+  }
+
+  app.innerHTML = `
+  <div class="quiz">
+    <header class="bar">
+      <a class="iconbtn" href="#/" aria-label="Leave the quiz">${ICON.close}</a>
+      <div class="bar__title"><span>Quiz: ${fmt(info.title)}</span><span class="bar__count">Question ${q.i + 1} of ${q.ids.length}, ${correctSoFar} correct</span></div>
+    </header>
+    ${tapeHTML(levels, answered ? -1 : q.i)}
+    ${storageNotice()}
+    <main class="quiz__main">
+      <p class="quiz__deck">${fmt(card.deck.title)}</p>
+      <h1 class="quiz__q">${fmt(quizPrompt(card))}</h1>
+      ${card.hint && !QUIZ[card.id]?.q ? `<p class="hint">${fmt(card.hint)}</p>` : ''}
+      <ol class="options">${options}</ol>
+      ${answered && card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
+    </main>
+    ${feedback}
+  </div>`;
+
+  if (answered) document.getElementById('quiz-next').focus({ preventScroll: true });
+}
+
+function pick(i) {
+  const q = store.quiz;
+  if (!q || !quizView || quizView.picked !== null || !quizView.choices[i]) return;
+  const id = quizView.id;
+  const ok = quizView.choices[i].right;
+  const before = masteryOf(id);
+  const m = ok ? Math.min(MASTER_AT, before + 1) : Math.max(0, before - 1);
+  store.cards[id] = { ...store.cards[id], m };
+  q.results.push({ id, ok, mastered: m >= MASTER_AT });
+  quizView.picked = i;
+  save();
+  render();
+}
+
+function quizNext() {
+  const q = store.quiz;
+  if (!q || !quizView || quizView.picked === null) return;
+  q.i = q.results.length;
+  quizView = null;
+  save();
+  window.scrollTo(0, 0);
+  render();
+}
+
+function renderQuizEmpty(key, info) {
+  app.innerHTML = `
+  <div class="quiz">
+    <header class="bar"><a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a><div class="bar__title"><span>Quiz: ${fmt(info.title)}</span></div></header>
+    <div class="finish">
+      <h1>${info.cards.length ? 'All mastered' : 'Nothing to quiz here yet'}</h1>
+      <p>${info.cards.length ? `Every question in ${fmt(info.title)} has been answered right ${MASTER_AT} times, so none are left to ask.` : 'This list has no cards in it.'}</p>
+      <div class="actions"><a class="btn btn--primary" href="#/">Back to decks</a>${info.cards.length ? `<a class="btn" href="#/study/${esc(key)}">Study these cards</a>` : ''}</div>
+    </div>
+  </div>`;
+}
+
+function renderQuizResults(key, info, q) {
+  const right = q.results.filter((r) => r.ok).length;
+  const total = q.results.length;
+  const pct = total ? Math.round((right / total) * 100) : 0;
+  const newlyMastered = q.results.filter((r) => r.ok && r.mastered).length;
+  const missed = q.results.filter((r) => !r.ok);
+  const left = info.cards.filter((c) => !isMastered(c.id)).length;
+
+  const missedRows = missed
+    .map((r) => {
+      const card = BY_ID.get(r.id);
+      return `<li class="miss"><p class="miss__q">${fmt(quizPrompt(card))}</p><p class="miss__a">${fmt(rightChoice(card))}</p></li>`;
+    })
+    .join('');
+
+  app.innerHTML = `
+  <div class="quiz">
+    <header class="bar"><a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a><div class="bar__title"><span>Quiz: ${fmt(info.title)}</span><span class="bar__count">Results</span></div></header>
+    ${tapeHTML(q.results.map((r) => (r.ok ? 'right' : 'wrong')))}
+    <div class="finish">
+      <h1>${right} of ${total} correct</h1>
+      <p>${pct}%. ${newlyMastered ? `${newlyMastered} ${newlyMastered === 1 ? 'question' : 'questions'} newly mastered. ` : ''}${left ? `${left} in ${fmt(info.title)} still to master.` : `Everything in ${fmt(info.title)} is mastered.`}</p>
+      <div class="actions">
+        ${left ? '<button class="btn btn--primary" data-action="quiz-new">Take another quiz</button>' : ''}
+        ${missed.length ? `<button class="btn" data-action="quiz-review">Review ${missed.length} missed as flashcards</button>` : ''}
+        <a class="btn ${left ? '' : 'btn--primary'}" href="#/">Back to decks</a>
+      </div>
+    </div>
+    ${missed.length ? `<section class="misses"><h2>Missed, with the right answers</h2><ul>${missedRows}</ul></section>` : ''}
+  </div>`;
+}
+
+/* ---------- browse ---------- */
+
+function renderBrowse(key) {
+  const info = scope(key);
+  if (!info) return go('#/');
+  document.title = `${plain(info.title)} | Study cards`;
+  const showDeck = key === 'all' || key === 'learning' || key === 'starred' || key.startsWith('group-');
+
+  const rows = info.cards
+    .map((card) => {
+      const level = levelOf(card.id);
+      const m = masteryOf(card.id);
+      return `
+      <li class="row" data-text="${esc(searchText(card))}">
+        <details>
+          <summary><span class="dot dot--${level}" role="img" aria-label="${LEVEL_LABEL[level]}"></span><span class="row__q">${fmt(card.q)}${card.hint ? ` <span class="row__hint">${fmt(card.hint)}</span>` : ''}</span></summary>
+          <div class="row__a">
+            ${showDeck ? `<p class="row__deck">${fmt(card.deck.title)}</p>` : ''}
+            <div class="answer answer--sm">${answerHTML(card)}</div>
+            ${card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
+            ${m ? `<p class="row__quiz">${pipsHTML(m)}Quiz: ${m} of ${MASTER_AT} toward mastered</p>` : ''}
+            <button class="btn btn--quiet btn--small" data-action="row-star" data-id="${card.id}" aria-pressed="${isStarred(card.id)}">${isStarred(card.id) ? 'Starred' : 'Star this card'}</button>
+          </div>
+        </details>
+      </li>`;
+    })
+    .join('');
+
+  app.innerHTML = `
+  <div class="browse">
+    <header class="bar">
+      <a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.back}</a>
+      <div class="bar__title"><span>${fmt(info.title)}</span><span class="bar__count">${info.cards.length} cards</span></div>
+      ${info.cards.length ? `<a class="btn btn--small" href="#/quiz/${esc(key)}">Quiz</a><a class="btn btn--primary btn--small" href="#/study/${esc(key)}">Study</a>` : ''}
+    </header>
+    <label class="search"><span class="visually-hidden">Search these cards</span><input type="search" id="search" placeholder="Search questions and answers" autocomplete="off" /></label>
+    <ul class="rows">${rows}</ul>
+    <p class="empty" id="no-match" hidden>No cards match that search.</p>
+    ${info.cards.length ? '' : '<p class="empty">No cards in this list yet.</p>'}
+  </div>`;
+
+  const input = document.getElementById('search');
+  input.addEventListener('input', () => {
+    const terms = input.value.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const li of app.querySelectorAll('.row')) {
+      const hit = terms.every((t) => li.dataset.text.includes(t));
+      li.hidden = !hit;
+      if (hit) shown++;
+    }
+    document.getElementById('no-match').hidden = shown > 0 || !info.cards.length;
+  });
+}
+
+/* ---------- routing and events ---------- */
+
+function route() {
+  const [, view, key] = location.hash.split('/');
+  return { view: view || 'home', key: key ? decodeURIComponent(key) : '' };
+}
+
+function go(hash) {
+  if (location.hash === hash) render();
+  else location.hash = hash;
+}
+
+function render() {
+  const { view, key } = route();
+  document.body.dataset.view = view;
+  if (view === 'study') renderStudy(key);
+  else if (view === 'quiz') renderQuiz(key);
+  else if (view === 'browse') renderBrowse(key);
+  else renderHome();
+}
+
+app.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const { key } = route();
+  const s = store.session;
+
+  switch (el.dataset.action) {
+    case 'know':
+    case 'learn':
+      mark(el.dataset.action);
+      break;
+    case 'undo':
+      undo();
+      break;
+    case 'star':
+      if (s && s.i < s.order.length) {
+        toggleStar(s.order[s.i]);
+        el.setAttribute('aria-pressed', String(isStarred(s.order[s.i])));
+      }
+      break;
+    case 'row-star':
+      toggleStar(el.dataset.id);
+      el.setAttribute('aria-pressed', String(isStarred(el.dataset.id)));
+      el.textContent = isStarred(el.dataset.id) ? 'Starred' : 'Star this card';
+      break;
+    case 'shuffle':
+      store.opts.shuffle = !store.opts.shuffle;
+      startSession(key);
+      render();
+      break;
+    case 'answer-first':
+      store.opts.answerFirst = !store.opts.answerFirst;
+      save();
+      render();
+      break;
+    case 'restart':
+      startSession(key);
+      render();
+      break;
+    case 'review-missed':
+      startSession(key, s.order.filter((id) => statusOf(id) === 'learn'));
+      render();
+      break;
+    case 'pick':
+      pick(Number(el.dataset.i));
+      break;
+    case 'quiz-next':
+      quizNext();
+      break;
+    case 'quiz-new':
+      startQuiz(key);
+      window.scrollTo(0, 0);
+      render();
+      break;
+    case 'quiz-review': {
+      const ids = store.quiz.results.filter((r) => !r.ok).map((r) => r.id);
+      store.quiz = null;
+      quizView = null;
+      startSession(key, ids);
+      go(`#/study/${key}`);
+      break;
+    }
+    case 'reset':
+      if (confirm('Erase all saved progress, mastery and stars? This cannot be undone.')) {
+        store.cards = {};
+        store.session = null;
+        store.quiz = null;
+        quizView = null;
+        save();
+        render();
+      }
+      break;
+  }
+});
+
+document.addEventListener('keydown', (e) => {
+  const { view } = route();
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const tag = e.target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  const onControl = tag === 'BUTTON' || tag === 'A';
+  const k = e.key.toLowerCase();
+
+  if (view === 'quiz') {
+    const i = k.length === 1 ? Math.max('1234'.indexOf(k), 'abcd'.indexOf(k)) : -1;
+    if (i >= 0) pick(i);
+    else if (e.key === 'Enter' && !onControl) quizNext();
+    return;
+  }
+  if (view !== 'study') return;
+
+  if ((e.key === ' ' || e.key === 'Enter') && !onControl) {
+    e.preventDefault();
+    flip();
+  } else if (e.key === 'ArrowRight') {
+    mark('know');
+  } else if (e.key === 'ArrowLeft') {
+    mark('learn');
+  } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+    if (!onControl) {
+      e.preventDefault();
+      flip();
+    }
+  } else if (e.key === 'Backspace' || k === 'u') {
+    undo();
+  } else if (k === 's') {
+    document.querySelector('[data-action="star"]')?.click();
+  }
+});
+
+window.addEventListener('hashchange', () => {
+  // A finished quiz is kept only while its results are on screen.
+  const { view, key } = route();
+  const q = store.quiz;
+  if (q && q.results.length >= q.ids.length && !(view === 'quiz' && key === q.key)) {
+    store.quiz = null;
+    quizView = null;
+    save();
+  }
+  window.scrollTo(0, 0);
+  render();
+});
+
+render();

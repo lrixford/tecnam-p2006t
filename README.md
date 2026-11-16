@@ -4,6 +4,8 @@ A browser-based weight, balance, and departure performance calculator for the Te
 
 **[Run it now on GitHub Pages](https://lrixford.github.io/tecnam-p2006t)**
 
+**[Multi-engine study cards](https://lrixford.github.io/tecnam-p2006t/study/)**: flashcards and graded multiple-choice quizzes for the P2006T systems quiz and the multi-engine aerodynamics quiz, including the MEI-only questions. Progress is saved in the browser.
+
 ![screenshot](screenshot.png)
 
 ## Features
