@@ -1261,20 +1261,6 @@ button {
 
 /* ---------- small screens, short screens, reduced motion ---------- */
 
-.face__foot .with-keys {
-  display: none;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  .face__foot .with-touch {
-    display: none;
-  }
-
-  .face__foot .with-keys {
-    display: inline;
-  }
-}
-
 @media (max-width: 22rem) {
   .mark {
     font-size: 0.92rem;

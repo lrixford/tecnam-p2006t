@@ -321,7 +321,7 @@ function renderStudy(key) {
     <main class="stage">
       <div class="card" id="card" role="button" tabindex="0" aria-label="Flashcard. Press space to flip.">
         <div class="card__inner">
-          <div class="face face--front">${faceHTML(card, front)}<p class="face__foot"><span class="with-touch">Tap to flip, swipe to sort</span><span class="with-keys">Click or press space to flip. Arrow keys sort.</span></p></div>
+          <div class="face face--front">${faceHTML(card, front)}<p class="face__foot">Tap to flip, swipe to sort</p></div>
           <div class="face face--back" aria-hidden="true">${faceHTML(card, back)}</div>
         </div>
         <span class="stamp stamp--learn" aria-hidden="true">Still learning</span>
