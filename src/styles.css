@@ -980,6 +980,12 @@
     box-shadow: none;
   }
 
+  /* Print in source order. A phone prints with its narrow-screen rules still
+     in force, and those reorder the sections. */
+  .p2006t .widget__body {
+    display: block;
+  }
+
   .p2006t .widget__header,
   .p2006t .station-input,
   .p2006t .suggest-card,
@@ -1020,6 +1026,7 @@
 
   .p2006t .print-page2 {
     display: block;
+    page-break-before: always;
     break-before: page;
   }
 
@@ -1716,4 +1723,36 @@
   .p2006t .perf-accel-grid,
   .p2006t .perf-avail-grid { grid-template-columns: 1fr; }
   .p2006t .perf-conditions  { grid-template-columns: 1fr 1fr; }
+}
+
+/* Printed sheet: size the tables from the page width. Browsers disagree on how
+   large a CSS pixel prints (iOS prints it a third larger than desktop), so
+   fixed sizes that fit one page there overflow it elsewhere and push the
+   graph to the next page. 1cqw is 1% of the printed page width. */
+@media print {
+  .p2006t .widget__body {
+    container-type: inline-size;
+  }
+
+  @supports (font-size: 1cqw) {
+    .p2006t .print-summary { margin-bottom: 1.2cqw; }
+    .p2006t .print-summary__title { gap: 0.25cqw; margin-bottom: 0.8cqw; }
+    .p2006t .print-summary__name { font-size: 1.41cqw; }
+    .p2006t .print-summary__ts,
+    .p2006t .print-summary__rwy { font-size: 1.18cqw; }
+    .p2006t .print-summary__rwy { margin-left: 1.57cqw; }
+    .p2006t .print-summary__metar { font-size: 1.07cqw; margin-bottom: 0.94cqw; }
+    .p2006t .print-summary__grid { gap: 2.36cqw; }
+
+    .p2006t .dt-table { font-size: 0.94cqw; }
+    .p2006t .dt-table thead th { font-size: 1.13cqw; }
+    .p2006t .dt-table th,
+    .p2006t .dt-table td { padding: 0.35cqw 0.74cqw; }
+
+    /* Leaves room for the tables above it on both Letter and A4. */
+    .p2006t .nomograph { max-height: 49cqw; }
+
+    .p2006t .print-page2__grid { gap: 3.14cqw; margin-top: 1.18cqw; }
+    .p2006t .print-page2__notes { margin-top: 0.94cqw; padding-left: 1.57cqw; font-size: 0.94cqw; }
+  }
 }
