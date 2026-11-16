@@ -5,7 +5,7 @@
 // where each force acts, not what the airplane looks like.
 //
 // There are eight: each of the four PAST factors, drawn once with the left
-// engine failed and once with the right engine failed. The drawings and their
+// engine inoperative and once with the right engine inoperative. The drawings and their
 // captions never name the factor or say "yaw" or "roll", because the picture
 // cards ask the reader to work that out.
 //
@@ -32,8 +32,8 @@ const cross = (x, y, r) =>
   `<path class="d-warn" d="M${x - r} ${y - r}L${x + r} ${y + r}M${x + r} ${y - r}L${x - r} ${y + r}" stroke-width="3"/>`;
 
 const engineLabels = (failed, y, leftX = ENGINE_X.left, rightX = ENGINE_X.right) =>
-  text(leftX, y, failed === 'left' ? 'left, failed' : 'left, running') +
-  text(rightX, y, failed === 'right' ? 'right, failed' : 'right, running');
+  text(leftX, y, failed === 'left' ? 'left, inoperative' : 'left, operating') +
+  text(rightX, y, failed === 'right' ? 'right, inoperative' : 'right, operating');
 
 /* Looking down on the airplane, nose toward the top of the drawing. */
 function topView(failed, labelY, extra) {
@@ -84,12 +84,12 @@ function arm(y, x, labelY) {
   ${text((CENTER + x) / 2 + (long ? 4 : -6), labelY, long ? 'long arm' : 'short arm', long ? 'd-text-warn' : '')}`;
 }
 
-/* Thrust acting at the descending blade of the running engine. */
+/* Thrust acting at the descending blade of the operating engine. */
 function thrust(failed) {
   const x = ENGINE_X[other(failed)] + 13;
   return svg(
     196,
-    `Top view of a twin with the ${failed} engine failed. An arrow shows the thrust of the running engine and its distance from the centerline.`,
+    `Top view of a twin with the ${failed} engine inoperative. An arrow shows the thrust of the operating engine and its distance from the centerline.`,
     topView(
       failed,
       126,
@@ -102,12 +102,12 @@ function thrust(failed) {
   );
 }
 
-/* Extra lift on the wing behind the running engine's descending blade. */
+/* Extra lift on the wing behind the operating engine's descending blade. */
 function lift(failed) {
   const x = ENGINE_X[other(failed)] + 14;
   return svg(
     198,
-    `Rear view of a twin with the ${failed} engine failed. An arrow shows the extra lift behind the running propeller and its distance from the centerline.`,
+    `Rear view of a twin with the ${failed} engine inoperative. An arrow shows the extra lift behind the operating propeller and its distance from the centerline.`,
     rearView(
       failed,
       `
@@ -119,25 +119,25 @@ function lift(failed) {
   );
 }
 
-/* The running engine's slipstream, which either reaches the vertical tail or not. */
+/* The operating engine's slipstream, which either reaches the vertical stabilizer or not. */
 function slipstream(failed) {
   const running = other(failed);
   const flow =
     running === 'left'
-      ? `<path class="d-force d-flow" d="M100 110C100 140 128 150 153 160" stroke-width="3" marker-end="url(#d-head-force)"/>${text(76, 160, 'reaches the tail')}`
-      : `<path class="d-warn d-flow" d="M220 110C220 142 262 150 290 176" stroke-width="3" marker-end="url(#d-head-warn)"/>${text(236, 194, 'misses the tail', 'd-text-warn')}`;
+      ? `<path class="d-force d-flow" d="M100 110C100 140 128 150 153 160" stroke-width="3" marker-end="url(#d-head-force)"/>${text(100, 202, 'reaches the vertical stabilizer')}`
+      : `<path class="d-warn d-flow" d="M220 110C220 142 262 150 290 176" stroke-width="3" marker-end="url(#d-head-warn)"/>${text(222, 202, 'misses the vertical stabilizer', 'd-text-warn')}`;
   return svg(
-    200,
-    `Top view of a twin with the ${failed} engine failed. The slipstream of the running engine ${running === 'left' ? 'reaches' : 'misses'} the vertical tail.`,
+    210,
+    `Top view of a twin with the ${failed} engine inoperative. The slipstream of the operating engine ${running === 'left' ? 'reaches' : 'misses'} the vertical stabilizer.`,
     topView(failed, 54, `<rect class="d-fill-ink" x="158" y="146" width="4" height="40" rx="2"/>${flow}`),
   );
 }
 
-/* The airframe's reaction to the running propeller. */
+/* The airframe's reaction to the operating propeller. */
 function reaction(failed) {
   return svg(
     166,
-    `Rear view of a twin with the ${failed} engine failed. An arrow shows the airframe reacting against the clockwise propeller.`,
+    `Rear view of a twin with the ${failed} engine inoperative. An arrow shows the airframe reacting against the clockwise operating propeller.`,
     rearView(
       failed,
       `
@@ -156,7 +156,7 @@ for (const factor of Object.keys(DRAW)) {
   for (const failed of ['left', 'right']) {
     DIAGRAMS[`${factor}-${failed}`] = {
       svg: DRAW[factor](failed),
-      caption: `${failed === 'left' ? 'Left' : 'Right'} engine failed. ${VIEW[factor]}`,
+      caption: `${failed === 'left' ? 'Left' : 'Right'} engine inoperative. ${VIEW[factor]}`,
     };
   }
 }

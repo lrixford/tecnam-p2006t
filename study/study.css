@@ -604,11 +604,15 @@ button {
   --learn: 0;
   position: relative;
   width: 100%;
+  /* The script sets a pixel height that fits the visible face (see fitCard).
+     It changes after the flip has turned, so the card grows or shrinks to the
+     side that has just come into view. */
   height: 100%;
-  max-height: 34rem;
+  max-height: 100%;
   perspective: 1600px;
   transform: translateX(var(--dx)) rotate(var(--rot));
-  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.19s ease;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.19s ease,
+    height 0.26s cubic-bezier(0.3, 0.7, 0.2, 1) 0.4s;
   touch-action: pan-y;
   cursor: pointer;
   user-select: none;
@@ -628,6 +632,11 @@ button {
    permission has to be repeated inside it or the browser cancels the drag. */
 .card * {
   touch-action: pan-y;
+}
+
+/* First sizing of a new card, and window resizes, apply at once. */
+.card.is-sizing {
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.19s ease;
 }
 
 .card.is-dragging {
@@ -1109,7 +1118,7 @@ button {
 
 .quiz__main {
   flex: 1;
-  padding: 1.5rem 0.15rem 1.5rem;
+  padding: 1.5rem 0.15rem max(1.5rem, env(safe-area-inset-bottom));
 }
 
 .quiz__deck {
@@ -1175,8 +1184,30 @@ button {
   }
 }
 
+.option {
+  /* Double-tap rules a choice out, so it must not zoom the page. */
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
 .option:disabled {
   cursor: default;
+}
+
+.option--selected {
+  border-color: var(--blue);
+  background: var(--blue-soft);
+}
+
+.option--selected .option__key {
+  background: var(--blue);
+  color: var(--on-accent);
+}
+
+.option--out {
+  opacity: 0.4;
 }
 
 .option--right {
@@ -1210,22 +1241,22 @@ button {
 }
 
 .feedback {
-  position: sticky;
-  bottom: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem 1rem;
   align-items: center;
   justify-content: space-between;
-  margin: 0 -0.9rem;
-  padding: 0.85rem 1.05rem max(0.85rem, env(safe-area-inset-bottom));
-  border-top: 3px solid var(--green);
-  background: var(--surface);
-  box-shadow: 0 -10px 24px -16px rgba(19, 33, 46, 0.45);
+  margin-top: 1rem;
 }
 
-.feedback--wrong {
-  border-top-color: var(--red);
+.feedback .btn {
+  margin-left: auto;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+  filter: none;
 }
 
 .feedback__verdict {
@@ -1271,6 +1302,37 @@ button {
 
 .quiz .finish {
   padding: 3rem 0.15rem 1.5rem;
+}
+
+.intro__rules {
+  display: grid;
+  gap: 0.9rem;
+  max-width: 34rem;
+  margin: 1.75rem 0 0;
+  padding: 0;
+  list-style: none;
+  line-height: 1.45;
+}
+
+.intro__rules li {
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--blue);
+  color: var(--muted);
+}
+
+.intro__rules strong {
+  display: block;
+  color: var(--ink);
+}
+
+.intro__keys {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .intro__keys {
+    display: block;
+  }
 }
 
 .misses {

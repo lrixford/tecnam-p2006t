@@ -81,21 +81,22 @@ export const QUIZ = {
   /* Engines and cooling */
   'eng.describe': {
     q: 'How are the Rotax 912 S3 engines cooled and lubricated?',
-    right: 'Liquid-cooled heads, air-cooled cylinders, dry-sump oil',
+    right: 'Liquid-cooled cylinder heads, air-cooled cylinders, dry-sump oil',
     wrong: [
-      'Air-cooled heads and cylinders, wet-sump oil',
-      'Liquid-cooled heads and cylinders, wet-sump oil',
-      'Air-cooled heads, liquid-cooled cylinders, dry-sump oil',
+      'Air-cooled cylinder heads and cylinders, wet-sump oil',
+      'Liquid-cooled cylinder heads and cylinders, wet-sump oil',
+      'Air-cooled cylinder heads, liquid-cooled cylinders, dry-sump oil',
     ],
   },
   'eng.power': {
-    q: "What is each engine's maximum power, and for how long?",
-    right: '98.6 hp at 5800 rpm, 5 minutes maximum',
-    wrong: [
-      '98.6 hp at 5500 rpm, continuous',
-      '115 hp at 5800 rpm, 5 minutes maximum',
-      '92.5 hp at 5800 rpm, 3 minutes maximum',
-    ],
+    q: "What is each engine's maximum takeoff power, and for how long?",
+    right: '98.6 hp (73.5 kW), 5 minutes maximum',
+    wrong: ['92.5 hp (69.0 kW), 5 minutes maximum', '98.6 hp (73.5 kW), continuous', '115 hp (85.8 kW), 5 minutes maximum'],
+  },
+  'eng.rpm': {
+    q: 'What is the maximum RPM shown on the gauge, and for how long?',
+    right: '2388 rpm, 5 minutes maximum',
+    wrong: ['2265 rpm, 5 minutes maximum', '2388 rpm, continuous', '2700 rpm, 5 minutes maximum'],
   },
   'eng.how-rotax-works': {
     q: 'Per the packet, how does a Rotax engine manage its fuel mixture?',
@@ -112,7 +113,7 @@ export const QUIZ = {
     wrong: [
       'The cylinders; the cylinder heads are air cooled',
       'Both the cylinder heads and the cylinders',
-      'Only the oil; heads and cylinders are air cooled',
+      'Only the oil; cylinder heads and cylinders are air cooled',
     ],
   },
   'eng.overflow': {
@@ -199,11 +200,11 @@ export const QUIZ = {
   },
   'fuel.capacity': {
     q: 'What is the total fuel capacity?',
-    right: '200 liters, 194 usable (52.8 gallons)',
+    right: '52.8 gallons, 51.35 usable (200 liters)',
     wrong: [
-      '100 liters, 97 usable (26.4 gallons)',
-      '200 liters, all usable (52.8 gallons)',
-      '240 liters, 230 usable (63.4 gallons)',
+      '26.4 gallons, 25.7 usable (100 liters)',
+      '52.8 gallons, all usable (200 liters)',
+      '63.4 gallons, 60.8 usable (240 liters)',
     ],
   },
   'fuel.drains': {
@@ -263,13 +264,13 @@ export const QUIZ = {
     ],
   },
   'prop.lever': {
-    right: 'The prop lever (blue)',
+    right: 'The propeller lever (blue)',
     wrong: ['The throttle', 'The carburetor heat lever', 'The choke lever'],
   },
   'prop.pitch-control': {
-    right: 'The prop lever sets spring tension, which meters oil to and from the hub',
+    right: 'The propeller lever sets spring tension, which meters oil to and from the hub',
     wrong: [
-      'The prop switch drives an electric pitch motor in the hub',
+      'The propeller switch drives an electric pitch motor in the hub',
       'Counterweights alone set pitch; the lever moves a mechanical stop',
       'Manifold pressure acts directly on the piston in the hub',
     ],
@@ -365,7 +366,7 @@ export const QUIZ = {
   'gear.describe': {
     right: 'A reversible electric pump pressurizes hydraulic up or down lines',
     wrong: [
-      'Electric motors drive a jackscrew at each gear leg',
+      'Electric motors drive a jackscrew at each landing gear leg',
       'An engine-driven hydraulic pump on the left engine',
       'A manual hand pump, with an electric pump as backup',
     ],
@@ -376,43 +377,43 @@ export const QUIZ = {
     wrong: ['By mechanical uplocks', 'By over-center springs', 'By electric brakes on the actuators'],
   },
   'gear.backup': {
-    right: 'An emergency system pushes hydraulic fluid into the top of each gear cylinder',
+    right: 'An emergency system pushes hydraulic fluid into the top of each landing gear cylinder',
     wrong: [
-      'A dump valve releases pressure and the gear free-falls',
-      'A hand crank between the seats winds the gear down',
+      'A dump valve releases pressure and the landing gear free-falls',
+      'A hand crank between the seats winds the landing gear down',
       'A manual hand pump under the right seat',
     ],
   },
   'gear.green': {
-    right: 'That gear is down and locked',
-    wrong: ['That gear is up and locked', 'The gear pump is running', 'That gear is in transit'],
+    right: 'That landing gear is down and locked',
+    wrong: ['That landing gear is up and locked', 'The landing gear pump is running', 'That landing gear is in transit'],
   },
   'gear.red': {
-    right: 'The gear are not all down and locked, nor all up',
-    wrong: ['All gear are up and locked', 'The gear pump has failed', 'Hydraulic pressure is low'],
+    right: 'The landing gear are not all down and locked, nor all up',
+    wrong: ['All landing gear are up and locked', 'The landing gear pump has failed', 'Hydraulic pressure is low'],
   },
   'gear.amber': {
-    right: 'The gear pump is powered, so the gear is in transit',
+    right: 'The landing gear pump is powered, so the landing gear is in transit',
     wrong: [
-      'One gear is not down and locked',
+      'One landing gear is not down and locked',
       'Emergency accumulator pressure is low',
       'The aircraft weight is on the wheels',
     ],
   },
   'gear.horn': {
-    right: 'Flaps lowered to FULL with the gear not down and locked',
+    right: 'Flaps lowered to FULL with the landing gear not down and locked',
     wrong: [
-      'Airspeed below V_MC with the gear up',
-      'Any time the gear is in transit',
-      'Flaps at takeoff with the gear down',
+      'Airspeed below V_MC with the landing gear up',
+      'Any time the landing gear is in transit',
+      'Flaps at takeoff with the landing gear down',
     ],
   },
   'gear.main-not-locked': {
-    right: 'Land gear up, and shut down the engines when landing is assured',
+    right: 'Land with the landing gear up, and shut down the engines when landing is assured',
     wrong: [
-      'Land on the locked gear and hold the other wing up as long as possible',
-      'Recycle the gear until fuel is nearly gone, then land gear down',
-      'Land gear up, keeping both engines at idle for a go-around',
+      'Land on the locked landing gear and hold the other wing up as long as possible',
+      'Recycle the landing gear until fuel is nearly gone, then land with the landing gear down',
+      'Land with the landing gear up, keeping both engines at idle for a go-around',
     ],
   },
   'gear.emergency-control': {
@@ -421,7 +422,7 @@ export const QUIZ = {
     wrong: ['Center console, between the seats', 'Overhead panel, by the fuel selectors', 'Right seat floorboard'],
   },
   'gear.exception': {
-    right: 'Emergency extension uses a pressurized accumulator to force the gear down',
+    right: 'Emergency extension uses a pressurized accumulator to force the landing gear down',
     wrong: [
       'Emergency extension relies on free fall alone',
       'Retraction is powered by engine-driven pumps',
@@ -430,9 +431,9 @@ export const QUIZ = {
   },
   'gear.accumulator': { wrong: ['10 bar', '30 bar', '5 bar'] },
   'gear.squat': {
-    right: 'Right main gear; it prevents gear retraction on the ground',
+    right: 'Right main gear; it prevents landing gear retraction on the ground',
     wrong: [
-      'Nose gear; it prevents gear retraction on the ground',
+      'Nose gear; it prevents landing gear retraction on the ground',
       'Left main gear; it silences the stall warning on the ground',
       'Right main gear; it shuts off the hydraulic pump after landing',
     ],
@@ -467,9 +468,9 @@ export const QUIZ = {
   'fc.stabilator': {
     right: 'A movable horizontal stabilizer; the whole surface moves',
     wrong: [
-      'A fixed stabilizer with a hinged elevator behind it',
+      'A fixed horizontal stabilizer with a hinged elevator behind it',
       'A V-tail surface that combines rudder and elevator',
-      'A fixed stabilizer whose incidence changes only for trim',
+      'A fixed horizontal stabilizer whose incidence changes only for trim',
     ],
   },
   'fc.anti-servo': {
@@ -596,9 +597,9 @@ export const QUIZ = {
   'vmc.who': { right: 'The manufacturer', wrong: ['The FAA', 'The pilot in command', 'The flight school'] },
   'vmc.combats': {
     q: 'In COMBATS, what does the B stand for?',
-    right: 'Bank of up to 5° towards the good engine',
+    right: 'Bank of up to 5° towards the operating engine',
     wrong: [
-      'Bank of up to 5° towards the dead engine',
+      'Bank of up to 5° towards the inoperative engine',
       'Ball centered with the wings level',
       'Both engines at max takeoff power',
     ],
@@ -661,15 +662,15 @@ export const QUIZ = {
     wrong: [
       "Yaw: the right engine's extra wing lift is farther from the centerline",
       "Roll: the left engine's extra wing lift is farther from the centerline",
-      "Yaw: the right engine's slipstream pushes on the vertical tail",
+      "Yaw: the right engine's slipstream pushes on the vertical stabilizer",
     ],
   },
   'ce.past-s': {
     q: 'With one engine inoperative, what does spiraling slipstream do, and why is losing the left engine worse?',
-    right: "Yaw: only the left engine's slipstream reaches the tail to oppose the yaw",
+    right: "Yaw: only the left engine's slipstream reaches the vertical stabilizer to oppose the yaw",
     wrong: [
-      "Roll: only the left engine's slipstream reaches the tail to oppose the roll",
-      "Yaw: only the right engine's slipstream reaches the tail to oppose the yaw",
+      "Roll: only the left engine's slipstream reaches the vertical stabilizer to oppose the roll",
+      "Yaw: only the right engine's slipstream reaches the vertical stabilizer to oppose the yaw",
       "Roll: the right engine's slipstream adds lift farther out on the wing",
     ],
   },
@@ -684,11 +685,11 @@ export const QUIZ = {
   },
   'ce.sideslip': {
     q: 'What is used to counter the sideslip with one engine inoperative?',
-    right: 'Rudder, and bank towards the good engine',
+    right: 'Rudder, and bank towards the operating engine',
     wrong: [
-      'Rudder, and bank towards the dead engine',
+      'Rudder, and bank towards the inoperative engine',
       'Rudder only, with wings level and the ball centered',
-      'Aileron only, towards the good engine',
+      'Aileron only, towards the operating engine',
     ],
   },
   'ce.service-ceiling': {
@@ -743,7 +744,7 @@ export const QUIZ = {
     right: 'To show how configuration changes affect drag and handling on one engine',
     wrong: [
       'To show the loss of directional control as speed nears V_MC',
-      'To show stall behavior with gear and flaps extended',
+      'To show stall behavior with landing gear and flaps extended',
       'To show how to feather and secure a failed engine',
     ],
   },

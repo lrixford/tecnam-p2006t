@@ -6,6 +6,8 @@ const STORE_KEY = 'p2006t-study:v1';
 const SWIPE_DISTANCE = 90;
 const MASTER_AT = 3; // correct quiz answers, net of misses, that retire a question
 const QUIZ_LENGTH = 20; // most questions in one quiz
+const DOUBLE_TAP_MS = 320;
+const CARD_MIN_REM = 15; // shortest a flashcard gets, however little is on it
 
 const ALL = DECKS.flatMap((deck) => deck.cards.map((card) => ({ ...card, deck })));
 const BY_ID = new Map(ALL.map((c) => [c.id, c]));
@@ -375,6 +377,7 @@ function renderStudy(key) {
   </div>`;
 
   attachCard(document.getElementById('card'));
+  fitCard({ instant: true });
 }
 
 function renderFinish(key, info, s) {
@@ -399,12 +402,40 @@ function renderFinish(key, info, s) {
   </div>`;
 }
 
+/* Size the card to the face in view: as tall as its content needs, within a
+   minimum that keeps it card-shaped and the room the screen allows. A face
+   taller than that room scrolls inside the card. */
+function fitCard({ instant = false } = {}) {
+  const card = document.getElementById('card');
+  const stage = card?.parentElement;
+  if (!card || !stage) return;
+  const face = card.querySelector(card.classList.contains('is-flipped') ? '.face--back' : '.face--front');
+  const body = face.querySelector('.face__body');
+  const bodyStyle = getComputedStyle(body);
+  let needed = body.querySelector('.face__content').offsetHeight
+    + parseFloat(bodyStyle.paddingTop) + parseFloat(bodyStyle.paddingBottom);
+  for (const part of face.children) if (part !== body) needed += part.offsetHeight;
+
+  const stageStyle = getComputedStyle(stage);
+  const room = stage.clientHeight - parseFloat(stageStyle.paddingTop) - parseFloat(stageStyle.paddingBottom);
+  const rem = parseFloat(getComputedStyle(document.documentElement).fontSize);
+  const height = Math.round(Math.min(room, Math.max(CARD_MIN_REM * rem, needed + 1)));
+
+  if (instant) card.classList.add('is-sizing');
+  card.style.height = `${height}px`;
+  if (instant) {
+    void card.offsetHeight; // apply the height before transitions come back on
+    card.classList.remove('is-sizing');
+  }
+}
+
 function flip() {
   const card = document.getElementById('card');
   if (!card) return;
   const flipped = card.classList.toggle('is-flipped');
   card.querySelector('.face--front').setAttribute('aria-hidden', String(flipped));
   card.querySelector('.face--back').setAttribute('aria-hidden', String(!flipped));
+  fitCard();
 }
 
 function mark(status) {
@@ -536,7 +567,10 @@ function choicesFor(card) {
   return shuffled([{ text: right, right: true }, ...wrong.map((text) => ({ text, right: false }))]);
 }
 
-let quizView = null; // the question on screen: { id, choices, picked }
+// The question on screen: { id, choices, selected, out, picked, lastTap }.
+// `selected` is the choice waiting to be submitted, `out` the choices the
+// reader has ruled out, and `picked` the choice that was graded.
+let quizView = null;
 
 function startQuiz(key) {
   const pool = scope(key).cards.filter((c) => !isMastered(c.id)).map((c) => c.id);
@@ -553,15 +587,14 @@ function renderQuiz(key) {
   let q = store.quiz;
   if (!q || q.key !== key || !Array.isArray(q.ids) || !q.ids.every((id) => BY_ID.has(id))) {
     if (!info.cards.some((c) => !isMastered(c.id))) return renderQuizEmpty(key, info);
-    startQuiz(key);
-    q = store.quiz;
+    return renderQuizIntro(info);
   }
   // A reload after answering but before "Next" lands on the following question.
   if (!quizView && q.results.length > q.i) q.i = q.results.length;
   if (q.i >= q.ids.length) return renderQuizResults(key, info, q);
 
   const card = BY_ID.get(q.ids[q.i]);
-  if (!quizView || quizView.id !== card.id) quizView = { id: card.id, choices: choicesFor(card), picked: null };
+  if (!quizView || quizView.id !== card.id) quizView = { id: card.id, choices: choicesFor(card), selected: null, out: new Set(), picked: null, lastTap: null };
   const { choices, picked } = quizView;
   const answered = picked !== null;
   const last = q.i === q.ids.length - 1;
@@ -574,11 +607,14 @@ function renderQuiz(key) {
       let state = '';
       if (answered) state = c.right ? ' option--right' : i === picked ? ' option--wrong' : ' option--dim';
       const tell = answered && c.right ? '<span class="visually-hidden"> (correct answer)</span>' : '';
-      return `<li><button class="option${state}" data-action="pick" data-i="${i}" ${answered ? 'disabled' : ''}><span class="option__key" aria-hidden="true">${'ABCD'[i]}</span><span class="option__text">${fmt(c.text)}${tell}</span></button></li>`;
+      return `<li><button class="option${state}" data-action="choose" data-i="${i}" aria-pressed="false" ${answered ? 'disabled' : ''}><span class="option__key" aria-hidden="true">${'ABCD'[i]}</span><span class="option__text">${fmt(c.text)}${tell}</span><span class="visually-hidden option__out-note"></span></button></li>`;
     })
     .join('');
 
-  let feedback = '';
+  let feedback = `
+    <div class="feedback feedback--pending">
+      <button class="btn btn--primary" id="quiz-submit" data-action="quiz-submit" disabled>Submit answer</button>
+    </div>`;
   if (answered) {
     const ok = choices[picked].right;
     const progress = isMastered(card.id)
@@ -608,17 +644,58 @@ function renderQuiz(key) {
       ${drawingsHTML(card.figure)}
       ${card.hint && !QUIZ[card.id]?.q ? `<p class="hint">${fmt(card.hint)}</p>` : ''}
       <ol class="options">${options}</ol>
+      ${feedback}
       ${answered && card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
     </main>
-    ${feedback}
   </div>`;
 
-  if (answered) document.getElementById('quiz-next').focus({ preventScroll: true });
+  if (answered) {
+    const next = document.getElementById('quiz-next');
+    next.focus({ preventScroll: true });
+    next.scrollIntoView({ block: 'nearest' });
+  } else {
+    paintChoices();
+  }
 }
 
-function pick(i) {
+/* Show which choice is selected and which are ruled out, without redrawing. */
+function paintChoices() {
+  if (!quizView || quizView.picked !== null) return;
+  for (const btn of app.querySelectorAll('.option')) {
+    const i = Number(btn.dataset.i);
+    const out = quizView.out.has(i);
+    btn.classList.toggle('option--selected', quizView.selected === i);
+    btn.classList.toggle('option--out', out);
+    btn.setAttribute('aria-pressed', String(quizView.selected === i));
+    btn.querySelector('.option__out-note').textContent = out ? ' (ruled out)' : '';
+  }
+  const submit = document.getElementById('quiz-submit');
+  if (submit) submit.disabled = quizView.selected === null;
+}
+
+/* One tap selects a choice. A second tap on the same choice within a moment
+   rules it out instead, or brings it back, and undoes the selection the first
+   tap made. A ruled-out choice has to be brought back before it can be selected. */
+function choose(i, { viaKey = false } = {}) {
+  if (!quizView || quizView.picked !== null || !quizView.choices[i]) return;
+  const now = Date.now();
+  const last = quizView.lastTap;
+  if (!viaKey && last && last.i === i && now - last.t <= DOUBLE_TAP_MS) {
+    quizView.lastTap = null;
+    if (quizView.out.has(i)) quizView.out.delete(i);
+    else quizView.out.add(i);
+    quizView.selected = last.before === i ? null : last.before;
+  } else {
+    quizView.lastTap = viaKey ? null : { i, t: now, before: quizView.selected };
+    if (!quizView.out.has(i)) quizView.selected = i;
+  }
+  paintChoices();
+}
+
+function submitAnswer() {
   const q = store.quiz;
-  if (!q || !quizView || quizView.picked !== null || !quizView.choices[i]) return;
+  if (!q || !quizView || quizView.picked !== null || quizView.selected === null) return;
+  const i = quizView.selected;
   const id = quizView.id;
   const ok = quizView.choices[i].right;
   const before = masteryOf(id);
@@ -638,6 +715,36 @@ function quizNext() {
   save();
   window.scrollTo(0, 0);
   render();
+}
+
+/* Title page: what the quiz covers and how it works, before any question shows. */
+function renderQuizIntro(info) {
+  const total = info.cards.length;
+  const open = info.cards.filter((c) => !isMastered(c.id)).length;
+  const count = Math.min(QUIZ_LENGTH, open);
+  const plural = count === 1 ? 'question' : 'questions';
+  const drawn = open > count ? `, drawn at random from the ${open} you have not mastered` : '';
+  const mastered = total - open;
+
+  app.innerHTML = `
+  <div class="quiz">
+    <header class="bar"><a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a><div class="bar__title"><span>Quiz</span></div></header>
+    <div class="finish intro">
+      <h1>${fmt(info.title)}</h1>
+      <p>${count} multiple-choice ${plural}${drawn}.${mastered ? ` ${mastered} of ${total} already mastered.` : ''}</p>
+      <ul class="intro__rules">
+        <li><strong>Select, then submit.</strong> Tap an answer to select it, then tap Submit answer. Nothing is graded until you submit.</li>
+        <li><strong>Rule answers out.</strong> Double-tap an answer to dim it. Double-tap again to bring it back.</li>
+        <li><strong>Mastering a question.</strong> A right answer adds one, a wrong answer takes one away. At ${MASTER_AT} the question is mastered and stops appearing in quizzes.</li>
+        <li class="intro__keys"><strong>On a keyboard.</strong> 1 to 4 select an answer and Enter submits.</li>
+      </ul>
+      <div class="actions">
+        <button class="btn btn--primary" id="quiz-start" data-action="quiz-start">Start quiz</button>
+        <a class="btn" href="#/study/${esc(route().key)}">Study these cards first</a>
+      </div>
+    </div>
+  </div>`;
+  document.getElementById('quiz-start').focus({ preventScroll: true });
 }
 
 function renderQuizEmpty(key, info) {
@@ -803,8 +910,16 @@ app.addEventListener('click', (e) => {
       startSession(key, s.order.filter((id) => statusOf(id) === 'learn'));
       render();
       break;
-    case 'pick':
-      pick(Number(el.dataset.i));
+    case 'choose':
+      choose(Number(el.dataset.i));
+      break;
+    case 'quiz-submit':
+      submitAnswer();
+      break;
+    case 'quiz-start':
+      startQuiz(key);
+      window.scrollTo(0, 0);
+      render();
       break;
     case 'quiz-next':
       quizNext();
@@ -845,8 +960,13 @@ document.addEventListener('keydown', (e) => {
 
   if (view === 'quiz') {
     const i = k.length === 1 ? Math.max('1234'.indexOf(k), 'abcd'.indexOf(k)) : -1;
-    if (i >= 0) pick(i);
-    else if (e.key === 'Enter' && !onControl) quizNext();
+    if (i >= 0) choose(i, { viaKey: true });
+    else if (e.key === 'Enter' && !(onControl && e.target.closest('.btn, .iconbtn'))) {
+      // Enter submits the selected choice, then moves on.
+      e.preventDefault();
+      if (quizView?.picked === null) submitAnswer();
+      else quizNext();
+    }
     return;
   }
   if (view !== 'study') return;
@@ -869,6 +989,8 @@ document.addEventListener('keydown', (e) => {
     document.querySelector('[data-action="star"]')?.click();
   }
 });
+
+window.addEventListener('resize', () => fitCard({ instant: true }));
 
 window.addEventListener('hashchange', () => {
   // A finished quiz is kept only while its results are on screen.
