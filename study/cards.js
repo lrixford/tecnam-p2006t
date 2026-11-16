@@ -596,13 +596,23 @@ export const DECKS = [
           'Also works as the trim tab',
         ],
       },
-      { id: 'fc.rudder-trim', q: 'How is the rudder trim controlled?', a: 'Electrically.' },
+      {
+        id: 'fc.rudder-trim',
+        q: 'How is the rudder trim actuated?',
+        a: '**Electrically.**',
+        bullets: ['An electric actuator moves the trim', 'The pilot commands it with a switch'],
+      },
       {
         id: 'fc.aileron-trim',
         q: 'Describe the aileron trim system.',
         a: 'A ground-adjustable tab on the left aileron.',
       },
-      { id: 'fc.flaps', q: 'How are the flaps controlled?', a: 'Electrically.' },
+      {
+        id: 'fc.flaps',
+        q: 'How are the flaps actuated?',
+        a: '**Electrically.**',
+        bullets: ['An electric actuator moves the flaps', 'The pilot commands it with the flap switch'],
+      },
     ],
   },
   {

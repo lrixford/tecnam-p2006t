@@ -497,7 +497,7 @@ export const QUIZ = {
   },
   'fc.rudder-trim': {
     right: 'Electrically',
-    wrong: ['Manually, with a trim wheel', 'With a ground-adjustable tab', 'It has no rudder trim'],
+    wrong: ['Manually, by cables from a trim wheel', 'It is not: the tab is ground-adjustable', 'Hydraulically'],
   },
   'fc.aileron-trim': {
     right: 'A ground-adjustable tab on the left aileron',
@@ -507,7 +507,7 @@ export const QUIZ = {
       'A ground-adjustable tab on each aileron',
     ],
   },
-  'fc.flaps': { right: 'Electrically', wrong: ['Manually, with a lever', 'Hydraulically', 'Pneumatically'] },
+  'fc.flaps': { right: 'Electrically', wrong: ['Manually, by a lever and cables', 'Hydraulically', 'Pneumatically'] },
 
   /* Preflight, towing and fueling */
   'pre.rotate-prop': {
