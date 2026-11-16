@@ -963,7 +963,8 @@
 
 /* ── Print ──────────────────────────────────────── */
 @media print {
-  @page { size: landscape; margin: 0.5cm; }
+  /* Letter landscape, given as lengths: iOS ignores the `landscape` keyword. */
+  @page { size: 11in 8.5in; margin: 0.5cm; }
 
   .p2006t {
     padding: 0;
