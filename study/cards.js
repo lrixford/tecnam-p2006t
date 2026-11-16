@@ -1,7 +1,9 @@
 // Flashcard content for the P2006T / multi-engine study decks.
 //
-// Answers follow the course quiz packet's answer key. Where the key is blank,
-// incomplete or contradicts itself, the card carries a `note` saying so.
+// Answers follow the course quiz packet's answer key. Where the key is
+// incomplete or contradicts itself, the card carries a `note` saying so. The
+// key leaves the "Factors affecting V_MC" table blank; that deck holds the
+// standard answers.
 //
 // Card shape:
 //   id       stable key used for saved progress. Never rename an id.
@@ -28,9 +30,6 @@ export const GROUPS = [
   { id: 'tecnam', title: 'P2006T Tecnam quiz' },
   { id: 'aero', title: 'Multi-engine aerodynamics quiz' },
 ];
-
-const NOT_IN_KEY =
-  'The packet leaves this table blank. This is the standard answer; confirm it with your instructor.';
 
 // The reasoning behind an answer, keyed by card id and shown under the answer
 // as "Why". These explanations are additions; they are not in the packet.
@@ -106,7 +105,7 @@ const WHY = {
   ],
   'vf.bank23': [
     'Banking toward the operating engine tilts lift sideways to help the rudder.',
-    'At about 2 to 3° the sideslip is zero, which is the least drag and the best climb.',
+    'Zero sideslip comes at about 2° of bank, which is the least drag and the best climb.',
   ],
   'vf.windmill': [
     'A windmilling propeller is a big disc of drag on the inoperative side.',
@@ -141,7 +140,7 @@ const WHY = {
   'ce.sideslip': [
     'With the wings level and the ball centered, the airplane is actually slipping sideways toward the inoperative engine.',
     'That sideslip adds drag and makes the rudder work harder, which raises V_MC.',
-    'A 2 to 3° bank toward the operating engine, with the ball about half out toward that side, gives zero sideslip.',
+    'About 2° of bank toward the operating engine, with the ball a third to a half out toward that side, gives zero sideslip.',
   ],
   'ce.manifold': [
     'A normally aspirated engine that has stopped making power still has outside air in its intake.',
@@ -779,19 +778,19 @@ export const DECKS = [
     title: 'Factors affecting V_MC',
     blurb: 'Which way actual V_MC and performance go',
     cards: [
-      { id: 'vf.power', q: 'Effect of more power', a: 'V_MC goes **up**.\n\nPerformance goes **up**.', note: NOT_IN_KEY },
-      { id: 'vf.temp', q: 'Effect of a temperature increase', a: 'V_MC goes **down**.\n\nPerformance goes **down**.', note: NOT_IN_KEY },
-      { id: 'vf.pressure', q: 'Effect of a pressure decrease', a: 'V_MC goes **down**.\n\nPerformance goes **down**.', note: NOT_IN_KEY },
-      { id: 'vf.da', q: 'Effect of a density altitude increase', a: 'V_MC goes **down**.\n\nPerformance goes **down**.', note: NOT_IN_KEY },
-      { id: 'vf.bank0', q: 'Effect of a 0° bank angle, no turn', a: 'V_MC goes **up**.\n\nPerformance goes **down**.', note: NOT_IN_KEY },
-      { id: 'vf.bank23', q: 'Effect of a 2 to 3° bank angle, no turn', a: 'V_MC goes **down**.\n\nPerformance goes **up**.', note: NOT_IN_KEY },
-      { id: 'vf.windmill', q: 'Effect of a windmilling propeller', a: 'V_MC goes **up**.\n\nPerformance goes **down**.', note: NOT_IN_KEY },
-      { id: 'vf.feather', q: 'Effect of a feathered propeller', a: 'V_MC goes **down**.\n\nPerformance goes **up**.', note: NOT_IN_KEY },
-      { id: 'vf.aft-cg', q: 'Effect of an aft CG', a: 'V_MC goes **up**.\n\nPerformance goes **up**.', note: NOT_IN_KEY },
-      { id: 'vf.weight', q: 'Effect of heavier weight', a: 'V_MC goes **down**.\n\nPerformance goes **down**.', note: NOT_IN_KEY },
-      { id: 'vf.flaps', q: 'Effect of flaps down', a: 'V_MC goes **down**.\n\nPerformance goes **down**.', note: NOT_IN_KEY },
-      { id: 'vf.gear', q: 'Effect of landing gear down', a: 'V_MC goes **down**.\n\nPerformance goes **down**.', note: NOT_IN_KEY },
-      { id: 'vf.ground-effect', q: 'Effect of being in ground effect', a: 'V_MC goes **down**.\n\nPerformance goes **up**.', note: NOT_IN_KEY },
+      { id: 'vf.power', q: 'Effect of more power', a: 'V_MC goes **up**.\n\nPerformance goes **up**.' },
+      { id: 'vf.temp', q: 'Effect of a temperature increase', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
+      { id: 'vf.pressure', q: 'Effect of a pressure decrease', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
+      { id: 'vf.da', q: 'Effect of a density altitude increase', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
+      { id: 'vf.bank0', q: 'Effect of a 0° bank angle, no turn', a: 'V_MC goes **up**.\n\nPerformance goes **down**.' },
+      { id: 'vf.bank23', q: 'Effect of a 2 to 3° bank angle, no turn', a: 'V_MC goes **down**.\n\nPerformance goes **up**.' },
+      { id: 'vf.windmill', q: 'Effect of a windmilling propeller', a: 'V_MC goes **up**.\n\nPerformance goes **down**.' },
+      { id: 'vf.feather', q: 'Effect of a feathered propeller', a: 'V_MC goes **down**.\n\nPerformance goes **up**.' },
+      { id: 'vf.aft-cg', q: 'Effect of an aft CG', a: 'V_MC goes **up**.\n\nPerformance goes **up**.' },
+      { id: 'vf.weight', q: 'Effect of heavier weight', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
+      { id: 'vf.flaps', q: 'Effect of flaps down', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
+      { id: 'vf.gear', q: 'Effect of landing gear down', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
+      { id: 'vf.ground-effect', q: 'Effect of being in ground effect', a: 'V_MC goes **down**.\n\nPerformance goes **up**.' },
     ],
   },
   {

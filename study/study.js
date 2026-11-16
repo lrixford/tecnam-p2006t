@@ -4,7 +4,7 @@ import { DIAGRAMS } from './diagrams.js';
 
 const STORE_KEY = 'p2006t-study:v1';
 const SWIPE_DISTANCE = 90;
-const MASTER_AT = 3; // correct quiz answers, net of misses, that retire a question
+const MASTER_AT = 3; // correct quiz answers, net of misses, that master a question
 const QUIZ_LENGTH = 20; // most questions in one quiz
 const DOUBLE_TAP_MS = 320;
 const CARD_MIN_REM = 15; // shortest a flashcard gets, however little is on it
@@ -338,7 +338,7 @@ function renderHome() {
     </section>
     ${groups}
     <footer class="foot">
-      <p>Answers follow the course quiz packet. Cards with a note flag where the packet is blank or unclear. The "Why" explanations and the wrong choices in quizzes are not from the packet. The POH and your instructor have the final word.</p>
+      <p>Answers follow the course quiz packet. Cards with a note flag where the packet is unclear. The packet leaves the "Factors affecting V<sub>MC</sub>" table blank, so those answers, the "Why" explanations and the wrong choices in quizzes are not from the packet. The POH and your instructor have the final word.</p>
       <button class="btn btn--quiet btn--danger" data-action="reset">Erase saved progress</button>
     </footer>
   </div>`;
@@ -627,8 +627,11 @@ function choicesFor(card) {
 let quizView = null;
 
 function startQuiz(key) {
-  const pool = scope(key).cards.filter((c) => !isMastered(c.id)).map((c) => c.id);
-  store.quiz = { key, ids: shuffled(pool).slice(0, QUIZ_LENGTH), i: 0, results: [] };
+  // Questions still to master come first; mastered ones fill whatever room is left.
+  const ids = scope(key).cards.map((c) => c.id);
+  const open = shuffled(ids.filter((id) => !isMastered(id))).slice(0, QUIZ_LENGTH);
+  const review = shuffled(ids.filter(isMastered)).slice(0, QUIZ_LENGTH - open.length);
+  store.quiz = { key, ids: shuffled([...open, ...review]), i: 0, results: [] };
   quizView = null;
   save();
 }
@@ -640,7 +643,7 @@ function renderQuiz(key) {
 
   let q = store.quiz;
   if (!q || q.key !== key || !Array.isArray(q.ids) || !q.ids.every((id) => BY_ID.has(id))) {
-    if (!info.cards.some((c) => !isMastered(c.id))) return renderQuizEmpty(key, info);
+    if (!info.cards.length) return renderQuizEmpty(key, info);
     return renderQuizIntro(info);
   }
   // A reload after answering but before "Next" lands on the following question.
@@ -674,9 +677,7 @@ function renderQuiz(key) {
     </div>`;
   if (answered) {
     const ok = quizView.ok;
-    const progress = isMastered(card.id)
-      ? 'Mastered. This question is retired from quizzes.'
-      : `${m} of ${MASTER_AT} toward mastered.`;
+    const progress = isMastered(card.id) ? 'Mastered.' : `${m} of ${MASTER_AT} toward mastered.`;
     feedback = `
     <div class="feedback feedback--${ok ? 'right' : 'wrong'}">
       <div class="feedback__text" role="status">
@@ -765,7 +766,8 @@ function submitAnswer() {
   const before = masteryOf(id);
   const m = ok ? Math.min(MASTER_AT, before + 1) : Math.max(0, before - 1);
   store.cards[id] = { ...store.cards[id], m };
-  q.results.push({ id, ok, mastered: m >= MASTER_AT });
+  // `mastered` marks a question that reached mastery on this answer, not one already there.
+  q.results.push({ id, ok, mastered: m >= MASTER_AT && before < MASTER_AT });
   quizView.graded = true;
   quizView.ok = ok;
   save();
@@ -786,22 +788,27 @@ function quizNext() {
 function renderQuizIntro(info) {
   const total = info.cards.length;
   const open = info.cards.filter((c) => !isMastered(c.id)).length;
-  const count = Math.min(QUIZ_LENGTH, open);
+  const count = Math.min(QUIZ_LENGTH, total);
   const plural = count === 1 ? 'question' : 'questions';
-  const drawn = open > count ? `, drawn at random from the ${open} you have not mastered` : '';
   const mastered = total - open;
+  const review = count - Math.min(QUIZ_LENGTH, open);
+  let mix = '';
+  if (!open) mix = ` All ${total} are already mastered, so this is a review.`;
+  else if (review) mix = ` ${review} ${review === 1 ? 'is a mastered question' : 'are mastered questions'} back for review.`;
+  else if (open > count) mix = ` They are drawn at random from the ${open} you have not mastered.`;
+  else if (mastered) mix = ` ${mastered} of ${total} already mastered.`;
 
   app.innerHTML = `
   <div class="quiz">
     <header class="bar"><a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a><div class="bar__title"><span>Quiz</span></div></header>
     <div class="finish intro">
       <h1>${fmt(info.title)}</h1>
-      <p>${count} multiple-choice ${plural}${drawn}.${mastered ? ` ${mastered} of ${total} already mastered.` : ''}</p>
+      <p>${count} multiple-choice ${plural}.${mix}</p>
       <ul class="intro__rules">
         <li><strong>Select, then submit.</strong> Tap an answer to select it, then tap Submit answer. Nothing is graded until you submit.</li>
         <li><strong>Select all that apply.</strong> Some questions have more than one right answer and say so. Tap each one you want. They count as right only with every correct answer selected and no wrong one.</li>
         <li><strong>Rule answers out.</strong> Double-tap an answer to dim it. Double-tap again to bring it back.</li>
-        <li><strong>Mastering a question.</strong> A right answer adds one, a wrong answer takes one away. At ${MASTER_AT} the question is mastered and stops appearing in quizzes.</li>
+        <li><strong>Mastering a question.</strong> A right answer adds one, a wrong answer takes one away. At ${MASTER_AT} the question is mastered. Mastered questions come back only when a quiz has room for them, and a wrong answer still takes one away.</li>
         <li class="intro__keys"><strong>On a keyboard.</strong> The number keys select an answer and Enter submits.</li>
       </ul>
       <div class="actions">
@@ -818,9 +825,9 @@ function renderQuizEmpty(key, info) {
   <div class="quiz">
     <header class="bar"><a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a><div class="bar__title"><span>Quiz: ${fmt(info.title)}</span></div></header>
     <div class="finish">
-      <h1>${info.cards.length ? 'All mastered' : 'Nothing to quiz here yet'}</h1>
-      <p>${info.cards.length ? `Every question in ${fmt(info.title)} has been answered right ${MASTER_AT} times, so none are left to ask.` : 'This list has no cards in it.'}</p>
-      <div class="actions"><a class="btn btn--primary" href="#/">Back to decks</a>${info.cards.length ? `<a class="btn" href="#/study/${esc(key)}">Study these cards</a>` : ''}</div>
+      <h1>Nothing to quiz here yet</h1>
+      <p>This list has no cards in it.</p>
+      <div class="actions"><a class="btn btn--primary" href="#/">Back to decks</a></div>
     </div>
   </div>`;
 }
@@ -848,7 +855,7 @@ function renderQuizResults(key, info, q) {
       <h1>${right} of ${total} correct</h1>
       <p>${pct}%. ${newlyMastered ? `${newlyMastered} ${newlyMastered === 1 ? 'question' : 'questions'} newly mastered. ` : ''}${left ? `${left} in ${fmt(info.title)} still to master.` : `Everything in ${fmt(info.title)} is mastered.`}</p>
       <div class="actions">
-        ${left ? '<button class="btn btn--primary" data-action="quiz-new">Take another quiz</button>' : ''}
+        <button class="btn${left ? ' btn--primary' : ''}" data-action="quiz-new">${left ? 'Take another quiz' : 'Take a review quiz'}</button>
         ${missed.length ? `<button class="btn" data-action="quiz-review">Review ${missed.length} missed as flashcards</button>` : ''}
         <a class="btn ${left ? '' : 'btn--primary'}" href="#/">Back to decks</a>
       </div>
