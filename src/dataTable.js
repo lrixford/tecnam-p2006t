@@ -1,6 +1,7 @@
 import { P2006T } from './data/p2006t.js';
 import { computeAll } from './loadingCondition.js';
 import { lbToKg, galToL, formatNumber } from './units.js';
+import { renderCgEnvelope } from './cgEnvelope.js';
 
 const DENSITY = P2006T.fuel.density_lb_per_gal;
 const LB_FT_PER_KG_M = 7.23301;
@@ -171,30 +172,61 @@ function performanceInputs(perf, metar) {
     .join('');
 }
 
-// The same warnings the performance panel shows, spelled out for a printed sheet.
-function performanceNotes(perf) {
-  return [
-    !perf.takeoff.tora_ok && `Takeoff over 50 ft is longer than the ${fmtFt(perf.tora_ft)} takeoff run available.`,
-    !perf.landing.lda_ok && `Landing from 50 ft is longer than the ${fmtFt(perf.lda_ft)} landing distance available.`,
-    perf.accel_stop.message && `Accelerate-stop: ${perf.accel_stop.message}`,
-    perf.accel_go.message && `Accelerate-go: ${perf.accel_go.message}`,
-    perf.xwind_kt !== null && !perf.xwind_ok && `Crosswind is above the ${perf.xwind_limit_kt} kt maximum demonstrated.`,
-    'Accelerate-stop and accelerate-go are estimates, not POH figures.',
-  ]
-    .filter(Boolean)
-    .map((note) => `<li>${note}</li>`)
-    .join('');
+// As many runway ends as fit on the sheet beside the inputs
+const MAX_RUNWAY_ROWS = 10;
+
+// The airport's runway ends with their wind components, in the order listed on
+// screen. A long list is cut short, always keeping the end in use.
+function runwayTable(runways) {
+  if (!runways.length) return '';
+  const dash = '—';
+  const shown = runways.slice(0, MAX_RUNWAY_ROWS);
+  const inUse = runways.find((r) => r.selected);
+  if (inUse && !shown.includes(inUse)) shown[shown.length - 1] = inUse;
+  const cut = runways.length > shown.length
+    ? ` Showing ${shown.length} of ${runways.length} runway ends.`
+    : '';
+  const rows = shown.map((r) => {
+    const tags = [r.selected && 'Used for this sheet', r.best && 'Best wind'].filter(Boolean).join(', ');
+    const dims = r.length_ft && r.width_ft
+      ? `${r.length_ft.toLocaleString()} × ${fmtFt(r.width_ft)}`
+      : r.length_ft ? fmtFt(r.length_ft) : dash;
+    const along = r.headwind_kt === null
+      ? dash
+      : r.headwind_kt >= 0 ? `Headwind ${r.headwind_kt} kt` : `Tailwind ${Math.abs(r.headwind_kt)} kt`;
+    const cross = r.xwind_kt === null
+      ? dash
+      : r.xwind_kt === 0
+        ? '0 kt'
+        : warnIf(!r.xwind_ok, `${Math.abs(r.xwind_kt)} kt ${r.xwind_kt > 0 ? 'right' : 'left'}`);
+    const slope = r.slope_pct !== null ? `${r.slope_pct > 0 ? '+' : ''}${r.slope_pct}%` : dash;
+    return `<tr${r.selected ? ' class="dt-selected"' : ''}>
+              <td>Rwy ${r.end_id}${tags ? `<span class="dt-basis">${tags}</span>` : ''}</td>
+              <td>${dims}</td><td>${SURFACE_LABEL[r.surface] ?? r.surface ?? dash}</td>
+              <td>${along}</td><td>${cross}</td><td>${slope}</td>
+            </tr>`;
+  }).join('');
+  return `
+          <table class="dt-table dt-table--runways">
+            <thead><tr><th>Runways</th><th>Size</th><th>Surface</th><th>Along</th><th>Crosswind from</th><th>Slope</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+          <p class="print-page2__caption">Runway wind components use the midpoint of the steady wind and the gust.${cut}</p>`;
 }
 
-// Accelerate-stop and accelerate-go, each split into the phases it is built from.
-function phaseTables(perf) {
+// Accelerate-stop and accelerate-go as a tree: the shared ground roll, then a
+// branch for each outcome with its own phases and total.
+function phaseTree(perf) {
   const stop = perf.accel_stop.phases;
   const go = perf.accel_go.phases;
   const goClass = { warning: 'dt-oei-warn', caution: 'dt-oei-caution' }[perf.accel_go.level] ?? '';
-  const row = (phase, basis, value) =>
-    `<tr><td>${phase}<span class="dt-basis">${basis}</span></td><td>${value}</td></tr>`;
-  const total = (value) => `<tr class="dt-total"><td>Total</td><td>${value}</td></tr>`;
-  const accelerate = row('Accelerate', `Takeoff ground roll, liftoff at ${stop.liftoff_kias} KIAS`, fmtFtM(stop.accelerate_m));
+  const row = (phase, basis, value, cls = '') =>
+    `<tr${cls ? ` class="${cls}"` : ''}><td>${phase}<span class="dt-basis">${basis}</span></td><td>${value}</td></tr>`;
+  const table = (heading, rows) => `
+              <table class="dt-table dt-table--phases">
+                <thead><tr><th>${heading}</th><th>Distance</th></tr></thead>
+                <tbody>${rows.join('')}</tbody>
+              </table>`;
   const na = '<span class="dt-oei-warn">N/A</span>';
   const climb = go.climb_m !== null
     ? row('Climb to 50 ft on one engine',
@@ -203,29 +235,31 @@ function phaseTables(perf) {
     : row('Climb to 50 ft on one engine', `${perf.roc_oei_fpm} fpm predicted`, na);
 
   return `
-          <table class="dt-table dt-table--phases">
-            <thead><tr><th>Accelerate-Stop by phase</th><th>Distance</th></tr></thead>
-            <tbody>
-              ${accelerate}
-              ${row('Decision', `30% allowance for a delayed decision: ${stop.decision_s.toFixed(1)} s at ${stop.liftoff_gs_kt} kt groundspeed`, fmtFtM(stop.decision_m))}
-              ${row('Stop', 'Landing ground roll at planned landing weight', fmtFtM(stop.stop_m))}
-              ${total(warnIf(!perf.accel_stop.ok, fmtFtM(perf.accel_stop.dist_m)))}
-            </tbody>
-          </table>
-          <table class="dt-table dt-table--phases">
-            <thead><tr><th>Accelerate-Go by phase</th><th>Distance</th></tr></thead>
-            <tbody>
-              ${accelerate}
-              ${row('Decision', 'No allowance: the engine is taken to fail at liftoff', fmtFtM(0))}
-              ${climb}
-              ${total(perf.accel_go.dist_m !== null ? `<span class="${goClass}">${fmtFtM(perf.accel_go.dist_m)}</span>` : na)}
-            </tbody>
-          </table>`;
+          <div class="fork">
+            ${table('Accelerate-Stop and Accelerate-Go by phase', [
+              row('Accelerate', `Takeoff ground roll, liftoff at ${stop.liftoff_kias} KIAS`, fmtFtM(stop.accelerate_m)),
+            ])}
+            <div class="fork__branch">
+              ${table('Stop', [
+                row('Decision', `30% allowance for a delayed decision: ${stop.decision_s.toFixed(1)} s at ${stop.liftoff_gs_kt} kt groundspeed`, fmtFtM(stop.decision_m)),
+                row('Stop', 'Landing ground roll at planned landing weight', fmtFtM(stop.stop_m)),
+                row('Accelerate-stop', 'Accelerate + decision + stop', warnIf(!perf.accel_stop.ok, fmtFtM(perf.accel_stop.dist_m)), 'dt-total'),
+              ])}
+            </div>
+            <div class="fork__branch">
+              ${table('Go', [
+                climb,
+                row('Accelerate-go', 'Accelerate + climb',
+                  perf.accel_go.dist_m !== null ? `<span class="${goClass}">${fmtFtM(perf.accel_go.dist_m)}</span>` : na, 'dt-total'),
+              ])}
+            </div>
+          </div>`;
 }
 
 // Second printed page: what the performance figures on the first page were
-// computed from. Print only, and only once a performance result exists.
-export function renderPerformancePage(target, state, metar = null, perf = null) {
+// computed from, the runways to choose from, and the weight and moment chart.
+// Print only, and only once a performance result exists.
+export function renderPerformancePage(target, state, metar = null, perf = null, runways = []) {
   if (!perf) {
     target.replaceChildren();
     return;
@@ -250,12 +284,15 @@ export function renderPerformancePage(target, state, metar = null, perf = null) 
             <thead><tr><th>Inputs</th><th></th></tr></thead>
             <tbody>${performanceInputs(perf, metar)}</tbody>
           </table>
+          ${runwayTable(runways)}
         </div>
         <div>
-          ${phaseTables(perf)}
-          <ul class="print-page2__notes">${performanceNotes(perf)}</ul>
+          ${phaseTree(perf)}
+          <p class="print-page2__caption">Accelerate-stop and accelerate-go are derived from the POH takeoff, landing and climb figures. The POH does not publish them. The 30% decision allowance is a training rule, not POH data.</p>
+          <div class="print-page2__envelope"></div>
         </div>
       </div>`;
+  renderCgEnvelope(section.querySelector('.print-page2__envelope'), state);
   target.replaceChildren(section);
 }
 

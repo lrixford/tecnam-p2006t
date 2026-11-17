@@ -42,7 +42,7 @@ export function mountWidget(target) {
     const metar = perfPanel?.getMetar();
     const perf  = perfPanel?.getResult();
     renderPrintSummary(printMount, state, metar, perf);
-    renderPerformancePage(printPage2Mount, state, metar, perf);
+    renderPerformancePage(printPage2Mount, state, metar, perf, perfPanel?.getRunways() ?? []);
   }
 
   function refresh(state) {

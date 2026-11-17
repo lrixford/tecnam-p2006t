@@ -144,4 +144,4 @@ METHODOLOGY.md
 
 ## Disclaimer
 
-This tool is for **planning and reference purposes only**. All weight, balance and performance calculations must be verified against the official Aircraft Flight Manual (AFM) and Pilot's Operating Handbook (POH) before flight. Accelerate-stop, accelerate-go and obstacle figures are estimates with no POH basis. The pilot in command is responsible for ensuring the aircraft is loaded within approved limits and for the safe operation of the flight.
+This tool is for **planning and reference purposes only**. All weight, balance and performance calculations must be verified against the official Aircraft Flight Manual (AFM) and Pilot's Operating Handbook (POH) before flight. Accelerate-stop and accelerate-go are derived from POH takeoff, landing and climb figures, but the POH does not publish them, and the decision allowance is a training rule. The obstacle figure is an estimate from FAA runway data. The pilot in command is responsible for ensuring the aircraft is loaded within approved limits and for the safe operation of the flight.

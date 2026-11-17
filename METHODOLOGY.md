@@ -2,7 +2,7 @@
 
 This document explains how the Tecnam P2006T calculator produces its numbers, where each input comes from, and why each decision was made. It is written for pilots who want to check the work rather than take it on trust.
 
-The calculator is a planning aid. The Pilot's Operating Handbook (POH) and the pilot in command remain the authority. Some figures below are published POH data, and others are estimates that the POH does not provide. Section 1 separates the two, because that distinction matters more than any formula here.
+The calculator is a planning aid. The Pilot's Operating Handbook (POH) and the pilot in command remain the authority. Some figures below are published POH data. Others are derived from POH data or estimated, and the POH does not publish them. Section 1 separates the two, because that distinction matters more than any formula here.
 
 ## 1. Sources and their standing
 
@@ -11,8 +11,8 @@ The calculator is a planning aid. The Pilot's Operating Handbook (POH) and the p
 | Weight, moment, CG | POH arms and limits, aircraft weighing record | POH method |
 | Takeoff and landing distances | POH tables SW5-7 to SW5-9 and SW5-19 to SW5-21 | POH data, interpolated |
 | Climb rates | POH tables SW5-10 and SW5-14 | POH data, interpolated |
-| Accelerate-stop distance | Training rule of thumb | Estimate, not in the POH |
-| Accelerate-go distance | Derived from POH ground roll and climb rate | Estimate, not in the POH |
+| Accelerate-stop distance | POH takeoff and landing ground rolls, plus a 30% training-rule allowance | Derived from POH data, not published in the POH |
+| Accelerate-go distance | POH takeoff ground roll and single-engine climb rate | Derived from POH data, not published in the POH |
 | Required climb to clear an obstacle | FAA runway data and simple geometry | Estimate, not in the POH |
 | Weather | VATSIM METAR API | Not an official weather source |
 | Airport and runway data | FAA NASR 28-day subscription | Official data, partial for obstacles |
@@ -201,7 +201,7 @@ Not every light twin publishes this data, and the terms do not appear in the sea
 accelerate-stop = (takeoff ground roll + landing ground roll) × 1.30
 ```
 
-This is a training rule of thumb and is **not** a POH figure. The 1.30 factor allows for a delayed decision. The landing roll is taken at planned landing weight as part of that rule.
+Both ground rolls are POH figures. The way they are combined is a training rule of thumb, so the result is derived from POH data but is **not** published in the POH. The 1.30 factor allows for a delayed decision and has no POH source. The landing roll is taken at planned landing weight as part of that rule.
 
 | Data point | Source | Conditions |
 |---|---|---|
@@ -214,7 +214,7 @@ If the result is longer than the runway, the card turns red and states the runwa
 
 ### Phases on the print sheet
 
-The second printed page splits the distance into three phases, in the order they happen.
+The second printed page draws accelerate-stop and accelerate-go as a tree. The takeoff ground roll is the trunk, shared by both, and each outcome is a branch with its own phases and total. Accelerate-stop has three phases, in the order they happen.
 
 | Phase | Distance | Basis |
 |---|---|---|
@@ -233,7 +233,7 @@ This is the margin restated as time at liftoff speed. It is not a measured react
 
 ## 9. Accelerate-go
 
-The POH publishes no accelerate-go data. The app gives an estimate:
+The POH publishes no accelerate-go data. The app derives a figure from the POH takeoff ground roll and single-engine climb rate:
 
 ```
 groundspeed       = 84 kt − headwind
@@ -255,7 +255,7 @@ The factor of 30.867 converts knots to metres per minute.
 
 The POH table for VYSE assumes maximum continuous power, the failed propeller feathered, and gear and flaps up. The table lists a lower VYSE at lighter weights and higher altitudes, but the calculation keeps 84 KIAS, which slightly lengthens the distance.
 
-The second printed page splits the distance into the same phases as accelerate-stop: the takeoff ground roll, a decision phase of zero length because the engine is taken to fail at liftoff, and the climb to 50 ft with its climb rate, groundspeed and time.
+On the second printed page the Go branch of the tree adds one phase to the shared takeoff ground roll: the climb to 50 ft with its climb rate, groundspeed and time. There is no decision phase, because the engine is taken to fail at liftoff.
 
 That assumption flatters the result. The estimate allows no time for recognition, for feathering, or for retracting gear and flaps. It treats indicated airspeed as true airspeed, which understates the distance at altitude. The accelerate-go distance is not compared with runway length.
 
@@ -361,4 +361,4 @@ Where the FAA gives no TORA or LDA, the physical runway length is used.
 
 ## 13. Disclaimer
 
-This tool is for planning and reference only. All figures must be verified against the approved Aircraft Flight Manual and POH before flight. The accelerate-stop, accelerate-go and obstacle figures are estimates with no POH basis. The pilot in command is responsible for the safe operation of the aircraft.
+This tool is for planning and reference only. All figures must be verified against the approved Aircraft Flight Manual and POH before flight. Accelerate-stop and accelerate-go are derived from POH takeoff, landing and climb figures, but the POH does not publish them, and the decision allowance is a training rule. The obstacle figure is an estimate from FAA runway data. The pilot in command is responsible for the safe operation of the aircraft.

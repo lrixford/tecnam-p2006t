@@ -190,7 +190,7 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
   const ldgRaw  = interpolatePerf(P2006T.landing.data,  ldgWeight_kg, pa_ft, oat_c);
   const ldgCorr = applyCorrections(ldgRaw, P2006T.landing.corrections, headwind_kt, surface, slope_pct);
 
-  // Accel-stop: training rule of thumb, not a POH figure
+  // Accel-stop: POH ground rolls combined by a training rule of thumb
   const accelStop_m = Math.round((toCorr.gr + ldgCorr.gr) * ACCEL_STOP_MARGIN);
   // The margin is the decision phase. Its time is the margin covered at liftoff speed.
   const liftoffGs_kt = Math.max(1, LIFTOFF_KIAS - headwind_kt);

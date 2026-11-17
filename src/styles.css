@@ -1052,8 +1052,40 @@
     text-align: right;
   }
 
-  .p2006t .dt-table--phases + .dt-table--phases {
-    margin-top: 0.75rem;
+  /* Accelerate-stop and accelerate-go tree: a trunk, then one branch for each
+     outcome, joined by connector lines. Lengths are in em so the lines scale
+     with the table text. */
+  .p2006t .fork {
+    font-size: 0.6rem;
+  }
+
+  .p2006t .fork__branch {
+    position: relative;
+    margin-left: 1em;
+    padding: 0.9em 0 0 2.2em;
+  }
+
+  .p2006t .fork__branch::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    border-left: 1.5px solid #000;
+  }
+
+  .p2006t .fork__branch:last-child::before {
+    bottom: auto;
+    height: 2em;
+  }
+
+  .p2006t .fork__branch::after {
+    content: '';
+    position: absolute;
+    top: 2em;
+    left: 0;
+    width: 1.7em;
+    border-top: 1.5px solid #000;
   }
 
   .p2006t .dt-table--phases thead th:first-child {
@@ -1081,11 +1113,40 @@
     border-top: 1.5px solid #000;
   }
 
-  .p2006t .print-page2__notes {
-    margin: 0.6rem 0 0;
-    padding-left: 1rem;
+  .p2006t .dt-table--runways {
+    margin-top: 0.75rem;
+  }
+
+  .p2006t .print-page2__grid .dt-table--runways td {
+    vertical-align: top;
+    white-space: nowrap;
+  }
+
+  /* Six columns share half the page, so the cells sit closer together */
+  .p2006t .print-page2__grid .dt-table--runways th,
+  .p2006t .print-page2__grid .dt-table--runways td {
+    padding-right: 0.25rem;
+    padding-left: 0.25rem;
+  }
+
+  .p2006t .dt-table .dt-selected td {
+    font-weight: 700;
+  }
+
+  .p2006t .print-page2__caption {
+    margin: 0.3rem 0 0;
     font-size: 0.6rem;
-    line-height: 1.5;
+    line-height: 1.4;
+    color: #444;
+  }
+
+  /* Weight and moment chart, kept short enough to share the page */
+  .p2006t .print-page2__envelope {
+    margin-top: 0.75rem;
+  }
+
+  .p2006t .print-page2__envelope .cg-envelope-svg {
+    max-height: 3in;
   }
 
   .p2006t #nomograph-mount {
@@ -1783,7 +1844,12 @@
     .p2006t .nomograph { max-height: 49cqw; }
 
     .p2006t .print-page2__grid { gap: 3.14cqw; margin-top: 1.18cqw; }
-    .p2006t .dt-table--phases + .dt-table--phases { margin-top: 1.18cqw; }
-    .p2006t .print-page2__notes { margin-top: 0.94cqw; padding-left: 1.57cqw; font-size: 0.94cqw; }
+    .p2006t .fork { font-size: 0.94cqw; }
+    .p2006t .dt-table--runways { margin-top: 1.18cqw; }
+    .p2006t .print-page2__grid .dt-table--runways th,
+    .p2006t .print-page2__grid .dt-table--runways td { padding-right: 0.4cqw; padding-left: 0.4cqw; }
+    .p2006t .print-page2__caption { margin-top: 0.45cqw; font-size: 0.94cqw; }
+    .p2006t .print-page2__envelope { margin-top: 1.18cqw; }
+    .p2006t .print-page2__envelope .cg-envelope-svg { max-height: 30cqw; }
   }
 }

@@ -155,6 +155,8 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onResu
   let airport  = null;
   let metar    = null;
   let ranked   = [];
+  let listed   = [];     // runway ends in the order shown, for the print sheet
+  let bestEnds = new Set();
   let selected = null;   // { runway, endId }
   let perfResult = null;
   let fetchSeq   = 0;    // ignores stale weather responses
@@ -358,6 +360,9 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onResu
         .filter(r => r.endId.replace(/[LRCrc]$/, '') === bestNum && r.xwind_ok === bestOk)
         .map(r => `${r.runway.id}::${r.endId}`)
     );
+
+    listed   = [...byRwy.values()].flat();
+    bestEnds = bestKeys;
 
     let autoSelect = null;
     for (const entries of byRwy.values()) {
@@ -581,6 +586,20 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onResu
     refresh:    () => { if (selected && metar) renderDistances(); },
     getMetar:   () => metar,
     getResult:  () => perfResult,
+    // Every runway end as listed, with its wind components and which one is in use
+    getRunways: () => (airport && metar ? listed : []).map(r => ({
+      runway_id:   r.runway.id,
+      end_id:      r.endId,
+      length_ft:   r.runway.length_ft ?? null,
+      width_ft:    r.runway.width_ft ?? null,
+      surface:     r.runway.surface,
+      slope_pct:   r.end.slope_pct ?? null,
+      headwind_kt: r.headwind_kt,
+      xwind_kt:    r.xwind_kt,
+      xwind_ok:    r.xwind_ok,
+      best:        bestEnds.has(`${r.runway.id}::${r.endId}`),
+      selected:    selected?.runway === r.runway && selected?.endId === r.endId,
+    })),
   };
 }
 
