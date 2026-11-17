@@ -651,6 +651,7 @@ button {
 }
 
 .stage {
+  position: relative;
   display: grid;
   min-height: 0;
   padding: 1rem 0;
@@ -701,6 +702,63 @@ button {
 
 .card.is-dragging {
   transition: none;
+}
+
+/* The swipe demonstration moves the card at an unhurried pace, with a dot
+   standing in for the finger. */
+.card.is-demo {
+  transition: transform 0.7s cubic-bezier(0.45, 0, 0.25, 1);
+}
+
+.card.is-demo .stamp {
+  transition: opacity 0.4s ease;
+}
+
+.card.is-demo::after {
+  content: '';
+  position: absolute;
+  top: 62%;
+  left: 50%;
+  width: 3rem;
+  height: 3rem;
+  margin: -1.5rem 0 0 -1.5rem;
+  border: 2px solid var(--blue);
+  border-radius: 50%;
+  background: var(--blue-soft);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+/* The caption sits in the space above the card, in the colour of the matching button. */
+.swipe-hint {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 0 1.25rem;
+  margin: 0;
+  font-size: clamp(1.5rem, 6.4vw, 2rem);
+  font-weight: 300;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  text-align: center;
+  pointer-events: none;
+}
+
+.swipe-hint__learn {
+  color: var(--red);
+}
+
+.swipe-hint__know {
+  color: var(--blue);
+}
+
+.swipe-hint:empty {
+  display: none;
 }
 
 .card.is-leaving-left {

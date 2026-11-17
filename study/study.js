@@ -424,6 +424,13 @@ function renderStudy(key) {
 
   attachCard(document.getElementById('card'));
   fitCard({ instant: true });
+
+  // The first card of the day shows how swiping sorts it.
+  if (store.hintDay !== today()) {
+    store.hintDay = today();
+    save();
+    playHint(document.getElementById('card'));
+  }
 }
 
 function renderFinish(key, info, s) {
@@ -478,6 +485,7 @@ function fitCard({ instant = false } = {}) {
 function flip() {
   const card = document.getElementById('card');
   if (!card) return;
+  stopHint();
   const flipped = card.classList.toggle('is-flipped');
   card.querySelector('.face--front').setAttribute('aria-hidden', String(flipped));
   card.querySelector('.face--back').setAttribute('aria-hidden', String(!flipped));
@@ -487,6 +495,7 @@ function flip() {
 function mark(status) {
   const s = store.session;
   if (busy || !s || s.i >= s.order.length) return;
+  stopHint();
   const id = s.order[s.i];
   const prev = store.cards[id] ? { ...store.cards[id] } : null;
   history.push({ id, prev });
@@ -528,6 +537,66 @@ function toggleStar(id) {
   save();
 }
 
+/* ---------- swipe hint ---------- */
+
+const today = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// The demonstration in progress: { card, label, timers }.
+let hint = null;
+
+function stopHint() {
+  if (!hint) return;
+  const { card, label, timers } = hint;
+  hint = null;
+  timers.forEach(clearTimeout);
+  label.remove();
+  card.classList.remove('is-demo');
+  for (const prop of ['--dx', '--rot', '--know', '--learn']) card.style.removeProperty(prop);
+}
+
+/* Leans the card to each side in turn, with the stamp and a caption naming
+   what a swipe that way does. Any touch on the card ends it. */
+function playHint(card) {
+  const label = document.createElement('p');
+  label.className = 'swipe-hint';
+  label.setAttribute('role', 'status');
+  // The caption is centred in the space between the top of the stage and the card.
+  label.style.height = `${card.offsetTop}px`;
+  card.parentElement.append(label);
+  const timers = [];
+  hint = { card, label, timers };
+  const at = (ms, fn) => timers.push(setTimeout(fn, ms));
+
+  if (reduceMotion.matches) {
+    label.innerHTML =
+      '<span class="swipe-hint__learn">Swipe left: still learning</span> <span class="swipe-hint__know">Swipe right: know it</span>';
+    at(6000, stopHint);
+    return;
+  }
+
+  const reach = Math.min(120, card.offsetWidth * 0.3);
+  const lean = (x) => {
+    card.style.setProperty('--dx', `${x}px`);
+    card.style.setProperty('--rot', `${x / 28}deg`);
+    card.style.setProperty('--know', x > 0 ? 1 : 0);
+    card.style.setProperty('--learn', x < 0 ? 1 : 0);
+  };
+  at(600, () => {
+    card.classList.add('is-demo');
+    label.innerHTML = '<span class="swipe-hint__learn">Swipe left: still learning</span>';
+    lean(-reach);
+  });
+  at(2100, () => {
+    label.innerHTML = '<span class="swipe-hint__know">Swipe right: know it</span>';
+    lean(reach);
+  });
+  at(3600, () => lean(0));
+  at(4300, stopHint);
+}
+
 /* Tap flips the card; dragging it sideways past the threshold sorts it. */
 function attachCard(card) {
   let startX = 0;
@@ -546,6 +615,7 @@ function attachCard(card) {
 
   card.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || busy) return;
+    stopHint();
     pointer = e.pointerId;
     startX = e.clientX;
     startY = e.clientY;
@@ -933,6 +1003,7 @@ function go(hash) {
 }
 
 function render() {
+  stopHint();
   const { view, key } = route();
   document.body.dataset.view = view;
   if (view === 'study') renderStudy(key);
