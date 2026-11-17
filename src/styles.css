@@ -1052,6 +1052,35 @@
     text-align: right;
   }
 
+  .p2006t .dt-table--phases + .dt-table--phases {
+    margin-top: 0.75rem;
+  }
+
+  .p2006t .dt-table--phases thead th:first-child {
+    text-align: left;
+  }
+
+  .p2006t .dt-table--phases thead th:last-child {
+    text-align: right;
+  }
+
+  .p2006t .dt-table--phases td:last-child {
+    white-space: nowrap;
+    vertical-align: top;
+  }
+
+  /* What a phase is taken from, under its name */
+  .p2006t .dt-basis {
+    display: block;
+    font-weight: 400;
+    color: #444;
+  }
+
+  .p2006t .dt-table .dt-total td {
+    font-weight: 700;
+    border-top: 1.5px solid #000;
+  }
+
   .p2006t .print-page2__notes {
     margin: 0.6rem 0 0;
     padding-left: 1rem;
@@ -1754,6 +1783,7 @@
     .p2006t .nomograph { max-height: 49cqw; }
 
     .p2006t .print-page2__grid { gap: 3.14cqw; margin-top: 1.18cqw; }
+    .p2006t .dt-table--phases + .dt-table--phases { margin-top: 1.18cqw; }
     .p2006t .print-page2__notes { margin-top: 0.94cqw; padding-left: 1.57cqw; font-size: 0.94cqw; }
   }
 }

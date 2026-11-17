@@ -212,6 +212,25 @@ This is a training rule of thumb and is **not** a POH figure. The 1.30 factor al
 
 If the result is longer than the runway, the card turns red and states the runway length. The distance stays visible, and it shows in red on the print sheet.
 
+### Phases on the print sheet
+
+The second printed page splits the distance into three phases, in the order they happen.
+
+| Phase | Distance | Basis |
+|---|---|---|
+| Accelerate | Takeoff ground roll | Liftoff at 65 KIAS, the speed the POH takeoff tables assume |
+| Decision | The 30% margin | 0.30 × (takeoff ground roll + landing ground roll) |
+| Stop | Landing ground roll | Planned landing weight |
+
+The decision phase also shows a time:
+
+```
+groundspeed at liftoff = 65 kt − headwind
+decision time          = decision distance ÷ groundspeed
+```
+
+This is the margin restated as time at liftoff speed. It is not a measured reaction time, and it treats indicated airspeed as true airspeed.
+
 ## 9. Accelerate-go
 
 The POH publishes no accelerate-go data. The app gives an estimate:
@@ -235,6 +254,8 @@ The factor of 30.867 converts knots to metres per minute.
 | Runway length | FAA runway record | Used only for the required climb rate |
 
 The POH table for VYSE assumes maximum continuous power, the failed propeller feathered, and gear and flaps up. The table lists a lower VYSE at lighter weights and higher altitudes, but the calculation keeps 84 KIAS, which slightly lengthens the distance.
+
+The second printed page splits the distance into the same phases as accelerate-stop: the takeoff ground roll, a decision phase of zero length because the engine is taken to fail at liftoff, and the climb to 50 ft with its climb rate, groundspeed and time.
 
 That assumption flatters the result. The estimate allows no time for recognition, for feathering, or for retracting gear and flaps. It treats indicated airspeed as true airspeed, which understates the distance at altitude. The accelerate-go distance is not compared with runway length.
 

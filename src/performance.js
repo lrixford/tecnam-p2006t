@@ -8,6 +8,8 @@ import { lbToKg }                                          from './units.js';
 
 export const XWIND_LIMIT_KT    = 17;     // POH §2 demonstrated crosswind
 const ACCEL_STOP_MARGIN        = 1.30;   // allows for a delayed decision
+const LIFTOFF_KIAS             = 65;     // liftoff speed the POH takeoff tables assume
+const KT_TO_M_PER_S            = 0.514444;
 const MIN_OEI_ROC_FPM          = 50;     // below this, no accel-go distance is given
 const CAUTION_BAND_FPM         = 50;     // this far above the floor, accel-go shows a caution
 
@@ -190,6 +192,10 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
 
   // Accel-stop: training rule of thumb, not a POH figure
   const accelStop_m = Math.round((toCorr.gr + ldgCorr.gr) * ACCEL_STOP_MARGIN);
+  // The margin is the decision phase. Its time is the margin covered at liftoff speed.
+  const liftoffGs_kt = Math.max(1, LIFTOFF_KIAS - headwind_kt);
+  const decision_m   = accelStop_m - toCorr.gr - ldgCorr.gr;
+  const decision_s   = Math.round(decision_m / (liftoffGs_kt * KT_TO_M_PER_S) * 10) / 10;
 
   // Climb rates (ft/min)
   const roc_fpm     = interpolateClimb(P2006T.climb.to_vy.data,    weight_kg, pa_ft, oat_c);
@@ -253,8 +259,26 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
       dist_m:  accelStop_m,
       ok:      acStopOk,
       message: acStopOk ? null : `Longer than the ${tora_ft.toLocaleString()} ft runway.`,
+      // In the order they happen; the three distances add up to dist_m
+      phases: {
+        accelerate_m:  toCorr.gr,
+        decision_m,
+        decision_s,
+        stop_m:        ldgCorr.gr,
+        liftoff_kias:  LIFTOFF_KIAS,
+        liftoff_gs_kt: liftoffGs_kt,
+      },
     },
-    accel_go:    { dist_m: accelGo_m, level: accelGoLevel, message: accelGoMessage },
+    accel_go:    {
+      dist_m: accelGo_m, level: accelGoLevel, message: accelGoMessage,
+      // No decision phase: the engine is taken to fail at liftoff
+      phases: {
+        accelerate_m: toCorr.gr,
+        climb_m:      canAccelGo ? accelGo_m - toCorr.gr : null,
+        climb_s:      canAccelGo ? Math.round(50 / roc_oei_fpm * 60) : null,
+        climb_gs_kt:  oeiGs_kt,
+      },
+    },
     roc_fpm,
     roc_oei_fpm,
   };

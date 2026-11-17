@@ -186,7 +186,44 @@ function performanceNotes(perf) {
     .join('');
 }
 
-// Second printed page: the performance figures with everything they were
+// Accelerate-stop and accelerate-go, each split into the phases it is built from.
+function phaseTables(perf) {
+  const stop = perf.accel_stop.phases;
+  const go = perf.accel_go.phases;
+  const goClass = { warning: 'dt-oei-warn', caution: 'dt-oei-caution' }[perf.accel_go.level] ?? '';
+  const row = (phase, basis, value) =>
+    `<tr><td>${phase}<span class="dt-basis">${basis}</span></td><td>${value}</td></tr>`;
+  const total = (value) => `<tr class="dt-total"><td>Total</td><td>${value}</td></tr>`;
+  const accelerate = row('Accelerate', `Takeoff ground roll, liftoff at ${stop.liftoff_kias} KIAS`, fmtFtM(stop.accelerate_m));
+  const na = '<span class="dt-oei-warn">N/A</span>';
+  const climb = go.climb_m !== null
+    ? row('Climb to 50 ft on one engine',
+        `${perf.roc_oei_fpm} fpm at ${go.climb_gs_kt} kt groundspeed, ${go.climb_s} s`,
+        `<span class="${goClass}">${fmtFtM(go.climb_m)}</span>`)
+    : row('Climb to 50 ft on one engine', `${perf.roc_oei_fpm} fpm predicted`, na);
+
+  return `
+          <table class="dt-table dt-table--phases">
+            <thead><tr><th>Accelerate-Stop by phase</th><th>Distance</th></tr></thead>
+            <tbody>
+              ${accelerate}
+              ${row('Decision', `30% allowance for a delayed decision: ${stop.decision_s.toFixed(1)} s at ${stop.liftoff_gs_kt} kt groundspeed`, fmtFtM(stop.decision_m))}
+              ${row('Stop', 'Landing ground roll at planned landing weight', fmtFtM(stop.stop_m))}
+              ${total(warnIf(!perf.accel_stop.ok, fmtFtM(perf.accel_stop.dist_m)))}
+            </tbody>
+          </table>
+          <table class="dt-table dt-table--phases">
+            <thead><tr><th>Accelerate-Go by phase</th><th>Distance</th></tr></thead>
+            <tbody>
+              ${accelerate}
+              ${row('Decision', 'No allowance: the engine is taken to fail at liftoff', fmtFtM(0))}
+              ${climb}
+              ${total(perf.accel_go.dist_m !== null ? `<span class="${goClass}">${fmtFtM(perf.accel_go.dist_m)}</span>` : na)}
+            </tbody>
+          </table>`;
+}
+
+// Second printed page: what the performance figures on the first page were
 // computed from. Print only, and only once a performance result exists.
 export function renderPerformancePage(target, state, metar = null, perf = null) {
   if (!perf) {
@@ -194,7 +231,6 @@ export function renderPerformancePage(target, state, metar = null, perf = null) 
     return;
   }
   const { aircraft, timestamp } = printHeading(state);
-  const goClass = { warning: 'dt-oei-warn', caution: 'dt-oei-caution' }[perf.accel_go.level] ?? '';
   const section = document.createElement('section');
   section.className = 'print-page2';
   section.innerHTML = `
@@ -216,16 +252,7 @@ export function renderPerformancePage(target, state, metar = null, perf = null) 
           </table>
         </div>
         <div>
-          <table class="dt-table">
-            <thead><tr><th>Performance</th><th>GR / Dist</th><th>50 ft / OEI</th></tr></thead>
-            <tbody>
-              <tr><td>Takeoff</td><td>${fmtFtM(perf.takeoff.gr)}</td><td>${warnIf(!perf.takeoff.tora_ok, fmtFtM(perf.takeoff.to50ft))}</td></tr>
-              <tr><td>Accelerate-Stop</td><td colspan="2">${warnIf(!perf.accel_stop.ok, fmtFtM(perf.accel_stop.dist_m))}</td></tr>
-              <tr><td>Accelerate-Go</td><td>${perf.accel_go.dist_m !== null ? `<span class="${goClass}">${fmtFtM(perf.accel_go.dist_m)}</span>` : '<span class="dt-oei-warn">N/A</span>'}</td><td><span class="${goClass}">${fmtFpmM(perf.roc_oei_fpm)}</span></td></tr>
-              <tr><td>Landing</td><td>${fmtFtM(perf.landing.gr)}</td><td>${warnIf(!perf.landing.lda_ok, fmtFtM(perf.landing.to50ft))}</td></tr>
-              <tr><td>Rate of Climb</td><td>${fmtFpmM(perf.roc_fpm)}</td><td>${fmtFpmM(perf.roc_oei_fpm)}</td></tr>
-            </tbody>
-          </table>
+          ${phaseTables(perf)}
           <ul class="print-page2__notes">${performanceNotes(perf)}</ul>
         </div>
       </div>`;

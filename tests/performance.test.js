@@ -284,6 +284,56 @@ test('accel-stop is takeoff roll plus landing roll at landing weight, plus 30%',
   assert.equal(r.accel_stop.dist_m, Math.round((328 + 210) * 1.3));
 });
 
+test('accel-stop phases are the two rolls and the decision margin, and add up', () => {
+  const r = calcPerformance({
+    grossLb: 2712,
+    landingLb: 1080 * 2.20462262,
+    airport: { elev_ft: 0 },
+    runway: { surface: 'turf', length_ft: 9000, ends: { 18: { hdg_mag: 180, slope_pct: 0 } } },
+    endId: '18',
+    metar: { altimeter_inhg: 29.92, oat_c: 25, wind_dir_deg: 180, wind_speed_kt: 0 },
+  });
+  const p = r.accel_stop.phases;
+  assert.equal(p.accelerate_m, 328);
+  assert.equal(p.stop_m, 210);
+  assert.equal(p.decision_m, 161);
+  assert.equal(p.accelerate_m + p.decision_m + p.stop_m, r.accel_stop.dist_m);
+  // 161 m at 65 kt, the liftoff speed with no wind
+  assert.equal(p.liftoff_gs_kt, 65);
+  assert.equal(p.decision_s, 4.8);
+});
+
+test('the decision time uses groundspeed at liftoff', () => {
+  const r = calcPerformance({
+    grossLb: 2712,
+    landingLb: 2712,
+    airport: { elev_ft: 0 },
+    runway: { surface: 'turf', length_ft: 9000, ends: { 18: { hdg_mag: 180, slope_pct: 0 } } },
+    endId: '18',
+    metar: { altimeter_inhg: 29.92, oat_c: 25, wind_dir_deg: 180, wind_speed_kt: 10 },
+  });
+  const p = r.accel_stop.phases;
+  assert.equal(p.liftoff_gs_kt, 55);
+  assert.equal(p.decision_s, Math.round(p.decision_m / (55 * 0.514444) * 10) / 10);
+});
+
+test('accel-go phases are the ground roll and the climb, and add up', () => {
+  const r = perfAt({ elev_ft: 0, oat_c: 25 });
+  const p = r.accel_go.phases;
+  assert.equal(p.accelerate_m, r.takeoff.gr);
+  assert.equal(p.accelerate_m + p.climb_m, r.accel_go.dist_m);
+  assert.equal(p.climb_gs_kt, 84);
+  // 50 ft at 142 fpm
+  assert.equal(p.climb_s, 21);
+});
+
+test('accel-go has no climb phase when no distance is given', () => {
+  const p = perfAt({ elev_ft: 5000, oat_c: 25 }).accel_go.phases;
+  assert.ok(p.accelerate_m > 0);
+  assert.equal(p.climb_m, null);
+  assert.equal(p.climb_s, null);
+});
+
 test('takeoff and landing distances are still given when accel-go is unavailable', () => {
   const r = perfAt({ elev_ft: 5000, oat_c: 25 });
   assert.ok(r.takeoff.gr > 0);
