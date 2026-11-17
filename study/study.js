@@ -426,11 +426,7 @@ function renderStudy(key) {
   fitCard({ instant: true });
 
   // The first card of the day shows how swiping sorts it.
-  if (store.hintDay !== today()) {
-    store.hintDay = today();
-    save();
-    playHint(document.getElementById('card'));
-  }
+  if (store.hintSeen !== today()) playHint(document.getElementById('card'));
 }
 
 function renderFinish(key, info, s) {
@@ -547,10 +543,17 @@ const today = () => {
 // The demonstration in progress: { card, label, timers }.
 let hint = null;
 
-function stopHint() {
+/* Ends the demonstration. It counts as seen for the day once it has played
+   through or the reader has acted on the card; a redraw that cuts it short
+   lets it play again. */
+function stopHint(seen = true) {
   if (!hint) return;
   const { card, label, timers } = hint;
   hint = null;
+  if (seen) {
+    store.hintSeen = today();
+    save();
+  }
   timers.forEach(clearTimeout);
   label.remove();
   card.classList.remove('is-demo');
@@ -573,7 +576,7 @@ function playHint(card) {
   if (reduceMotion.matches) {
     label.innerHTML =
       '<span class="swipe-hint__learn">Swipe left: still learning</span> <span class="swipe-hint__know">Swipe right: know it</span>';
-    at(6000, stopHint);
+    at(6000, () => stopHint());
     return;
   }
 
@@ -594,7 +597,7 @@ function playHint(card) {
     lean(reach);
   });
   at(3600, () => lean(0));
-  at(4300, stopHint);
+  at(4300, () => stopHint());
 }
 
 /* Tap flips the card; dragging it sideways past the threshold sorts it. */
@@ -1003,7 +1006,7 @@ function go(hash) {
 }
 
 function render() {
-  stopHint();
+  stopHint(false);
   const { view, key } = route();
   document.body.dataset.view = view;
   if (view === 'study') renderStudy(key);
