@@ -17,8 +17,12 @@
 //   figure   key of a drawing in diagrams.js, shown with the question
 //   diagram  key or keys of drawings in diagrams.js, shown with the answer
 //
+//   letter   the COMBATS letter a V_MC factor belongs to, or '' for none
+//
 // A deck with `table: true` shows all of its answers as a reference table on
 // the back of each flashcard, filled column by column, five rows per column.
+// A deck with `table: 'factors'` shows one row per card instead, grouped by
+// COMBATS letter, with the direction of V_MC and of performance.
 //
 // Text markup: V_MC renders as V with a subscript; **text** renders bold.
 //
@@ -777,20 +781,100 @@ export const DECKS = [
     group: 'aero',
     title: 'Factors affecting V_MC',
     blurb: 'Which way actual V_MC and performance go',
+    table: 'factors',
+    // In COMBATS order, so the reference table reads as the mnemonic
     cards: [
-      { id: 'vf.power', q: 'Effect of more power', a: 'V_MC goes **up**.\n\nPerformance goes **up**.' },
-      { id: 'vf.temp', q: 'Effect of a temperature increase', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
-      { id: 'vf.pressure', q: 'Effect of a pressure decrease', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
-      { id: 'vf.da', q: 'Effect of a density altitude increase', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
-      { id: 'vf.bank0', q: 'Effect of a 0° bank angle, no turn', a: 'V_MC goes **up**.\n\nPerformance goes **down**.' },
-      { id: 'vf.bank23', q: 'Effect of a 2 to 3° bank angle, no turn', a: 'V_MC goes **down**.\n\nPerformance goes **up**.' },
-      { id: 'vf.windmill', q: 'Effect of a windmilling propeller', a: 'V_MC goes **up**.\n\nPerformance goes **down**.' },
-      { id: 'vf.feather', q: 'Effect of a feathered propeller', a: 'V_MC goes **down**.\n\nPerformance goes **up**.' },
-      { id: 'vf.aft-cg', q: 'Effect of an aft CG', a: 'V_MC goes **up**.\n\nPerformance goes **up**.' },
-      { id: 'vf.weight', q: 'Effect of heavier weight', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
-      { id: 'vf.flaps', q: 'Effect of flaps down', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
-      { id: 'vf.gear', q: 'Effect of landing gear down', a: 'V_MC goes **down**.\n\nPerformance goes **down**.' },
-      { id: 'vf.ground-effect', q: 'Effect of being in ground effect', a: 'V_MC goes **down**.\n\nPerformance goes **up**.' },
+      {
+        id: 'vf.windmill',
+        q: 'Effect of a windmilling propeller',
+        label: 'Windmilling propeller',
+        letter: 'C',
+        a: 'V_MC goes **up**.\n\nPerformance goes **down**.',
+      },
+      {
+        id: 'vf.feather',
+        q: 'Effect of a feathered propeller',
+        label: 'Feathered propeller',
+        letter: 'C',
+        a: 'V_MC goes **down**.\n\nPerformance goes **up**.',
+      },
+      {
+        id: 'vf.power',
+        q: 'Effect of more power',
+        label: 'More power',
+        letter: 'O',
+        a: 'V_MC goes **up**.\n\nPerformance goes **up**.',
+      },
+      {
+        id: 'vf.weight',
+        q: 'Effect of heavier weight',
+        label: 'Heavier weight',
+        letter: 'M',
+        a: 'V_MC goes **down**.\n\nPerformance goes **down**.',
+      },
+      {
+        id: 'vf.bank0',
+        q: 'Effect of a 0° bank angle, no turn',
+        label: '0° bank',
+        letter: 'B',
+        a: 'V_MC goes **up**.\n\nPerformance goes **down**.',
+      },
+      {
+        id: 'vf.bank23',
+        q: 'Effect of a 2 to 3° bank angle, no turn',
+        label: '2 to 3° bank',
+        letter: 'B',
+        a: 'V_MC goes **down**.\n\nPerformance goes **up**.',
+      },
+      {
+        id: 'vf.aft-cg',
+        q: 'Effect of an aft CG',
+        label: 'Aft CG',
+        letter: 'A',
+        a: 'V_MC goes **up**.\n\nPerformance goes **up**.',
+      },
+      {
+        id: 'vf.flaps',
+        q: 'Effect of flaps down',
+        label: 'Flaps down',
+        letter: 'T',
+        a: 'V_MC goes **down**.\n\nPerformance goes **down**.',
+      },
+      {
+        id: 'vf.gear',
+        q: 'Effect of landing gear down',
+        label: 'Gear down',
+        letter: 'T',
+        a: 'V_MC goes **down**.\n\nPerformance goes **down**.',
+      },
+      {
+        id: 'vf.temp',
+        q: 'Effect of a temperature increase',
+        label: 'Hotter',
+        letter: 'S',
+        a: 'V_MC goes **down**.\n\nPerformance goes **down**.',
+      },
+      {
+        id: 'vf.pressure',
+        q: 'Effect of a pressure decrease',
+        label: 'Lower pressure',
+        letter: 'S',
+        a: 'V_MC goes **down**.\n\nPerformance goes **down**.',
+      },
+      {
+        id: 'vf.da',
+        q: 'Effect of a density altitude increase',
+        label: 'Higher density altitude',
+        letter: 'S',
+        a: 'V_MC goes **down**.\n\nPerformance goes **down**.',
+      },
+      {
+        id: 'vf.ground-effect',
+        q: 'Effect of being in ground effect',
+        label: 'In ground effect',
+        letter: '',
+        a: 'V_MC goes **down**.\n\nPerformance goes **up**.',
+      },
     ],
   },
   {

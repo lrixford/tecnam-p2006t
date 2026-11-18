@@ -109,6 +109,28 @@ function deckTableHTML(card) {
   return `<table class="reftable"><caption>${fmt(card.deck.title)}, ${fmt(card.deck.blurb.toLowerCase())}</caption><tbody>${rows}</tbody></table>`;
 }
 
+/* The V_MC factors as one table in COMBATS order, with this card's row marked. */
+function factorTableHTML(card) {
+  const cards = card.deck.cards;
+  const arrow = (text, word) => {
+    const dir = new RegExp(`${word} goes \\*\\*(up|down)`).exec(text)?.[1];
+    return dir === 'up' ? '<span aria-hidden="true">▲</span> Up' : '<span aria-hidden="true">▼</span> Down';
+  };
+  const rows = cards
+    .map((item, i) => {
+      const first = i === 0 || cards[i - 1].letter !== item.letter;
+      const span = cards.filter((c) => c.letter === item.letter).length;
+      const letter = first ? `<th scope="rowgroup" rowspan="${span}" class="reftable__letter">${item.letter}</th>` : '';
+      const here = item.id === card.id ? ' class="is-here"' : '';
+      return `<tr>${letter}<th scope="row"${here}>${fmt(item.label)}</th><td${here}>${arrow(item.a, 'V_MC')}</td><td${here}>${arrow(item.a, 'Performance')}</td></tr>`;
+    })
+    .join('');
+  return `<table class="reftable reftable--factors">
+    <caption>${fmt('V_MC rises with more yaw to stop, or less help for the rudder. Performance rises with more thrust or less drag.')}</caption>
+    <thead><tr><th scope="col"><span class="visually-hidden">COMBATS</span></th><th scope="col">Factor</th><th scope="col">${fmt('V_MC')}</th><th scope="col">Performance</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
 /* Drawings for a card: `figure` goes with the question, `diagram` with the answer. */
 function drawingsHTML(keys) {
   return []
@@ -362,7 +384,7 @@ function faceHTML(card, side) {
       <div class="face__top face__top--q"><span>${fmt(card.q)}</span></div>
       <div class="face__body"><div class="face__content">
         <div class="answer answer--${answerSize(card)}">${answerHTML(card)}</div>
-        ${card.deck.table ? deckTableHTML(card) : ''}
+        ${card.deck.table === 'factors' ? factorTableHTML(card) : card.deck.table ? deckTableHTML(card) : ''}
         ${drawingsHTML(card.figure)}${drawingsHTML(card.diagram)}
         ${whyHTML(card)}
         ${card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
@@ -561,7 +583,8 @@ function stopHint(seen = true) {
 }
 
 /* Leans the card to each side in turn, with the stamp and a caption naming
-   what a swipe that way does. Any touch on the card ends it. */
+   what a swipe that way does. Any touch on the card ends it. It plays even
+   when reduced motion is requested: it is brief, and it is the instruction. */
 function playHint(card) {
   const label = document.createElement('p');
   label.className = 'swipe-hint';
@@ -572,13 +595,6 @@ function playHint(card) {
   const timers = [];
   hint = { card, label, timers };
   const at = (ms, fn) => timers.push(setTimeout(fn, ms));
-
-  if (reduceMotion.matches) {
-    label.innerHTML =
-      '<span class="swipe-hint__learn">Swipe left: still learning</span> <span class="swipe-hint__know">Swipe right: know it</span>';
-    at(6000, () => stopHint());
-    return;
-  }
 
   const reach = Math.min(120, card.offsetWidth * 0.3);
   const lean = (x) => {

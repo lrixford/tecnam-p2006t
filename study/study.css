@@ -994,6 +994,35 @@ button {
   font-weight: 800;
 }
 
+/* V_MC factors: one row per factor, grouped by COMBATS letter. */
+.reftable--factors th {
+  text-align: left;
+}
+
+.reftable--factors td {
+  width: auto;
+  white-space: nowrap;
+}
+
+.reftable--factors th,
+.reftable--factors td {
+  padding: 0.32em 0.45em;
+}
+
+.reftable--factors thead th {
+  background: none;
+  border-width: 0 0 1px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.reftable--factors .reftable__letter {
+  width: 1.6em;
+  background: none;
+  font-size: 1.15em;
+  text-align: center;
+}
+
 /* Schematic diagrams (diagrams.js). */
 .diagram {
   max-width: 26rem;
