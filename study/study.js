@@ -127,8 +127,25 @@ function factorTableHTML(card) {
     })
     .join('');
   return `<table class="reftable reftable--factors">
-    <caption>${fmt('V_MC rises with more yaw to stop, or less help for the rudder. Performance rises with more thrust or less drag.')}</caption>
+    <caption>${fmt('Each COMBATS condition raises both, with two exceptions: the bank lowers V_MC, and the windmilling propeller lowers performance. The opposite of a condition flips both arrows.')}</caption>
     <thead><tr><th scope="col"><span class="visually-hidden">COMBATS</span></th><th scope="col">Factor</th><th scope="col">${fmt('V_MC')}</th><th scope="col">Performance</th></tr></thead>
+    <tbody>${rows}</tbody></table>`;
+}
+
+/* Propeller governor: one row per case, built from the cards that carry a row. */
+function governorTableHTML(card) {
+  const arrow = (dir) => `<span aria-hidden="true">${dir === 'up' ? '▲' : '▼'}</span><span class="visually-hidden">${dir}</span>`;
+  const rows = card.deck.cards
+    .filter((item) => item.governor)
+    .map((item) => {
+      const here = item.id === card.id ? ' class="is-here"' : '';
+      const cells = item.governor.map((cell, i) => `<td${here}>${i < 3 ? esc(cell) : arrow(cell)}</td>`).join('');
+      return `<tr><th scope="row"${here}>${fmt(item.label)}</th>${cells}</tr>`;
+    })
+    .join('');
+  return `<table class="reftable reftable--factors reftable--governor">
+    <caption>In a climb or dive the lever has not moved: the governor is bringing RPM back to where it was set.</caption>
+    <thead><tr><th scope="col"><span class="visually-hidden">Case</span></th><th scope="col">Spring</th><th scope="col">Fly&shy;weights</th><th scope="col">Pilot valve</th><th scope="col">Oil press.</th><th scope="col">Blade angle</th><th scope="col">RPM</th></tr></thead>
     <tbody>${rows}</tbody></table>`;
 }
 
@@ -390,6 +407,7 @@ function faceHTML(card, side) {
       <div class="face__body"><div class="face__content">
         <div class="answer answer--${answerSize(card)}">${answerHTML(card)}</div>
         ${card.deck.table === 'factors' ? factorTableHTML(card) : card.deck.table ? deckTableHTML(card) : ''}
+        ${card.governor ? governorTableHTML(card) : ''}
         ${drawingsHTML(card.figure)}${drawingsHTML(card.diagram)}
         ${whyHTML(card)}
         ${card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}

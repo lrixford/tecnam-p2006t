@@ -1032,6 +1032,26 @@ button {
   text-align: center;
 }
 
+/* Propeller governor: seven narrow columns. */
+.reftable--governor {
+  font-size: clamp(0.66rem, 2.9vw, 0.9rem);
+}
+
+.reftable--governor th,
+.reftable--governor td {
+  padding: 0.4em 0.3em;
+  text-align: center;
+}
+
+.reftable--governor tbody th {
+  text-align: left;
+}
+
+.reftable--governor thead th {
+  white-space: normal;
+  vertical-align: bottom;
+}
+
 /* Schematic diagrams (diagrams.js). */
 .diagram {
   max-width: 26rem;

@@ -145,6 +145,30 @@ export const QUIZ = {
       'Yes, with a torsional damper on the crankshaft',
     ],
   },
+  'eng.gear-ratio': {
+    right: '2.43 to 1',
+    wrong: [
+      '1.5 to 1',
+      '3.14 to 1',
+      '4.86 to 1',
+    ],
+  },
+  'eng.water-pump': {
+    right: 'The engine camshaft, mechanically',
+    wrong: [
+      'An electric motor on the battery bus',
+      'A belt from the alternator',
+      'Oil pressure from the propeller governor',
+    ],
+  },
+  'eng.expansion-tank': {
+    right: 'The expansion tank on top of the engine; a relief valve in its cap',
+    wrong: [
+      'The overflow bottle; a relief valve in the radiator',
+      'The radiator; a thermostat in the water pump',
+      'The expansion tank behind the firewall; the oil pressure regulator',
+    ],
+  },
 
   /* Oil */
   'oil.describe': {
@@ -189,6 +213,38 @@ export const QUIZ = {
       'Straight 100-weight aviation mineral oil',
       'Any SAE 20W-50 aviation oil',
       'Two-stroke oil premixed with the fuel',
+    ],
+  },
+  'oil.liters': {
+    right: 'Max 3, min 2, operating 2.5',
+    wrong: [
+      'Max 4, min 3, operating 3.5',
+      'Max 6, min 4, operating 5',
+      'Max 2, min 1, operating 1.5',
+    ],
+  },
+  'oil.thermostat': {
+    right: 'Sends oil through the oil radiator only once it is hot, about 75 °C',
+    wrong: [
+      'Shuts the engine down if oil temperature passes 130 °C',
+      'Opens the cowl flaps as the oil warms',
+      'Sends oil through the radiator only while it is cold, below 50 °C',
+    ],
+  },
+  'oil.regulator': {
+    right: 'A pressure regulator built into the engine-driven oil pump',
+    wrong: [
+      'The propeller governor',
+      'The thermostatic valve',
+      'An electric boost pump',
+    ],
+  },
+  'oil.tank': {
+    right: 'Behind the firewall, away from heat sources',
+    wrong: [
+      'In the lower cowling, next to the oil radiator',
+      'In the wing root, inboard of the fuel tank',
+      'On top of the engine, under a pressure cap',
     ],
   },
 
@@ -300,6 +356,63 @@ export const QUIZ = {
     q: 'On a multi-engine constant-speed propeller, what does high oil pressure do?',
     right: 'Moves the blades to low pitch',
     wrong: ['Moves the blades to high pitch', 'Feathers the blades', 'Locks the blades at their current pitch'],
+  },
+  'prop.governor': {
+    q: 'Which three parts make up the working chain of the propeller governor?',
+    right: 'Speeder spring, flyweights and pilot valve',
+    wrong: [
+      'Shuttle valve, accumulator and squat switch',
+      'Thermostatic valve, relief valve and return valve',
+      'Voltage regulator, overvoltage relay and field switch',
+    ],
+  },
+  'prop.gov-forward': {
+    right: 'Flyweights fall in, oil pressure up, blade angle down, RPM up',
+    wrong: [
+      'Flyweights fall out, oil pressure down, blade angle up, RPM down',
+      'Flyweights fall in, oil pressure down, blade angle up, RPM up',
+      'Flyweights fall out, oil pressure up, blade angle down, RPM down',
+    ],
+  },
+  'prop.gov-aft': {
+    right: 'Flyweights fall out, oil pressure down, blade angle up, RPM down',
+    wrong: [
+      'Flyweights fall in, oil pressure up, blade angle down, RPM up',
+      'Flyweights fall out, oil pressure up, blade angle down, RPM down',
+      'Flyweights fall in, oil pressure down, blade angle up, RPM up',
+    ],
+  },
+  'prop.gov-climb': {
+    right: 'Flyweights fall in, oil pressure up, blade angle down',
+    wrong: [
+      'Flyweights fall out, oil pressure down, blade angle up',
+      'Flyweights fall in, oil pressure down, blade angle up',
+      'Nothing moves until the prop lever is moved',
+    ],
+  },
+  'prop.gov-dive': {
+    right: 'Flyweights fall out, oil pressure down, blade angle up',
+    wrong: [
+      'Flyweights fall in, oil pressure up, blade angle down',
+      'Flyweights fall out, oil pressure up, blade angle down',
+      'Nothing moves until the prop lever is moved',
+    ],
+  },
+  'prop.feather-lock': {
+    right: 'Below about 600 to 800 rpm the propeller cannot feather, so feather before then',
+    wrong: [
+      'Above 2265 rpm the propeller cannot feather, so reduce power first',
+      'It holds the propeller feathered until oil pressure returns',
+      'It stops the prop lever moving to feather on the ground',
+    ],
+  },
+  'prop.feather-force': {
+    right: 'Counterweights and a heavy-duty spring',
+    wrong: [
+      'High oil pressure from the governor',
+      'Nitrogen pressure from an accumulator',
+      'An electric feathering motor',
+    ],
   },
 
   /* Electrical */
@@ -446,6 +559,38 @@ export const QUIZ = {
       'Nose gear; it prevents landing gear retraction on the ground',
       'Left main gear; it silences the stall warning on the ground',
       'Right main gear; it shuts off the hydraulic pump after landing',
+    ],
+  },
+  'gear.type': {
+    right: 'Electrically activated, hydraulically actuated',
+    wrong: [
+      'Hydraulically activated, electrically actuated',
+      'Mechanically activated, pneumatically actuated',
+      'Electrically activated and electrically actuated',
+    ],
+  },
+  'gear.pressure': {
+    right: 'Retracting',
+    wrong: [
+      'Extending',
+      'Both take the same pressure',
+      'Neither; the pump only runs for emergency extension',
+    ],
+  },
+  'gear.shuttle': {
+    right: 'Nitrogen from the accumulator reaches the gear jacks through the shuttle valves',
+    wrong: [
+      'The electric pump reverses and runs from the emergency battery',
+      'The up locks release and the landing gear free-falls',
+      'Engine oil pressure is routed to the gear jacks',
+    ],
+  },
+  'gear.unsafe': {
+    right: 'Gear selector up on the ground, or gear not down and locked with flaps FULL',
+    wrong: [
+      'Gear selector down in flight above 122 KIAS',
+      'Gear down with flaps up',
+      'Either alternator field switched off',
     ],
   },
 
@@ -606,6 +751,96 @@ export const QUIZ = {
     ],
   },
 
+  /* Brakes, instruments and heating */
+  'brk.toe': {
+    right: 'Toe brakes on both sets of rudder pedals',
+    wrong: [
+      'A hand lever on the center pedestal',
+      'Toe brakes on the left seat only',
+      'Heel brakes below the rudder pedals',
+    ],
+  },
+  'brk.master': {
+    right: 'A single vented reservoir feeds the pilot side, with hoses to the co-pilot side',
+    wrong: [
+      'Each pedal has its own sealed reservoir',
+      'The landing gear hydraulic pump supplies them',
+      'The emergency accumulator supplies them',
+    ],
+  },
+  'brk.wheels': {
+    right: 'Hydraulic calipers on Cleveland 6.00-6 wheels',
+    wrong: [
+      'Drum brakes on Cleveland 5.00-5 wheels',
+      'Hydraulic calipers on all three wheels',
+      'Cable-operated calipers on Cleveland 6.00-6 wheels',
+    ],
+  },
+  'brk.parking': {
+    right: 'A valve traps hydraulic pressure in the brake lines',
+    wrong: [
+      'A pin locks the nose wheel',
+      'A cable clamps the brake calipers',
+      'The electric pump holds pressure with the master switch on',
+    ],
+  },
+  'ins.adahrs': {
+    right: 'Air Data, Attitude and Heading Reference System; it combines the ADC and the AHRS',
+    wrong: [
+      'Automatic Dependent Altitude and Heading Reporting System; it replaces the transponder',
+      'Air Data and Autopilot Heading Reference System; it replaces the flight director',
+      'Attitude Display and Horizontal Reference System; it replaces the magnetometer',
+    ],
+  },
+  'ins.ahrs': {
+    right: 'Solid-state accelerometers and tilt sensors, with no moving parts',
+    wrong: [
+      'A vacuum-driven gyro',
+      'An electrically spun gyro',
+      'GPS track and ground speed only',
+    ],
+  },
+  'ins.magnetometer': {
+    right: 'Senses the magnetic field for heading; in the wingtip',
+    wrong: [
+      'Senses the magnetic field for heading; behind the instrument panel',
+      'Measures outside air temperature; in the wingtip',
+      'Measures yaw rate; in the tail cone',
+    ],
+  },
+  'ins.adc': {
+    right: 'Pitot and static pressure; airspeed, altitude and vertical speed',
+    wrong: [
+      'Magnetic flux; heading and track',
+      'Acceleration; pitch, roll and yaw',
+      'Manifold pressure; engine power',
+    ],
+  },
+  'ins.oat': {
+    right: 'True airspeed and density altitude',
+    wrong: [
+      'Indicated airspeed and pressure altitude',
+      'Heading and track',
+      'Fuel flow and endurance',
+    ],
+  },
+  'env.heat': {
+    right: 'Ram air warmed by engine exhaust in a heat exchanger',
+    wrong: [
+      'An electric heater on the avionics bus',
+      'Hot engine coolant in a cabin radiator',
+      'Warm air drawn from the oil radiator',
+    ],
+  },
+  'env.pitot-heat': {
+    right: 'The left main pitot tube; left side of the instrument panel',
+    wrong: [
+      'Both pitot tubes; overhead panel',
+      'The right pitot tube; center pedestal',
+      'The left main pitot tube; overhead panel',
+    ],
+  },
+
   /* Minimum control speed */
   'vmc.define': {
     right: 'The slowest speed at which directional control can be maintained with one engine inoperative',
@@ -680,6 +915,15 @@ export const QUIZ = {
   'vmc.combats-lowers': {
     right: 'Bank of up to 5° towards the operating engine',
     wrong: ['Critical engine failed and windmilling', 'Operating engine at max takeoff power', 'Aft CG'],
+  },
+  'vmc.pattern': {
+    q: 'Every COMBATS condition raises both V_MC and performance, with one exception each. What are the exceptions?',
+    right: 'The bank lowers V_MC; the windmilling propeller lowers performance',
+    wrong: [
+      'The aft CG lowers V_MC; the light weight lowers performance',
+      'The windmilling propeller lowers V_MC; the bank lowers performance',
+      'The light weight lowers V_MC; the takeoff power lowers performance',
+    ],
   },
   'vmc.demo': {
     q: 'What does the V_MC demo show?',

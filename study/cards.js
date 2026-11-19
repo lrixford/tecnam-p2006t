@@ -5,6 +5,9 @@
 // key leaves the "Factors affecting V_MC" table blank; that deck holds the
 // standard answers. The "Maneuvers and drills" decks follow the packet's
 // emergency checklist and maneuver guide.
+// Cards on the gearbox ratio, coolant and oil plumbing, propeller governor,
+// landing gear hydraulics, brakes, instruments and heating follow a separate
+// systems summary sheet.
 //
 // Card shape:
 //   id       stable key used for saved progress. Never rename an id.
@@ -22,6 +25,9 @@
 //   diagram  key or keys of drawings in diagrams.js, shown with the answer
 //
 //   letter   the COMBATS letter a V_MC factor belongs to, or '' for none
+//   governor one row of the propeller governor table: speeder spring, flyweights,
+//            pilot valve, then 'up' or 'down' for oil pressure, blade angle and RPM.
+//            Cards with a row show the whole table, with their own row marked
 //
 // A deck with `table: true` shows all of its answers as a reference table on
 // the back of each flashcard, filled column by column, five rows per column.
@@ -300,6 +306,32 @@ export const DECKS = [
         q: 'Are the engines direct drive?',
         a: '**No.** A reduction gearbox lowers propeller RPM.',
       },
+      {
+        id: 'eng.gear-ratio',
+        q: 'What is the reduction ratio of the propeller gearbox?',
+        a: '**2.43 : 1**',
+        bullets: [
+          '5800 engine rpm gives 2388 propeller rpm',
+          '5500 engine rpm gives 2265 propeller rpm',
+        ],
+      },
+      {
+        id: 'eng.water-pump',
+        q: 'What drives the coolant pump?',
+        a: 'The engine **camshaft**. It is a mechanical water pump.',
+        bullets: [
+          'Forces coolant from the radiator through the cylinder heads',
+        ],
+      },
+      {
+        id: 'eng.expansion-tank',
+        q: 'Where does hot coolant go after the cylinder heads, and what limits its pressure?',
+        bullets: [
+          'To the expansion tank on top of the engine, under a pressure cap',
+          'Too much pressure: the relief valve opens and coolant flows to the overflow bottle',
+          'As the engine cools, the return valve lets a vacuum pull it back',
+        ],
+      },
     ],
   },
   {
@@ -342,6 +374,42 @@ export const DECKS = [
         q: 'What oil is to be used?',
         bullets: ['Oil with RON 424 classification', 'Check with maintenance for the specific oil'],
         note: 'The oil tank placard reads: use only oil with API classification SG or higher.',
+      },
+      {
+        id: 'oil.liters',
+        q: 'What are the maximum, minimum and operating oil quantities in liters?',
+        bullets: [
+          'Maximum: 3 liters',
+          'Minimum: 2 liters',
+          'Operating: 2.5 liters',
+        ],
+      },
+      {
+        id: 'oil.thermostat',
+        q: 'What does the oil thermostatic valve do?',
+        bullets: [
+          'Regulates oil flow to the oil radiator by oil temperature',
+          'Cold oil: valve closed, oil bypasses the radiator so the engine warms quickly',
+          'About 75 °C (167 °F): valve opens, oil goes through the radiator in the lower cowling',
+          'Ram air cools it before it returns to the tank',
+        ],
+      },
+      {
+        id: 'oil.regulator',
+        q: 'What keeps oil pressure consistent as engine RPM changes?',
+        a: 'A **pressure regulator** built into the engine-driven oil pump.',
+        bullets: [
+          'The pump pulls oil from the external tank and forces it through the regulator',
+          'Bearings and other parts get steady pressure at any RPM',
+        ],
+      },
+      {
+        id: 'oil.tank',
+        q: 'Where is the oil tank?',
+        a: 'Behind the **firewall**, protected from heat sources.',
+        bullets: [
+          'Holes allow air ventilation',
+        ],
       },
     ],
   },
@@ -441,6 +509,61 @@ export const DECKS = [
         bullets: [
           'Single-engine propellers use high oil pressure to achieve **high** pitch.',
           'Multi-engine propellers use high oil pressure to adjust to **low** pitch.',
+        ],
+      },
+      {
+        id: 'prop.governor',
+        q: 'What are the working parts of the propeller governor, and what does each do?',
+        bullets: [
+          '**Speeder spring:** the prop lever sets its tension',
+          '**Flyweights:** spin faster and sling out, spin slower and fall in',
+          '**Pilot valve:** moves up or down to meter engine oil into and out of the hub',
+          'Result: constant RPM at any power setting',
+        ],
+      },
+      {
+        id: 'prop.gov-forward',
+        q: 'Prop lever forward: what happens in the governor?',
+        label: 'Lever forward',
+        governor: ['More', 'In', 'Down', 'up', 'down', 'up'],
+        a: 'Blade angle **decreases** and RPM **increases**.',
+      },
+      {
+        id: 'prop.gov-aft',
+        q: 'Prop lever aft: what happens in the governor?',
+        label: 'Lever aft',
+        governor: ['Less', 'Out', 'Up', 'down', 'up', 'down'],
+        a: 'Blade angle **increases** and RPM **decreases**.',
+      },
+      {
+        id: 'prop.gov-climb',
+        q: 'You pitch up into a climb without touching the prop lever. How does the governor hold RPM?',
+        label: 'Climb',
+        governor: ['', 'In', 'Down', 'up', 'down', 'up'],
+        a: 'Blade angle **decreases**, which brings RPM back up.',
+      },
+      {
+        id: 'prop.gov-dive',
+        q: 'You pitch down into a dive without touching the prop lever. How does the governor hold RPM?',
+        label: 'Dive',
+        governor: ['', 'Out', 'Up', 'down', 'up', 'down'],
+        a: 'Blade angle **increases**, which brings RPM back down.',
+      },
+      {
+        id: 'prop.feather-lock',
+        q: 'What is the feathering lock, and what does it mean for the pilot?',
+        bullets: [
+          'It stops the propeller feathering once engine speed falls below about 600 to 800 rpm',
+          'Move the prop lever to feather before RPM drops that far',
+        ],
+      },
+      {
+        id: 'prop.feather-force',
+        q: 'What moves the blades toward feather?',
+        a: '**Counterweights** and a heavy-duty **spring**.',
+        bullets: [
+          'The counterweights want to move into the plane of rotation',
+          'Oil pressure works against them, toward low pitch',
         ],
       },
     ],
@@ -573,7 +696,7 @@ export const DECKS = [
       {
         id: 'gear.exception',
         q: 'The landing gear system is relatively standard, with one very big exception. What is it?',
-        bullets: ['The emergency extension system', 'A pressurized accumulator forces the landing gear down'],
+        bullets: ['The emergency extension system', 'A nitrogen-pressurized accumulator forces the landing gear down'],
       },
       {
         id: 'gear.accumulator',
@@ -584,6 +707,43 @@ export const DECKS = [
         id: 'gear.squat',
         q: 'Where is the squat switch located, and what is its purpose?',
         bullets: ['On the right main gear', 'Stops the landing gear retracting on the ground if selected up by accident'],
+      },
+      {
+        id: 'gear.type',
+        q: 'How is the landing gear activated and actuated?',
+        a: '**Electrically** activated, **hydraulically** actuated.',
+        bullets: [
+          'Fully retractable',
+          'Tricycle configuration',
+          'The gear switch runs an electric, reversible hydraulic pump',
+        ],
+      },
+      {
+        id: 'gear.pressure',
+        q: 'Which takes the higher hydraulic pressure: retracting the landing gear or extending it?',
+        a: '**Retracting.** Extension uses lower pressure.',
+        bullets: [
+          'Fluid is pumped both ways, through the up lines and the down lines',
+          'Once the up limit switches are pressed, pressure stops building',
+        ],
+      },
+      {
+        id: 'gear.shuttle',
+        q: 'What happens in the system when the emergency gear extension levers are used?',
+        bullets: [
+          'Nitrogen pressure is released from the accumulator',
+          'It travels down the emergency extension line to the shuttle valves',
+          'Each shuttle valve moves to block the unused line and open the path to the gear jacks',
+          'That stops the pressure flowing back to the main pump reservoir',
+        ],
+      },
+      {
+        id: 'gear.unsafe',
+        q: 'What can cause a gear unsafe message?',
+        bullets: [
+          'Gear selector up with the airplane on the ground',
+          'Landing gear not down and locked with flaps FULL',
+        ],
       },
     ],
   },
@@ -664,7 +824,11 @@ export const DECKS = [
       {
         id: 'pre.rotate-prop',
         q: 'Why must pilots rotate the propeller during preflight?',
-        bullets: ['Forces oil through the system', 'Needed for an accurate oil quantity check'],
+        bullets: [
+          'Forces oil through the system',
+          'Needed for an accurate oil quantity check',
+          'Ignition off, and turn the propeller by hand',
+        ],
       },
       {
         id: 'pre.fluids',
@@ -756,6 +920,106 @@ export const DECKS = [
       },
     ],
   },
+  {
+    id: 'cabin',
+    group: 'tecnam',
+    title: 'Brakes, instruments and heating',
+    cards: [
+      {
+        id: 'brk.toe',
+        q: 'How are the brakes applied?',
+        a: '**Toe brakes.** Press the top of the rudder pedals.',
+        bullets: [
+          'Fitted for both the pilot and the co-pilot',
+        ],
+      },
+      {
+        id: 'brk.master',
+        q: 'How are the brake master cylinders supplied?',
+        bullets: [
+          'Each set of rudder pedals connects to master cylinders',
+          'One vented reservoir feeds the pilot-side cylinders',
+          'Hoses connect them to the co-pilot side',
+        ],
+      },
+      {
+        id: 'brk.wheels',
+        q: 'What brakes and wheels are on the main landing gear?',
+        bullets: [
+          'Cleveland wheels, size 6.00-6',
+          'Master cylinder pressure runs through lines to the brake calipers',
+        ],
+      },
+      {
+        id: 'brk.parking',
+        q: 'How does the parking brake work?',
+        bullets: [
+          'A valve near the cabin floor locks hydraulic pressure in the lines',
+          'Controlled by a knob on the center pedestal',
+        ],
+      },
+      {
+        id: 'ins.adahrs',
+        q: 'What does ADAHRS stand for, and what does it replace?',
+        a: '**Air Data, Attitude and Heading Reference System.**',
+        bullets: [
+          'Used by the Garmin G1000 NXi',
+          'Combines two formerly separate units: the Air Data Computer (ADC) and the AHRS',
+        ],
+      },
+      {
+        id: 'ins.ahrs',
+        q: 'How does the ADAHRS sense attitude?',
+        bullets: [
+          'Solid-state gyros: accelerometers and tilt sensors',
+          'No moving parts',
+          'Measures pitch, roll and yaw',
+        ],
+      },
+      {
+        id: 'ins.magnetometer',
+        q: 'What does the magnetometer do, and where is it?',
+        bullets: [
+          'Senses the magnetic field of the Earth in three axes',
+          'Solid state, no moving parts',
+          'Sends digital data to the ADAHRS, which works out heading',
+          'Usually in the wingtip, away from electrical interference',
+        ],
+      },
+      {
+        id: 'ins.adc',
+        q: 'What does the air data side of the ADAHRS measure, and what does it work out?',
+        bullets: [
+          'Pressure sensors connect to the pitot and static lines',
+          'Gives airspeed, altitude and vertical speed',
+        ],
+      },
+      {
+        id: 'ins.oat',
+        q: 'What does the OAT probe let the system calculate?',
+        a: '**True airspeed** (TAS) and **density altitude**.',
+        bullets: [
+          'It supplies outside air temperature',
+        ],
+      },
+      {
+        id: 'env.heat',
+        q: 'Where does cabin heat and windshield defrost air come from?',
+        bullets: [
+          'A heat exchanger: cold ram air is warmed by engine exhaust gases',
+          'Hoses carry it to the cabin and the windshield',
+        ],
+      },
+      {
+        id: 'env.pitot-heat',
+        q: 'Which pitot tube does pitot heat warm, and where is the switch?',
+        bullets: [
+          'Heats the left main pitot tube',
+          'Switch on the left side of the instrument panel',
+        ],
+      },
+    ],
+  },
 
   {
     id: 'vmc',
@@ -828,6 +1092,18 @@ export const DECKS = [
         bullets: [
           'Every other condition is the worst case, so it raises V_MC',
           'With the wings level, actual V_MC is higher than the red line',
+        ],
+        note: 'This card is not from the course packet.',
+      },
+      {
+        id: 'vmc.pattern',
+        q: 'What is the pattern for how the COMBATS conditions move V_MC and performance?',
+        a: 'Every condition pushes **both up**, with one exception each.',
+        bullets: [
+          'V_MC: all up, except the **bank**, which lowers it',
+          'Performance: all up, except the **windmilling** propeller, which lowers it',
+          'The opposite of a condition flips both arrows. Heavier, hotter, flaps down: both down',
+          'Ground effect is not in COMBATS: V_MC down, performance up',
         ],
         note: 'This card is not from the course packet.',
       },
