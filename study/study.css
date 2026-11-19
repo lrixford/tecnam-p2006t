@@ -1667,6 +1667,12 @@ ol.checklist {
   letter-spacing: 0.08em;
 }
 
+/* A marked step: the card note explains the asterisk. */
+.chk__star {
+  color: var(--red);
+  font-weight: 800;
+}
+
 .chk__act {
   flex: 0 1 auto;
   max-width: 75%;
@@ -1836,8 +1842,40 @@ ol.checklist {
   box-shadow: var(--shadow);
 }
 
+.rowtools {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.rowtools + .rows {
+  margin-top: 0.25rem;
+}
+
+.row {
+  position: relative;
+}
+
 .row + .row {
   border-top: 1px solid var(--rule);
+}
+
+/* A known card carries a small button at the right that clears the mark. */
+.row--reset summary {
+  padding-right: 3rem;
+}
+
+.row__reset {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.35rem;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.row__reset svg {
+  width: 1.1rem;
+  height: 1.1rem;
 }
 
 .row summary {

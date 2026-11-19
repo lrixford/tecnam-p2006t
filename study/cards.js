@@ -17,6 +17,7 @@
 //   bullets  answer as a list (may be combined with `a`)
 //   steps    answer as a sequence. The quiz asks for these to be put in order
 //            instead of offering choices. Any `bullets` are shown after them.
+//            A step ending in * is marked; the card note says what it means.
 //   note     caveat shown under the answer
 //   off      true keeps the card in this file but leaves it out of the page
 //   why      the reasoning behind the answer, as short lines (filled in from WHY)
@@ -1528,14 +1529,14 @@ export const DECKS = [
           'Inoperative Engine Throttle: IDLE',
           'Inoperative Engine Ignition Switches: OFF',
           'Inoperative Engine Prop: FEATHER',
-          'Inoperative Engine Fuel Selector: OFF',
-          'Inoperative Engine Fuel Pump: OFF',
+          'Inoperative Engine Fuel Selector: OFF*',
+          'Inoperative Engine Fuel Pump: OFF*',
           'Inoperative Engine ALT Field: OFF',
           'Operating Engine Fuel Pump: ON',
           'Fuel Crossfeed: CONSIDER',
         ],
         bullets: ['Inoperative throttle to 13" to silence the gear warning horn'],
-        note: 'The checklist marks the fuel selector and fuel pump steps with an asterisk. On a training flight, say those steps aloud and do not do them.',
+        note: '* On a training flight, say this step aloud and do not do it.',
       },
       {
         id: 'drill.restart',

@@ -79,7 +79,7 @@ const plain = (s) => String(s).replace(/\bV_([A-Z0-9]+)/g, 'V$1').replace(/\*\*/
 function checkHTML(text) {
   const at = text.indexOf(': ');
   if (at < 0) return `<span class="chk__item">${fmt(text)}</span>`;
-  return `<span class="chk__item">${fmt(text.slice(0, at))}</span><span class="chk__dots" aria-hidden="true"></span><span class="visually-hidden">: </span><span class="chk__act">${fmt(text.slice(at + 2))}</span>`;
+  return `<span class="chk__item">${fmt(text.slice(0, at))}</span><span class="chk__dots" aria-hidden="true"></span><span class="visually-hidden">: </span><span class="chk__act">${fmt(text.slice(at + 2)).replace(/\*$/, '<span class="chk__star">*</span>')}</span>`;
 }
 
 const checklistHTML = (steps, cls = '') =>
@@ -1116,7 +1116,8 @@ function renderBrowse(key) {
       const level = levelOf(card.id);
       const m = masteryOf(card.id);
       return `
-      <li class="row" data-text="${esc(searchText(card))}">
+      <li class="row${level === 'know' ? ' row--reset' : ''}" data-text="${esc(searchText(card))}">
+        ${level === 'know' ? `<button class="iconbtn row__reset" data-action="row-reset" data-id="${card.id}" aria-label="Mark as not seen: ${esc(plain(card.q))}" title="Mark as not seen">${ICON.undo}</button>` : ''}
         <details>
           <summary><span class="dot dot--${level}" role="img" aria-label="${LEVEL_LABEL[level]}"></span><span class="row__q">${fmt(card.q)}${card.hint ? ` <span class="row__hint">${fmt(card.hint)}</span>` : ''}</span></summary>
           <div class="row__a">
@@ -1141,6 +1142,7 @@ function renderBrowse(key) {
       ${info.cards.length ? `<a class="btn btn--small" href="#/quiz/${esc(key)}">Quiz</a><a class="btn btn--primary btn--small" href="#/study/${esc(key)}">Study</a>` : ''}
     </header>
     <label class="search"><span class="visually-hidden">Search these cards</span><input type="search" id="search" placeholder="Search questions and answers" autocomplete="off" /></label>
+    ${info.cards.length ? '<div class="rowtools"><button class="btn btn--quiet btn--small" data-action="rows-open">Expand all</button><button class="btn btn--quiet btn--small" data-action="rows-close">Collapse all</button></div>' : ''}
     <ul class="rows">${rows}</ul>
     <p class="empty" id="no-match" hidden>No cards match that search.</p>
     ${info.cards.length ? '' : '<p class="empty">No cards in this list yet.</p>'}
@@ -1206,6 +1208,23 @@ app.addEventListener('click', (e) => {
       toggleStar(el.dataset.id);
       el.setAttribute('aria-pressed', String(isStarred(el.dataset.id)));
       el.textContent = isStarred(el.dataset.id) ? 'Starred' : 'Star this card';
+      break;
+    case 'row-reset': {
+      const { s: _status, ...rest } = store.cards[el.dataset.id] || {};
+      store.cards[el.dataset.id] = rest;
+      save();
+      const row = el.closest('.row');
+      const dot = row.querySelector('.dot');
+      dot.className = 'dot dot--new';
+      dot.setAttribute('aria-label', LEVEL_LABEL.new);
+      row.classList.remove('row--reset');
+      el.remove();
+      row.querySelector('summary').focus({ preventScroll: true });
+      break;
+    }
+    case 'rows-open':
+    case 'rows-close':
+      for (const d of app.querySelectorAll('.row details')) d.open = el.dataset.action === 'rows-open';
       break;
     case 'shuffle':
       store.opts.inOrder = !store.opts.inOrder;
