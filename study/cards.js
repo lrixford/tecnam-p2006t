@@ -1,13 +1,7 @@
 // Flashcard content for the P2006T / multi-engine study decks.
 //
-// Answers follow the course quiz packet's answer key. Where the key is
-// incomplete or contradicts itself, the card carries a `note` saying so. The
-// key leaves the "Factors affecting V_MC" table blank; that deck holds the
-// standard answers. The "Maneuvers and drills" decks follow the packet's
-// emergency checklist and maneuver guide.
-// Cards on the gearbox ratio, coolant and oil plumbing, propeller governor,
-// landing gear hydraulics, brakes, instruments and heating follow a separate
-// systems summary sheet.
+// Where an expected answer is incomplete or contradicts itself, the card
+// carries a `note` saying so.
 //
 // Card shape:
 //   id       stable key used for saved progress. Never rename an id.
@@ -48,7 +42,7 @@ export const GROUPS = [
 ];
 
 // The reasoning behind an answer, keyed by card id and shown under the answer
-// as "Why". These explanations are additions; they are not in the packet.
+// as "Why".
 const WHY = {
   'eng.direct-drive': [
     'The Rotax makes its power at high crankshaft speed, up to 5800 rpm.',
@@ -255,7 +249,7 @@ export const DECKS = [
         hint: 'The RPM gauges read propeller rpm',
         bullets: [
           'Max takeoff: 2388 rpm, 5 minutes maximum',
-          'Max continuous: 2265 rpm (packet: 2250)',
+          'Max continuous: 2265 rpm (also taught as 2250)',
           'Engine itself: 5800 and 5500 rpm, ahead of the gearbox',
         ],
       },
@@ -268,7 +262,7 @@ export const DECKS = [
           'Better fuel efficiency, reliability and longevity',
           'Efficient lean-of-peak operation',
         ],
-        note: 'This is the packet answer, but it describes a fuel-injected engine. The packet also says the 912 S3 has two carburetors per engine. Ask your instructor which answer they expect.',
+        note: 'This answer describes a fuel-injected engine, but the 912 S3 has two carburetors per engine. Ask your instructor which answer they expect.',
       },
       {
         id: 'eng.coolant',
@@ -692,7 +686,7 @@ export const DECKS = [
           'Wait at least 20 seconds',
           'LH lever: 180° counter-clockwise',
         ],
-        note: 'The packet words this question as emergency landing gear "retraction". The answer it gives is the emergency extension procedure.',
+        note: 'This question is sometimes worded as emergency landing gear "retraction". The answer is the emergency extension procedure.',
       },
       {
         id: 'gear.exception',
@@ -1094,7 +1088,6 @@ export const DECKS = [
           'Every other condition is the worst case, so it raises V_MC',
           'With the wings level, actual V_MC is higher than the red line',
         ],
-        note: 'This card is not from the course packet.',
       },
       {
         id: 'vmc.pattern',
@@ -1106,7 +1099,6 @@ export const DECKS = [
           'The opposite of a condition flips both arrows. Heavier, hotter, flaps down: both down',
           'Ground effect is not in COMBATS: V_MC down, performance up',
         ],
-        note: 'This card is not from the course packet.',
       },
       {
         id: 'vmc.demo',

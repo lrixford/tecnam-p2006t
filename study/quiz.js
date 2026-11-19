@@ -2,7 +2,7 @@
 //
 // The flashcard answers in cards.js are often too long to be an answer choice,
 // so each entry here gives a short correct choice and three wrong ones. The
-// wrong choices are invented distractors, not packet content.
+// wrong choices are invented distractors.
 //
 // Entry shape, keyed by card id:
 //   q      optional quiz wording, when the flashcard prompt is too open-ended
@@ -102,7 +102,7 @@ export const QUIZ = {
     wrong: ['2265 rpm, 5 minutes maximum', '2388 rpm, continuous', '2700 rpm, 5 minutes maximum'],
   },
   'eng.how-rotax-works': {
-    q: 'Per the packet, how does a Rotax engine manage its fuel mixture?',
+    q: 'In the expected answer, how does a Rotax engine manage its fuel mixture?',
     right: 'Dual-path engine control units control the fuel injection',
     wrong: [
       'Magnetos and a manual mixture lever meter the fuel',

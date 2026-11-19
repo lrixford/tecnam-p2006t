@@ -393,7 +393,7 @@ function renderHome() {
     </section>
     ${groups}
     <footer class="foot">
-      <p>Answers follow the course quiz packet. Maneuvers and drills follow its emergency checklist and maneuver guide. Cards with a note flag where the packet is unclear. The packet leaves the "Factors affecting V<sub>MC</sub>" table blank, so those answers, the "Why" explanations and the wrong choices in quizzes are not from the packet. The POH and your instructor have the final word.</p>
+      <p>Cards with a note flag an answer worth checking. The "Why" explanations and the wrong choices in quizzes are study aids. The POH and your instructor have the final word.</p>
       <button class="btn btn--quiet btn--danger" data-action="reset">Erase saved progress</button>
     </footer>
   </div>`;
