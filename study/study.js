@@ -77,6 +77,7 @@ const plain = (s) => String(s).replace(/\bV_([A-Z0-9]+)/g, 'V$1').replace(/\*\*/
 function answerHTML(card) {
   let html = '';
   if (card.a) html += card.a.split('\n\n').map((p) => `<p>${fmt(p)}</p>`).join('');
+  if (card.steps) html += `<ol>${card.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol>`;
   if (card.bullets) html += `<ul>${card.bullets.map((b) => `<li>${fmt(b)}</li>`).join('')}</ul>`;
   return html;
 }
@@ -142,6 +143,7 @@ function drawingsHTML(keys) {
 }
 
 function answerSize(card) {
+  if (card.steps) return card.steps.length > 7 ? 'sm' : 'md';
   const len = (card.a || '').length + (card.bullets || []).join(' ').length;
   if (len <= 18 && !card.bullets) return 'xl';
   if (len <= 110) return 'lg';
@@ -150,7 +152,7 @@ function answerSize(card) {
 }
 
 const searchText = (card) =>
-  plain([card.q, card.hint, card.a, ...(card.bullets || []), ...(card.why || []), card.note].filter(Boolean).join(' ')).toLowerCase();
+  plain([card.q, card.hint, card.a, ...(card.steps || []), ...(card.bullets || []), ...(card.why || []), card.note].filter(Boolean).join(' ')).toLowerCase();
 
 function shuffled(list) {
   const out = list.slice();
@@ -231,6 +233,9 @@ const ICON = {
     '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h3.5c4.5 0 6 10 10.5 10H21M3 17h3.5c1.6 0 2.8-1.2 3.8-2.8M21 7h-4c-1.6 0-2.8 1.2-3.8 2.8M18 4l3 3-3 3M18 14l3 3-3 3"/></svg>',
   swap: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4L3.5 7.5 7 11M3.5 7.5H17M17 13l3.5 3.5L17 20M20.5 16.5H7"/></svg>',
   undo: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5L4 9l4 4M4 9h10a6 6 0 010 12h-3"/></svg>',
+  grip: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>',
+  up: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14.500l6-6 6 6"/></svg>',
+  down: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.500l6 6 6-6"/></svg>',
   star: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1.05 5.850L12 16.850 6.750 19.650 7.8 13.8 3.5 9.7l5.9-.8z"/></svg>',
 };
 
@@ -360,7 +365,7 @@ function renderHome() {
     </section>
     ${groups}
     <footer class="foot">
-      <p>Answers follow the course quiz packet. Cards with a note flag where the packet is unclear. The packet leaves the "Factors affecting V<sub>MC</sub>" table blank, so those answers, the "Why" explanations and the wrong choices in quizzes are not from the packet. The POH and your instructor have the final word.</p>
+      <p>Answers follow the course quiz packet. Maneuvers and drills follow its emergency checklist and maneuver guide. Cards with a note flag where the packet is unclear. The packet leaves the "Factors affecting V<sub>MC</sub>" table blank, so those answers, the "Why" explanations and the wrong choices in quizzes are not from the packet. The POH and your instructor have the final word.</p>
       <button class="btn btn--quiet btn--danger" data-action="reset">Erase saved progress</button>
     </footer>
   </div>`;
@@ -692,6 +697,16 @@ const quizPrompt = (card) => QUIZ[card.id]?.q || card.q;
 /* A select-all-that-apply question lists every correct choice under `all`. */
 const isMulti = (card) => Array.isArray(QUIZ[card.id]?.all);
 const rightText = (card) => (isMulti(card) ? QUIZ[card.id].all.join('; ') : rightChoice(card));
+/* A card with `steps` is asked as a put-in-order question. */
+const isOrder = (card) => Array.isArray(card.steps);
+
+/* The steps shuffled, and never left in the right order. */
+function mixedSteps(card) {
+  const same = (list) => list.every((text, i) => text === card.steps[i]);
+  let out = shuffled(card.steps);
+  for (let n = 0; n < 20 && same(out); n++) out = shuffled(card.steps);
+  return out;
+}
 
 function choicesFor(card) {
   if (isMulti(card)) {
@@ -702,7 +717,7 @@ function choicesFor(card) {
   let wrong = QUIZ[card.id]?.wrong;
   if (!wrong) {
     // Borrow the correct answers of the other cards in this deck.
-    const pool = new Set(card.deck.cards.filter((c) => !isMulti(c)).map((c) => rightChoice(c)));
+    const pool = new Set(card.deck.cards.filter((c) => !isMulti(c) && !isOrder(c)).map((c) => rightChoice(c)));
     pool.delete(right);
     wrong = shuffled([...pool]).slice(0, 3);
   }
@@ -712,7 +727,8 @@ function choicesFor(card) {
 // The question on screen: { id, multi, choices, selected, out, graded, ok, lastTap }.
 // `selected` holds the choices waiting to be submitted (one, unless `multi`),
 // `out` the choices the reader has ruled out. Once `graded`, `selected` is
-// what was submitted and `ok` whether it was right.
+// what was submitted and `ok` whether it was right. A put-in-order question
+// sets `order` and keeps the steps as the reader has arranged them in `seq`.
 let quizView = null;
 
 function startQuiz(key) {
@@ -740,8 +756,11 @@ function renderQuiz(key) {
   if (q.i >= q.ids.length) return renderQuizResults(key, info, q);
 
   const card = BY_ID.get(q.ids[q.i]);
-  if (!quizView || quizView.id !== card.id) quizView = { id: card.id, multi: isMulti(card), choices: choicesFor(card), selected: new Set(), out: new Set(), graded: false, ok: false, lastTap: null };
-  const { choices, selected, multi } = quizView;
+  if (!quizView || quizView.id !== card.id) {
+    const order = isOrder(card);
+    quizView = { id: card.id, order, seq: order ? mixedSteps(card) : [], multi: !order && isMulti(card), choices: order ? [] : choicesFor(card), selected: new Set(), out: new Set(), graded: false, ok: false, lastTap: null };
+  }
+  const { choices, selected, multi, order } = quizView;
   const answered = quizView.graded;
   const last = q.i === q.ids.length - 1;
   const correctSoFar = q.results.filter((r) => r.ok).length;
@@ -762,7 +781,7 @@ function renderQuiz(key) {
 
   let feedback = `
     <div class="feedback feedback--pending">
-      <button class="btn btn--primary" id="quiz-submit" data-action="quiz-submit" disabled>Submit answer</button>
+      <button class="btn btn--primary" id="quiz-submit" data-action="quiz-submit" ${order ? '' : 'disabled'}>Submit answer</button>
     </div>`;
   if (answered) {
     const ok = quizView.ok;
@@ -791,8 +810,11 @@ function renderQuiz(key) {
       ${drawingsHTML(card.figure)}
       ${card.hint && !QUIZ[card.id]?.q ? `<p class="hint">${fmt(card.hint)}</p>` : ''}
       ${multi ? '<p class="quiz__multi">Select all that apply.</p>' : ''}
-      <ol class="options${multi ? ' options--multi' : ''}">${options}</ol>
+      ${order ? `<p class="quiz__multi">${answered ? 'Your order' : 'Drag the steps into order, or use the arrows.'}</p>` : ''}
+      ${order ? `<ol class="steps" id="steps">${stepRowsHTML()}</ol>` : `<ol class="options${multi ? ' options--multi' : ''}">${options}</ol>`}
       ${feedback}
+      ${order && answered && !quizView.ok ? `<div class="why"><p class="why__label">Correct order</p><ol>${card.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol></div>` : ''}
+      ${order && answered && card.bullets ? `<div class="answer answer--sm quiz__then"><ul>${card.bullets.map((b) => `<li>${fmt(b)}</li>`).join('')}</ul></div>` : ''}
       ${answered ? whyHTML(card) : ''}
       ${answered && card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
     </main>
@@ -807,9 +829,99 @@ function renderQuiz(key) {
   }
 }
 
+/* The rows of a put-in-order question, as the reader has them arranged. Once
+   graded, each row shows whether it sits where the checklist has it. */
+function stepRowsHTML() {
+  const { seq, graded } = quizView;
+  const steps = BY_ID.get(quizView.id).steps;
+  return seq
+    .map((text, i) => {
+      const n = `<span class="step__n" aria-hidden="true">${i + 1}</span>`;
+      if (graded) {
+        const ok = text === steps[i];
+        return `<li class="step step--${ok ? 'right' : 'wrong'}">${n}<span class="step__text">${fmt(text)}<span class="visually-hidden"> (${ok ? 'in the right place' : 'in the wrong place'})</span></span></li>`;
+      }
+      const label = esc(plain(text));
+      return `<li class="step" data-i="${i}">
+        <span class="step__grip" aria-hidden="true">${ICON.grip}</span>${n}
+        <span class="step__text">${fmt(text)}</span>
+        <span class="step__move">
+          <button class="step__btn" data-action="step-up" data-i="${i}" aria-label="Move up: ${label}" ${i ? '' : 'disabled'}>${ICON.up}</button>
+          <button class="step__btn" data-action="step-down" data-i="${i}" aria-label="Move down: ${label}" ${i < seq.length - 1 ? '' : 'disabled'}>${ICON.down}</button>
+        </span>
+      </li>`;
+    })
+    .join('');
+}
+
+/* Move a step one place with its arrow buttons, keeping the keyboard focus on it. */
+function moveStep(i, by) {
+  if (!quizView?.order || quizView.graded) return;
+  const j = i + by;
+  const { seq } = quizView;
+  if (j < 0 || j >= seq.length) return;
+  [seq[i], seq[j]] = [seq[j], seq[i]];
+  const list = document.getElementById('steps');
+  list.innerHTML = stepRowsHTML();
+  const buttons = list.children[j].querySelectorAll('.step__btn');
+  const wanted = buttons[by < 0 ? 0 : 1];
+  (wanted.disabled ? buttons[by < 0 ? 1 : 0] : wanted).focus({ preventScroll: true });
+  list.children[j].scrollIntoView({ block: 'nearest' });
+}
+
+/* Dragging a step. The row follows the pointer and trades places with a
+   neighbour as its middle crosses theirs, so rows of any height work. */
+let drag = null; // { row, pointerId, y0, top0, clientY, frame }
+
+function dragStart(e) {
+  if (drag || !quizView?.order || quizView.graded || e.button > 0) return;
+  const row = e.target.closest('.step');
+  if (!row || e.target.closest('button')) return;
+  // A finger drags by the handle, so the rest of the row still scrolls the page.
+  if (e.pointerType !== 'mouse' && !e.target.closest('.step__grip')) return;
+  e.preventDefault();
+  drag = { row, pointerId: e.pointerId, y0: e.clientY + window.scrollY, top0: row.offsetTop, clientY: e.clientY, frame: 0 };
+  row.classList.add('is-dragging');
+  // Captured on the page, not the row: moving the row in the list would drop it.
+  app.setPointerCapture(e.pointerId);
+  drag.frame = requestAnimationFrame(dragFrame);
+}
+
+function dragFrame() {
+  if (!drag) return;
+  const { row } = drag;
+  // Near the top or bottom of the window, scroll the page along.
+  const edge = 64;
+  if (drag.clientY < edge) window.scrollBy(0, -9);
+  else if (drag.clientY > window.innerHeight - edge) window.scrollBy(0, 9);
+
+  const top = drag.top0 + drag.clientY + window.scrollY - drag.y0;
+  const middle = top + row.offsetHeight / 2;
+  for (;;) {
+    const prev = row.previousElementSibling;
+    const next = row.nextElementSibling;
+    if (prev && middle < prev.offsetTop + prev.offsetHeight / 2) row.parentNode.insertBefore(row, prev);
+    else if (next && middle > next.offsetTop + next.offsetHeight / 2) row.parentNode.insertBefore(next, row);
+    else break;
+  }
+  row.style.transform = `translateY(${top - row.offsetTop}px)`;
+  drag.frame = requestAnimationFrame(dragFrame);
+}
+
+function dragEnd() {
+  if (!drag) return;
+  cancelAnimationFrame(drag.frame);
+  const list = drag.row.parentNode;
+  drag = null;
+  if (!quizView?.order || quizView.graded || !list?.isConnected) return;
+  const before = quizView.seq;
+  quizView.seq = [...list.children].map((li) => before[Number(li.dataset.i)]);
+  list.innerHTML = stepRowsHTML();
+}
+
 /* Show which choices are selected and which are ruled out, without redrawing. */
 function paintChoices() {
-  if (!quizView || quizView.graded) return;
+  if (!quizView || quizView.graded || quizView.order) return;
   for (const btn of app.querySelectorAll('.option')) {
     const i = Number(btn.dataset.i);
     const out = quizView.out.has(i);
@@ -848,10 +960,13 @@ function choose(i, { viaKey = false } = {}) {
 
 function submitAnswer() {
   const q = store.quiz;
-  if (!q || !quizView || quizView.graded || !quizView.selected.size) return;
+  if (!q || !quizView || quizView.graded || drag) return;
+  if (!quizView.order && !quizView.selected.size) return;
   const id = quizView.id;
-  // Right means every correct choice selected and nothing else.
-  const ok = quizView.choices.every((c, i) => c.right === quizView.selected.has(i));
+  // Right means every correct choice selected and nothing else, or every step in its place.
+  const ok = quizView.order
+    ? quizView.seq.every((text, i) => text === BY_ID.get(id).steps[i])
+    : quizView.choices.every((c, i) => c.right === quizView.selected.has(i));
   const before = masteryOf(id);
   const m = ok ? Math.min(MASTER_AT, before + 1) : Math.max(0, before - 1);
   store.cards[id] = { ...store.cards[id], m };
@@ -879,6 +994,8 @@ function renderQuizIntro(info) {
   const open = info.cards.filter((c) => !isMastered(c.id)).length;
   const count = Math.min(QUIZ_LENGTH, total);
   const plural = count === 1 ? 'question' : 'questions';
+  const ordering = info.cards.some(isOrder);
+  const choosing = info.cards.some((c) => !isOrder(c));
   const mastered = total - open;
   const review = count - Math.min(QUIZ_LENGTH, open);
   let mix = '';
@@ -892,11 +1009,12 @@ function renderQuizIntro(info) {
     <header class="bar"><a class="iconbtn" href="#/" aria-label="Back to decks">${ICON.close}</a><div class="bar__title"><span>Quiz</span></div></header>
     <div class="finish intro">
       <h1>${fmt(info.title)}</h1>
-      <p>${count} multiple-choice ${plural}.${mix}</p>
+      <p>${count} ${ordering ? (choosing ? '' : 'put-in-order ') : 'multiple-choice '}${plural}.${mix}</p>
       <ul class="intro__rules">
-        <li><strong>Select, then submit.</strong> Tap an answer to select it, then tap Submit answer. Nothing is graded until you submit.</li>
+        ${ordering ? '<li><strong>Put the steps in order.</strong> Drag a step by its handle, or use its arrows, then tap Submit answer. It counts as right only with every step in its place.</li>' : ''}
+        ${choosing ? `<li><strong>Select, then submit.</strong> Tap an answer to select it, then tap Submit answer. Nothing is graded until you submit.</li>
         <li><strong>Select all that apply.</strong> Some questions have more than one right answer and say so. Tap each one you want. They count as right only with every correct answer selected and no wrong one.</li>
-        <li><strong>Rule answers out.</strong> Double-tap an answer to dim it. Double-tap again to bring it back.</li>
+        <li><strong>Rule answers out.</strong> Double-tap an answer to dim it. Double-tap again to bring it back.</li>` : ''}
         <li><strong>Mastering a question.</strong> A right answer adds one, a wrong answer takes one away. At ${MASTER_AT} the question is mastered. Mastered questions come back only when a quiz has room for them, and a wrong answer still takes one away.</li>
         <li class="intro__keys"><strong>On a keyboard.</strong> The number keys select an answer and Enter submits.</li>
       </ul>
@@ -932,7 +1050,10 @@ function renderQuizResults(key, info, q) {
   const missedRows = missed
     .map((r) => {
       const card = BY_ID.get(r.id);
-      return `<li class="miss"><p class="miss__q">${fmt(quizPrompt(card))}</p><p class="miss__a">${fmt(rightText(card))}</p></li>`;
+      const answer = isOrder(card)
+        ? `<ol class="miss__a miss__steps">${card.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol>`
+        : `<p class="miss__a">${fmt(rightText(card))}</p>`;
+      return `<li class="miss"><p class="miss__q">${fmt(quizPrompt(card))}</p>${answer}</li>`;
     })
     .join('');
 
@@ -1023,6 +1144,7 @@ function go(hash) {
 
 function render() {
   stopHint(false);
+  dragEnd();
   const { view, key } = route();
   document.body.dataset.view = view;
   if (view === 'study') renderStudy(key);
@@ -1077,6 +1199,12 @@ app.addEventListener('click', (e) => {
     case 'choose':
       choose(Number(el.dataset.i));
       break;
+    case 'step-up':
+      moveStep(Number(el.dataset.i), -1);
+      break;
+    case 'step-down':
+      moveStep(Number(el.dataset.i), 1);
+      break;
     case 'quiz-submit':
       submitAnswer();
       break;
@@ -1121,6 +1249,13 @@ app.addEventListener('click', (e) => {
   }
 });
 
+app.addEventListener('pointerdown', dragStart);
+app.addEventListener('pointermove', (e) => {
+  if (drag && e.pointerId === drag.pointerId) drag.clientY = e.clientY;
+});
+app.addEventListener('pointerup', dragEnd);
+app.addEventListener('pointercancel', dragEnd);
+
 document.addEventListener('keydown', (e) => {
   const { view } = route();
   if (e.metaKey || e.ctrlKey || e.altKey) return;
@@ -1132,7 +1267,7 @@ document.addEventListener('keydown', (e) => {
   if (view === 'quiz') {
     const i = k.length === 1 ? Math.max('123456'.indexOf(k), 'abcdef'.indexOf(k)) : -1;
     if (i >= 0) choose(i, { viaKey: true });
-    else if (e.key === 'Enter' && !(onControl && e.target.closest('.btn, .iconbtn'))) {
+    else if (e.key === 'Enter' && !(onControl && e.target.closest('.btn, .iconbtn, .step__btn'))) {
       // Enter submits the selected choice, then moves on.
       e.preventDefault();
       if (quizView && !quizView.graded) submitAnswer();

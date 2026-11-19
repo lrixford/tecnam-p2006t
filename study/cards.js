@@ -3,7 +3,8 @@
 // Answers follow the course quiz packet's answer key. Where the key is
 // incomplete or contradicts itself, the card carries a `note` saying so. The
 // key leaves the "Factors affecting V_MC" table blank; that deck holds the
-// standard answers.
+// standard answers. The "Maneuvers and drills" decks follow the packet's
+// emergency checklist and maneuver guide.
 //
 // Card shape:
 //   id       stable key used for saved progress. Never rename an id.
@@ -11,7 +12,10 @@
 //   hint     optional short clarifier shown under the prompt
 //   a        answer text; blank lines separate paragraphs
 //   bullets  answer as a list (may be combined with `a`)
+//   steps    answer as a sequence. The quiz asks for these to be put in order
+//            instead of offering choices. Any `bullets` are shown after them.
 //   note     caveat shown under the answer
+//   off      true keeps the card in this file but leaves it out of the page
 //   why      the reasoning behind the answer, as short lines (filled in from WHY)
 //   label    short name for the card's cell in its deck's reference table
 //   figure   key of a drawing in diagrams.js, shown with the question
@@ -33,6 +37,7 @@
 export const GROUPS = [
   { id: 'tecnam', title: 'P2006T Tecnam quiz' },
   { id: 'aero', title: 'Multi-engine aerodynamics quiz' },
+  { id: 'flying', title: 'Maneuvers and drills' },
 ];
 
 // The reasoning behind an answer, keyed by card id and shown under the answer
@@ -86,6 +91,38 @@ const WHY = {
     'These are the conditions the manufacturer uses to set the red line (14 CFR 23.149).',
     'Most are the worst case for control, so they give the highest V_MC: full power at sea level, critical engine windmilling, aft CG, light weight.',
     'The bank is the exception. Banking 5° toward the operating engine lowers V_MC, so with the wings level the real figure is higher than the red line.',
+  ],
+  'vmc.combats-c': [
+    'The critical engine is the one whose loss yaws the airplane hardest.',
+    'A windmilling propeller adds drag on that same side.',
+    'Both push V_MC up, so the red line covers the worst case.',
+  ],
+  'vmc.combats-o': [
+    'Full power on one side is the most asymmetric thrust the rudder will ever have to stop.',
+    'That gives the highest V_MC.',
+  ],
+  'vmc.combats-m': [
+    'In a bank, the sideways part of lift helps the rudder.',
+    'A lighter airplane makes less lift, so it gets less of that help.',
+    'So the lightest weight gives the highest V_MC.',
+  ],
+  'vmc.combats-b': [
+    'Banking toward the operating engine tilts lift sideways to help the rudder, which lowers V_MC.',
+    'The manufacturer may use up to 5° and no more.',
+    'With the wings level, the real V_MC is higher than the red line.',
+  ],
+  'vmc.combats-a': [
+    'The rudder works around the CG. An aft CG shortens its arm, so it has less leverage against the yaw.',
+    'That gives the highest V_MC.',
+  ],
+  'vmc.combats-t': [
+    'An engine failure matters most just after takeoff, so that is the configuration tested.',
+    'Landing gear up takes away the keel effect that steadies the airplane against yaw.',
+  ],
+  'vmc.combats-s': [
+    'Standard sea-level air is dense, so a normally aspirated engine makes its full power.',
+    'Full power is the most asymmetric thrust, so V_MC is highest there.',
+    'V_MC falls as density altitude rises.',
   ],
   'vf.power': [
     'More thrust on one side is more yaw for the rudder to stop, so it takes more airspeed to hold heading.',
@@ -749,6 +786,52 @@ export const DECKS = [
         ],
       },
       {
+        id: 'vmc.combats-c',
+        q: 'In COMBATS, what does the C stand for?',
+        a: '**C**ritical engine failed and windmilling.',
+      },
+      {
+        id: 'vmc.combats-o',
+        q: 'In COMBATS, what does the O stand for?',
+        a: '**O**perating engine at max takeoff power.',
+      },
+      {
+        id: 'vmc.combats-m',
+        q: 'In COMBATS, what does the M stand for?',
+        a: '**M**ost adverse (unfavorable) weight, normally lighter.',
+      },
+      {
+        id: 'vmc.combats-b',
+        q: 'In COMBATS, what does the B stand for?',
+        a: '**B**ank of up to 5° towards the operating engine.',
+      },
+      {
+        id: 'vmc.combats-a',
+        q: 'In COMBATS, what does the A stand for?',
+        a: '**A**ft CG.',
+      },
+      {
+        id: 'vmc.combats-t',
+        q: 'In COMBATS, what does the T stand for?',
+        a: '**T**akeoff configuration.',
+        bullets: ['Flaps in T/O position', 'Landing gear up', 'Trim set'],
+      },
+      {
+        id: 'vmc.combats-s',
+        q: 'In COMBATS, what does the S stand for?',
+        a: '**S**tandard day temperature and pressure altitude.',
+      },
+      {
+        id: 'vmc.combats-lowers',
+        q: 'Which COMBATS condition lowers V_MC instead of raising it?',
+        a: 'The **bank** of up to 5° towards the operating engine.',
+        bullets: [
+          'Every other condition is the worst case, so it raises V_MC',
+          'With the wings level, actual V_MC is higher than the red line',
+        ],
+        note: 'This card is not from the course packet.',
+      },
+      {
         id: 'vmc.demo',
         q: 'What is the purpose of the V_MC demo?',
         bullets: [
@@ -1127,9 +1210,265 @@ export const DECKS = [
       },
     ],
   },
+  {
+    id: 'drills',
+    group: 'flying',
+    title: 'Engine-out drills',
+    blurb: 'Emergency checklist steps, in order',
+    cards: [
+      {
+        id: 'drill.the-drill',
+        q: 'Engine failure: "The Drill"',
+        hint: 'Steps in order',
+        steps: [
+          'Autopilot: OFF',
+          'Maintain directional control, pitch for 84 KIAS',
+          'Props: FULL FWD',
+          'Throttles: FULL FWD',
+          'Gear / flaps: UP',
+          'Identify: dead foot, dead engine',
+          'Verify: suspected throttle idle',
+          'Feather the dead engine',
+        ],
+        bullets: [
+          'Below 3,000 ft AGL: secure the engine',
+          'Above 3,000 ft AGL: engine restart',
+          'At a safe altitude: report, then the secure checklist',
+        ],
+      },
+      {
+        id: 'drill.before-rotation',
+        q: 'Engine failure prior to rotation',
+        hint: 'Steps in order',
+        steps: ['Throttles: BOTH IDLE', 'Maintain directional control', 'Brakes: AS REQUIRED'],
+      },
+      {
+        id: 'drill.secure',
+        q: 'Engine secure in flight',
+        hint: 'Steps in order',
+        steps: [
+          'Throttle (inoperative engine): IDLE',
+          'Ignition switches (inoperative engine): OFF',
+          'Prop (inoperative engine): FEATHER',
+          'Fuel selector (inoperative engine): OFF',
+          'Fuel pump (inoperative engine): OFF',
+          'ALT field (inoperative engine): OFF',
+          'Fuel pump (operating engine): ON',
+          'Fuel crossfeed: CONSIDER',
+        ],
+        bullets: ['Inoperative throttle to 13" to silence the gear warning horn'],
+        note: 'The checklist marks the fuel selector and fuel pump steps with an asterisk. On a training flight, say those steps aloud and do not do them.',
+      },
+      {
+        id: 'drill.restart',
+        q: 'Engine restart in flight',
+        hint: 'Steps in order',
+        steps: [
+          'Carburetor heat: ON IF REQUIRED',
+          'Fuel pump: ON',
+          'Fuel quantity: CHECK',
+          'Fuel selector: FULLEST TANK',
+          'ALT field: OFF',
+          'Ignitions: ON',
+          'Throttle (inoperative engine): IDLE',
+          'Prop (inoperative engine): FULL FWD',
+          'Starter (inoperative engine): ENGAGE',
+          'Throttle: 13" MP',
+          'Prop: 2250 RPM',
+          'ALT field: ON',
+          'Fuel pump: AS REQUIRED',
+        ],
+        bullets: ['If the restart is unsuccessful: emergency starting battery ON, then repeat the checklist'],
+      },
+      {
+        id: 'drill.fire',
+        q: 'Engine fire in flight',
+        hint: 'Steps in order',
+        steps: [
+          'Maintain directional control, pitch for 84 KIAS',
+          'Autopilot: OFF',
+          'Cabin heat / defrost: OFF',
+          'Fuel selector (fire affected): OFF',
+          'Ignition switch (fire affected): OFF',
+          'Throttles: FULL FWD',
+          'Prop (fire affected): FEATHER',
+          'Fuel pump (fire affected): OFF',
+          'ALT field (fire affected): OFF',
+          'Cabin ventilation: OPEN',
+          'Land as soon as possible',
+        ],
+      },
+      {
+        id: 'drill.oei-landing',
+        q: 'One engine inoperative landing',
+        hint: 'Steps in order',
+        steps: [
+          'Refer to "The Drill"',
+          'Fuel pump (operating engine): ON',
+          'On final, flaps: T/O',
+          'On final, landing gear: DOWN, VERIFIED',
+          'Approach speed: V_YSE (84 KIAS)',
+          'Touchdown speed: 70 KIAS',
+        ],
+      },
+    ],
+  },
+  {
+    id: 'maneuvers',
+    group: 'flying',
+    title: 'Maneuvers',
+    blurb: 'Setup and recovery, in order',
+    cards: [
+      {
+        id: 'man.pre',
+        q: 'Pre-maneuver checks',
+        hint: 'ACDCS',
+        steps: [
+          'Altitude: 3,000 ft AGL or higher',
+          'Configuration: fuel pumps on, fuel selectors, landing light on, instruments green',
+          'Diversions: nearby airports',
+          'Clearing turns: clear the area',
+          'Standards: recite',
+        ],
+      },
+      {
+        id: 'man.steep',
+        q: 'Steep turns',
+        hint: 'Steps in order',
+        steps: ['Prop: 2250', 'Throttles: 21" to 23.5"', 'Airspeed: 110 knots', 'Bank: roll to 50°', 'Turn: 360° both ways'],
+      },
+      {
+        id: 'man.slow',
+        q: 'Slow flight',
+        hint: 'Steps in order',
+        steps: [
+          'Prop: 2250',
+          'Throttles: 15"',
+          'Gear / flaps: down / full',
+          'Approaching 70 knots, throttles: 20"',
+          'Airspeed: 65 knots',
+          'Bank: as instructed',
+        ],
+      },
+      {
+        id: 'man.power-off',
+        q: 'Power-off stall',
+        hint: 'Setup, then recovery',
+        steps: [
+          'Gear / flaps: down / full',
+          'Airspeed: 75 knots',
+          'Descent: 500 FPM',
+          'Throttles: idle',
+          'Pitch: landing attitude',
+          'Recovery: reduce AOA',
+          'Throttles: full forward',
+          'Flaps: T/O',
+          'Pitch for 72 knots (V_X)',
+          'Transition to 84 knots (V_Y)',
+          'At 84 knots with a positive rate: gear / flaps up',
+        ],
+      },
+      {
+        id: 'man.power-on',
+        q: 'Power-on stall',
+        hint: 'Setup, then recovery',
+        steps: [
+          'Prop: 2250',
+          'Throttles: 17"',
+          'Airspeed: 80 knots',
+          'Throttles: 20"',
+          'Pitch: takeoff attitude',
+          'Bank: as instructed',
+          'Recovery: reduce AOA',
+          'Roll wings level (if banked)',
+          'Throttles: full forward',
+          'Pitch for 84 knots (V_Y)',
+        ],
+      },
+      {
+        id: 'man.accelerated',
+        off: true,
+        q: 'Accelerated stall',
+        hint: 'Setup, then recovery',
+        steps: [
+          'Prop: 2250',
+          'Throttles: 15"',
+          'Airspeed: 100 knots',
+          'Bank: 45°, to the stall',
+          'Recovery: reduce AOA',
+          'Roll wings level (if banked)',
+          'Throttles: full forward',
+          'Pitch for 84 knots (V_Y)',
+        ],
+      },
+      {
+        id: 'man.vmc-demo',
+        q: 'V_MC demo',
+        hint: 'Setup, then recovery',
+        steps: [
+          'Prop: 2250',
+          'Throttles: 15"',
+          'Flaps: T/O',
+          'Airspeed: slow to 84 knots',
+          'LH throttle: idle',
+          'RH throttle: full forward',
+          'Bank: 3° to 5° into the operating engine',
+          'Heading and altitude: maintain',
+          'Pitch: raise to slow by 1 knot per second',
+          'Instructor limits the rudder; keep holding heading',
+          'At the first sign of loss of control: both throttles idle',
+          'Reduce AOA',
+          'Above V_MC with directional control, RH throttle: full',
+          'Airspeed: 84 knots',
+          'Flaps: up',
+        ],
+      },
+      {
+        id: 'man.drag-demo',
+        off: true,
+        q: 'Drag demo',
+        hint: 'Steps in order',
+        steps: [
+          'Props: 2250',
+          'Throttles: 15"',
+          'Airspeed: 84 knots',
+          'LH throttle: idle',
+          'RH throttle: full forward',
+          'Bank: 3° to 5° into the operating engine',
+          'Gear: down (note the VSI)',
+          'Flaps: T/O (note the VSI)',
+          'Flaps: full (note the VSI)',
+          'LH throttle: 13.5" (zero thrust)',
+          'Gear: up (note the VSI)',
+          'Flaps: back to T/O (note the VSI)',
+          'Flaps: up (note the VSI)',
+          'Airspeed: 83 knots (note the VSI)',
+          'Airspeed: 94 knots (note the VSI)',
+          'Throttles: recover',
+        ],
+      },
+      {
+        id: 'man.emergency-descent',
+        off: true,
+        q: 'Emergency descent',
+        hint: 'Steps in order',
+        steps: [
+          'Props: 2250',
+          'Throttles: idle',
+          'Gear: down',
+          'Pitch: 15° down',
+          'Airspeed: 115 knots (122 max)',
+          'Bank: 30° to 45°',
+          'Simulate declaring an emergency',
+        ],
+        note: 'This is the maneuver guide. The emergency checklist gives props FULL FWD, flaps UP and landing gear down below 122 KIAS.',
+      },
+    ],
+  },
 ];
 
 for (const deck of DECKS) {
+  deck.cards = deck.cards.filter((card) => !card.off);
   for (const card of deck.cards) {
     if (WHY[card.id]) card.why = WHY[card.id];
   }

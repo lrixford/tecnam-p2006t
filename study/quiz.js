@@ -14,6 +14,7 @@
 //          of `wrong`, which may then hold any number of choices.
 //
 // Decks with no entries at all (V-speeds) work entirely by borrowing.
+// A card with `steps` needs no entry: the quiz asks for its steps in order.
 
 const FACTOR_CHOICES = {
   uu: 'V_MC goes up, performance goes up',
@@ -616,13 +617,69 @@ export const QUIZ = {
   },
   'vmc.who': { right: 'The manufacturer', wrong: ['The FAA', 'The pilot in command', 'The flight school'] },
   'vmc.combats': {
-    q: 'In COMBATS, what does the B stand for?',
+    q: 'Which of these are COMBATS conditions for V_MC?',
+    all: ['Critical engine failed and windmilling', 'Aft CG', 'Landing gear up'],
+    wrong: ['Maximum takeoff weight', 'Wings level', 'Flaps up'],
+  },
+  'vmc.combats-c': {
+    right: 'Critical engine failed and windmilling',
+    wrong: [
+      'Critical engine failed and feathered',
+      'Cowl flaps closed',
+      'CG at the forward limit',
+    ],
+  },
+  'vmc.combats-o': {
+    right: 'Operating engine at max takeoff power',
+    wrong: [
+      'Operating engine at max continuous power',
+      'Operating engine at cruise power',
+      'Operating engine at idle',
+    ],
+  },
+  'vmc.combats-m': {
+    right: 'Most adverse weight, normally the lighter one',
+    wrong: [
+      'Maximum takeoff weight',
+      'Maximum landing weight',
+      'Mixture full rich',
+    ],
+  },
+  'vmc.combats-b': {
     right: 'Bank of up to 5° towards the operating engine',
     wrong: [
       'Bank of up to 5° towards the inoperative engine',
       'Ball centered with the wings level',
       'Both engines at max takeoff power',
     ],
+  },
+  'vmc.combats-a': {
+    right: 'Aft CG',
+    wrong: [
+      'Forward CG',
+      'Airspeed at the blue line',
+      'Altitude of 5,000 ft',
+    ],
+  },
+  'vmc.combats-t': {
+    right: 'Takeoff configuration: flaps T/O, landing gear up, trim set',
+    wrong: [
+      'Takeoff configuration: flaps up, landing gear down, trim set',
+      'Landing configuration: flaps FULL, landing gear down',
+      'Clean configuration: flaps up, landing gear up',
+    ],
+  },
+  'vmc.combats-s': {
+    right: 'Standard day temperature and pressure altitude',
+    wrong: [
+      'Service ceiling on one engine',
+      'Stall speed in the landing configuration',
+      'Sideslip of zero',
+    ],
+  },
+  'vmc.combats-lowers': {
+    right: 'Bank of up to 5° towards the operating engine',
+    wrong: ['Critical engine failed and windmilling', 'Operating engine at max takeoff power', 'Aft CG'],
   },
   'vmc.demo': {
     q: 'What does the V_MC demo show?',
