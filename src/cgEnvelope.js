@@ -9,7 +9,7 @@ const KGM_TO_LBFT = 7.23301;
 const KG_TO_LB    = 2.20462;
 const FT_TO_M     = 0.3048;
 
-// Arm in metres
+// Arm in meters
 const FWD_ARM_M = P2006T.envelope.fwd_arm_ft * FT_TO_M;
 const AFT_ARM_M = P2006T.envelope.aft_arm_ft * FT_TO_M;
 const MZFW_KG   = P2006T.mzfw_lb / KG_TO_LB;

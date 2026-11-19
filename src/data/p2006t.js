@@ -69,7 +69,7 @@ export const P2006T = {
 
   // Takeoff performance — POH §5 SW5-7 to SW5-9
   // Conditions: grass runway, flaps T/O, liftoff 65 KIAS, obstacle speed 70 KIAS, full throttle.
-  // Distances in metres. Temperature columns: OAT = -25, 0, 25, 50 °C; last value is ISA.
+  // Distances in meters. Temperature columns: OAT = -25, 0, 25, 50 °C; last value is ISA.
   // Corrections (apply to grass figures):
   //   Headwind:     −2.5 m per kt on ground roll
   //   Tailwind:     +10 m per kt on ground roll
@@ -129,7 +129,7 @@ export const P2006T = {
 
   // Landing performance — POH §5 SW5-19 to SW5-22
   // Conditions: grass runway, flaps LAND, approach 70 KIAS, throttle idle.
-  // Distances in metres. Temperature columns: OAT = -25, 0, 25, 50 °C; last value is ISA.
+  // Distances in meters. Temperature columns: OAT = -25, 0, 25, 50 °C; last value is ISA.
   // Corrections (apply to grass figures):
   //   Headwind:     −5 m per kt on ground roll; similar reduction on 50ft distance
   //   Tailwind:     +11 m per kt on ground roll

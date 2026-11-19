@@ -75,18 +75,18 @@ function rawPerf({ elev_ft = 0, oat_c = 25, grossLb = 2712, altimeter_inhg = 29.
   });
 }
 
-test('pressure altitude interpolates between neighbouring table rows', () => {
+test('pressure altitude interpolates between neighboring table rows', () => {
   const r = rawPerf({ elev_ft: 500 });
   assert.equal(r.takeoff.gr, 347);       // midway between 328 (S.L.) and 366 (1000 ft)
   assert.equal(r.takeoff.to50ft, 454);   // midway between 429 and 479
 });
 
-test('weight interpolates between neighbouring tables', () => {
+test('weight interpolates between neighboring tables', () => {
   const r = rawPerf({ grossLb: 1005 * 2.20462262 });
   assert.equal(r.takeoff.gr, 196);       // midway between 158 (930 kg) and 234 (1080 kg)
 });
 
-test('climb rate interpolates between neighbouring table rows', () => {
+test('climb rate interpolates between neighboring table rows', () => {
   const r = rawPerf({ grossLb: 1005 * 2.20462262, elev_ft: 500 });
   // 930 kg: (349 + 305) / 2 = 327. 1080 kg: (235 + 196) / 2 = 215.5. Midway: 271.25
   assert.equal(r.roc_oei_fpm, 271);

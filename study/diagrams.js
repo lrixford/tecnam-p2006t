@@ -9,7 +9,7 @@
 // captions never name the factor or say "yaw" or "roll", because the picture
 // cards ask the reader to work that out.
 //
-// Colours come from study.css through the d-* classes, so the drawings follow
+// Colors come from study.css through the d-* classes, so the drawings follow
 // the light and dark themes.
 
 const CENTER = 160;

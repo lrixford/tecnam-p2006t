@@ -1,6 +1,6 @@
-/* Study cards. Colour follows the airspeed indicator: blue line for what you
+/* Study cards. Color follows the airspeed indicator: blue line for what you
    know, red line for what still needs work, green arc for what the quiz says
-   you have mastered, pale grey for what you have not seen. */
+   you have mastered, pale gray for what you have not seen. */
 
 :root {
   color-scheme: light dark;
@@ -729,7 +729,7 @@ button {
   pointer-events: none;
 }
 
-/* The caption sits in the space above the card, in the colour of the matching button. */
+/* The caption sits in the space above the card, in the color of the matching button. */
 .swipe-hint {
   position: absolute;
   top: 0;
@@ -844,7 +844,7 @@ button {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Auto margins centre short content and let long content scroll from the top. */
+/* Auto margins center short content and let long content scroll from the top. */
 .face__content {
   width: 100%;
   margin: auto 0;
@@ -1469,6 +1469,7 @@ button {
 /* Put-in-order questions: rows dragged by the handle or moved with the arrows. */
 .steps {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.45rem;
   margin: 0.7rem 0 0;
   padding: 0;
@@ -1603,9 +1604,74 @@ button {
 }
 
 .miss__steps {
-  padding-left: 1.6em;
-  list-style: decimal;
+  margin-top: 0.3rem;
+}
+
+/* Checklist lines, set like a printed checklist: numbered item, dot leader,
+   action in capitals at the right, all inside a thin box. */
+.checklist,
+.chk {
+  font-family: 'Minion Pro', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif;
   font-weight: 500;
+  line-height: 1.25;
+}
+
+ol.checklist {
+  margin-left: 0;
+  padding: 0.55em 0.7em;
+  border: 3px solid var(--ink);
+  list-style: none;
+  counter-reset: chk;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.checklist li {
+  display: flex;
+  gap: 0.45em;
+  align-items: flex-start;
+  counter-increment: chk;
+}
+
+.checklist li + li {
+  margin-top: 0.3em;
+}
+
+.checklist li::before {
+  flex: none;
+  min-width: 1.3em;
+  content: counter(chk) '.';
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.chk {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: baseline;
+}
+
+.chk__item {
+  flex: 0 1 auto;
+}
+
+.chk__dots {
+  flex: 1 0 1.5em;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.chk__dots::before {
+  content: '....................................................................................................................................................................................';
+  letter-spacing: 0.08em;
+}
+
+.chk__act {
+  flex: 0 1 auto;
+  max-width: 75%;
+  text-align: right;
+  text-transform: uppercase;
 }
 
 .feedback {

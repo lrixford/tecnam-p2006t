@@ -101,7 +101,7 @@ If a report has no temperature or altimeter, the app calculates no distances and
 
 ## 4. Reading the POH tables
 
-The tables give values at fixed weights, altitudes and temperatures. The app interpolates linearly between the two neighbouring values along each axis in turn: temperature, then pressure altitude, then weight.
+The tables give values at fixed weights, altitudes and temperatures. The app interpolates linearly between the two neighboring values along each axis in turn: temperature, then pressure altitude, then weight.
 
 **Table edges.** Values outside a table use its nearest edge. The POH publishes nothing beyond those edges, and no extrapolation is attempted.
 
@@ -132,7 +132,7 @@ The tables assume a grass runway. Corrections are applied in this order.
 | Paved runway | −6% of ground roll | −2% of ground roll |
 | Slope, per +1% upslope | +5% of ground roll | −2.5% of ground roll |
 
-The POH applies these to ground roll. The app adds the same number of metres to the 50 ft distance, on the reasoning that a change on the ground leaves the airborne segment unchanged.
+The POH applies these to ground roll. The app adds the same number of meters to the 50 ft distance, on the reasoning that a change on the ground leaves the airborne segment unchanged.
 
 Only paved runways receive a surface correction. Turf, gravel and dirt all use the grass figures unchanged. There is no allowance for wet or contaminated surfaces.
 
@@ -241,7 +241,7 @@ climb to 50 ft    = (50 ÷ single-engine climb rate) × groundspeed × 30.867
 accelerate-go     = takeoff ground roll + climb to 50 ft
 ```
 
-The factor of 30.867 converts knots to metres per minute.
+The factor of 30.867 converts knots to meters per minute.
 
 | Data point | Source | Conditions |
 |---|---|---|
@@ -347,7 +347,7 @@ Where the FAA gives no TORA or LDA, the physical runway length is used.
 
 ## 12. Known limitations
 
-**Not modelled**
+**Not modeled**
 - Wet or contaminated runways, and runway condition generally.
 - Published climb gradients, departure procedures and terrain.
 - Balked landing performance, cruise and fuel burn.

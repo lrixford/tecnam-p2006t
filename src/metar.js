@@ -68,7 +68,7 @@ export function parseMETAR(raw) {
     }
   }
 
-  // Visibility — handles: "10SM", "1/2SM", "M1/4SM", "1 1/2SM" (two tokens), "9999" (metres)
+  // Visibility — handles: "10SM", "1/2SM", "M1/4SM", "1 1/2SM" (two tokens), "9999" (meters)
   if (tokens[i]) {
     // Two-token fraction: whole-number + fraction+SM  e.g. "1" "1/2SM"
     if (/^\d+$/.test(tokens[i]) && tokens[i + 1]?.endsWith('SM')) {
@@ -81,7 +81,7 @@ export function parseMETAR(raw) {
       result.visibility_sm = parseFraction(s);
       i++;
     } else if (/^\d{4}$/.test(tokens[i])) {
-      // Metric metres (international)
+      // Metric meters (international)
       result.visibility_sm = parseInt(tokens[i], 10) / 1609.34;
       i++;
     }

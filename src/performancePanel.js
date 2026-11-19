@@ -459,7 +459,7 @@ export function mountPerformancePanel(target, { getGrossLb, getLandingLb, onResu
 
   // Top-down runway schematic with wind arrow + wind sock.
   // Runway always drawn vertically; base end at bottom, recip at top.
-  // Wind arrow: from source toward runway centre. Wind sock: opposite side, streaming downwind.
+  // Wind arrow: from source toward runway center. Wind sock: opposite side, streaming downwind.
   function buildWindSVG(entry) {
     const hw  = entry.headwind_kt ?? 0;
     const xw  = entry.xwind_kt    ?? 0;

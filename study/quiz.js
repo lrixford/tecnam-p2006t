@@ -881,9 +881,9 @@ export const QUIZ = {
     ],
   },
   'vmc.combats-b': {
-    right: 'Bank of up to 5° towards the operating engine',
+    right: 'Bank of up to 5° toward the operating engine',
     wrong: [
-      'Bank of up to 5° towards the inoperative engine',
+      'Bank of up to 5° toward the inoperative engine',
       'Ball centered with the wings level',
       'Both engines at max takeoff power',
     ],
@@ -913,7 +913,7 @@ export const QUIZ = {
     ],
   },
   'vmc.combats-lowers': {
-    right: 'Bank of up to 5° towards the operating engine',
+    right: 'Bank of up to 5° toward the operating engine',
     wrong: ['Critical engine failed and windmilling', 'Operating engine at max takeoff power', 'Aft CG'],
   },
   'vmc.pattern': {
@@ -1010,11 +1010,11 @@ export const QUIZ = {
   },
   'ce.sideslip': {
     q: 'What is used to counter the sideslip with one engine inoperative?',
-    right: 'Rudder, and bank towards the operating engine',
+    right: 'Rudder, and bank toward the operating engine',
     wrong: [
-      'Rudder, and bank towards the inoperative engine',
+      'Rudder, and bank toward the inoperative engine',
       'Rudder only, with wings level and the ball centered',
-      'Aileron only, towards the operating engine',
+      'Aileron only, toward the operating engine',
     ],
   },
   'ce.service-ceiling': {

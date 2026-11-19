@@ -87,7 +87,7 @@ function fuelCellHtml({ id, label }) {
         <input type="number" id="in-${id}-gal" data-field="${id}.volume_gal" data-unit="gal"
                min="0" step="0.1" inputmode="decimal" placeholder="0">
         <span class="unit">gal</span>
-        <label class="vh" for="in-${id}-L">${label} volume in litres</label>
+        <label class="vh" for="in-${id}-L">${label} volume in liters</label>
         <input type="number" id="in-${id}-L" data-field="${id}.volume_gal" data-unit="L"
                min="0" step="0.1" inputmode="decimal" placeholder="0" tabindex="-1">
         <span class="unit">L</span>
@@ -137,7 +137,7 @@ function emptySectionHtml() {
           <input type="number" id="in-empty-m-lbft" data-field="empty.moment_lb_ft" data-unit="lb·ft"
                  step="0.1" inputmode="decimal" placeholder="2778">
           <span class="unit">lb·ft</span>
-          <label class="vh" for="in-empty-m-kgm">Empty moment in kilogram-metres</label>
+          <label class="vh" for="in-empty-m-kgm">Empty moment in kilogram-meters</label>
           <input type="number" id="in-empty-m-kgm" data-field="empty.moment_lb_ft" data-unit="kg·m"
                  step="0.01" inputmode="decimal" placeholder="378" tabindex="-1">
           <span class="unit">kg·m</span>
@@ -161,7 +161,7 @@ function fuelPlanHtml() {
           <input type="number" id="in-taxi-gal" data-field="fuelTaxi.volume_gal" data-unit="gal"
                  min="0" step="0.1" inputmode="decimal" placeholder="1.0">
           <span class="unit">gal</span>
-          <label class="vh" for="in-taxi-L">Taxi fuel in litres</label>
+          <label class="vh" for="in-taxi-L">Taxi fuel in liters</label>
           <input type="number" id="in-taxi-L" data-field="fuelTaxi.volume_gal" data-unit="L"
                  min="0" step="0.1" inputmode="decimal" placeholder="3.8" tabindex="-1">
           <span class="unit">L</span>
@@ -175,7 +175,7 @@ function fuelPlanHtml() {
           <input type="number" id="in-burnoff-gal" data-field="fuelBurnoff.volume_gal" data-unit="gal"
                  min="0" step="0.1" inputmode="decimal" placeholder="0">
           <span class="unit">gal</span>
-          <label class="vh" for="in-burnoff-L">Enroute fuel in litres</label>
+          <label class="vh" for="in-burnoff-L">Enroute fuel in liters</label>
           <input type="number" id="in-burnoff-L" data-field="fuelBurnoff.volume_gal" data-unit="L"
                  min="0" step="0.1" inputmode="decimal" placeholder="0" tabindex="-1">
           <span class="unit">L</span>
@@ -189,7 +189,7 @@ function fuelPlanHtml() {
           <input type="number" id="in-reserve-gal" data-field="fuelReserve.volume_gal" data-unit="gal"
                  min="0" step="0.1" inputmode="decimal" placeholder="8.0">
           <span class="unit">gal</span>
-          <label class="vh" for="in-reserve-L">Reserve fuel in litres</label>
+          <label class="vh" for="in-reserve-L">Reserve fuel in liters</label>
           <input type="number" id="in-reserve-L" data-field="fuelReserve.volume_gal" data-unit="L"
                  min="0" step="0.1" inputmode="decimal" placeholder="30" tabindex="-1">
           <span class="unit">L</span>

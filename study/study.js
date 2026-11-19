@@ -74,10 +74,21 @@ const fmt = (s) =>
 
 const plain = (s) => String(s).replace(/\bV_([A-Z0-9]+)/g, 'V$1').replace(/\*\*/g, '');
 
+/* One checklist line. "Item: action" is set as the item, a dot leader and the
+   action at the right; a line with no action is set as a plain sentence. */
+function checkHTML(text) {
+  const at = text.indexOf(': ');
+  if (at < 0) return `<span class="chk__item">${fmt(text)}</span>`;
+  return `<span class="chk__item">${fmt(text.slice(0, at))}</span><span class="chk__dots" aria-hidden="true"></span><span class="visually-hidden">: </span><span class="chk__act">${fmt(text.slice(at + 2))}</span>`;
+}
+
+const checklistHTML = (steps, cls = '') =>
+  `<ol class="checklist${cls}">${steps.map((s) => `<li><span class="chk">${checkHTML(s)}</span></li>`).join('')}</ol>`;
+
 function answerHTML(card) {
   let html = '';
   if (card.a) html += card.a.split('\n\n').map((p) => `<p>${fmt(p)}</p>`).join('');
-  if (card.steps) html += `<ol>${card.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol>`;
+  if (card.steps) html += checklistHTML(card.steps);
   if (card.bullets) html += `<ul>${card.bullets.map((b) => `<li>${fmt(b)}</li>`).join('')}</ul>`;
   return html;
 }
@@ -612,7 +623,7 @@ function playHint(card) {
   const label = document.createElement('p');
   label.className = 'swipe-hint';
   label.setAttribute('role', 'status');
-  // The caption is centred in the space between the top of the stage and the card.
+  // The caption is centered in the space between the top of the stage and the card.
   label.style.height = `${card.offsetTop}px`;
   card.parentElement.append(label);
   const timers = [];
@@ -831,7 +842,7 @@ function renderQuiz(key) {
       ${order ? `<p class="quiz__multi">${answered ? 'Your order' : 'Drag the steps into order, or use the arrows.'}</p>` : ''}
       ${order ? `<ol class="steps" id="steps">${stepRowsHTML()}</ol>` : `<ol class="options${multi ? ' options--multi' : ''}">${options}</ol>`}
       ${feedback}
-      ${order && answered && !quizView.ok ? `<div class="why"><p class="why__label">Correct order</p><ol>${card.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol></div>` : ''}
+      ${order && answered && !quizView.ok ? `<div class="why"><p class="why__label">Correct order</p>${checklistHTML(card.steps)}</div>` : ''}
       ${order && answered && card.bullets ? `<div class="answer answer--sm quiz__then"><ul>${card.bullets.map((b) => `<li>${fmt(b)}</li>`).join('')}</ul></div>` : ''}
       ${answered ? whyHTML(card) : ''}
       ${answered && card.note ? `<p class="note">${fmt(card.note)}</p>` : ''}
@@ -857,12 +868,12 @@ function stepRowsHTML() {
       const n = `<span class="step__n" aria-hidden="true">${i + 1}</span>`;
       if (graded) {
         const ok = text === steps[i];
-        return `<li class="step step--${ok ? 'right' : 'wrong'}">${n}<span class="step__text">${fmt(text)}<span class="visually-hidden"> (${ok ? 'in the right place' : 'in the wrong place'})</span></span></li>`;
+        return `<li class="step step--${ok ? 'right' : 'wrong'}">${n}<span class="step__text chk">${checkHTML(text)}<span class="visually-hidden"> (${ok ? 'in the right place' : 'in the wrong place'})</span></span></li>`;
       }
       const label = esc(plain(text));
       return `<li class="step" data-i="${i}">
         <span class="step__grip" aria-hidden="true">${ICON.grip}</span>${n}
-        <span class="step__text">${fmt(text)}</span>
+        <span class="step__text chk">${checkHTML(text)}</span>
         <span class="step__move">
           <button class="step__btn" data-action="step-up" data-i="${i}" aria-label="Move up: ${label}" ${i ? '' : 'disabled'}>${ICON.up}</button>
           <button class="step__btn" data-action="step-down" data-i="${i}" aria-label="Move down: ${label}" ${i < seq.length - 1 ? '' : 'disabled'}>${ICON.down}</button>
@@ -888,7 +899,7 @@ function moveStep(i, by) {
 }
 
 /* Dragging a step. The row follows the pointer and trades places with a
-   neighbour as its middle crosses theirs, so rows of any height work. */
+   neighbor as its middle crosses theirs, so rows of any height work. */
 let drag = null; // { row, pointerId, y0, top0, clientY, frame }
 
 function dragStart(e) {
@@ -1069,7 +1080,7 @@ function renderQuizResults(key, info, q) {
     .map((r) => {
       const card = BY_ID.get(r.id);
       const answer = isOrder(card)
-        ? `<ol class="miss__a miss__steps">${card.steps.map((s) => `<li>${fmt(s)}</li>`).join('')}</ol>`
+        ? checklistHTML(card.steps, ' miss__a miss__steps')
         : `<p class="miss__a">${fmt(rightText(card))}</p>`;
       return `<li class="miss"><p class="miss__q">${fmt(quizPrompt(card))}</p>${answer}</li>`;
     })

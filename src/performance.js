@@ -1,5 +1,5 @@
 // Departure performance calculations for the Tecnam P2006T.
-// All POH tables use metric (metres, kg). Weight input accepted in lbs.
+// All POH tables use metric (meters, kg). Weight input accepted in lbs.
 
 import { P2006T }                                          from './data/p2006t.js';
 import { headwindComponent, crosswindComponent, componentWind_kt,
@@ -83,7 +83,7 @@ function interpolate(table, weight_kg, pa_ft, oat_c, columns) {
   return lerp(atPA(table[lo]), atPA(table[hi]), f);
 }
 
-// { gr, to50ft } in metres, unrounded
+// { gr, to50ft } in meters, unrounded
 function interpolatePerf(table, weight_kg, pa_ft, oat_c) {
   return {
     gr:     interpolate(table, weight_kg, pa_ft, oat_c, row => row.gr),
@@ -100,7 +100,7 @@ function interpolateClimb(table, weight_kg, pa_ft, oat_c) {
 // POH corrections
 // ---------------------------------------------------------------------------
 
-// Apply POH corrections to raw { gr, to50ft } distances (metres).
+// Apply POH corrections to raw { gr, to50ft } distances (meters).
 // headwind_kt: positive = headwind, negative = tailwind
 // surface: 'paved' | 'turf' | 'gravel' | 'dirt'
 // slope_pct: positive = upslope in departure direction
