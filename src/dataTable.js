@@ -251,11 +251,13 @@ function phaseTree(perf) {
                 <tbody>${rows.join('')}</tbody>
               </table>`;
   const na = '<span class="dt-oei-warn">N/A</span>';
+  // Climb gradient over the ground, in feet per nautical mile
+  const perNm = `${Math.round(perf.roc_oei_fpm * 60 / go.climb_gs_kt)} ft/NM`;
   const climb = go.climb_m !== null
     ? row(`Climb to 50 ft on one engine at ${go.climb_kias} kts IAS`,
-        `${perf.roc_oei_fpm} fpm at ${go.climb_gs_kt} kt groundspeed, ${go.climb_s} s`,
+        `${perf.roc_oei_fpm} fpm at ${go.climb_gs_kt} kt groundspeed (${perNm}), ${go.climb_s} s`,
         `<span class="${goClass}">${fmtFtM(go.climb_m)}</span>`)
-    : row(`Climb to 50 ft on one engine at ${go.climb_kias} kts IAS`, `${perf.roc_oei_fpm} fpm calculated`, na);
+    : row(`Climb to 50 ft on one engine at ${go.climb_kias} kts IAS`, `${perf.roc_oei_fpm} fpm calculated at ${go.climb_gs_kt} kt groundspeed (${perNm})`, na);
 
   return `
           <div class="fork">
