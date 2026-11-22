@@ -255,7 +255,7 @@ function phaseTree(perf) {
     ? row(`Climb to 50 ft on one engine at ${go.climb_kias} kts IAS`,
         `${perf.roc_oei_fpm} fpm at ${go.climb_gs_kt} kt groundspeed, ${go.climb_s} s`,
         `<span class="${goClass}">${fmtFtM(go.climb_m)}</span>`)
-    : row(`Climb to 50 ft on one engine at ${go.climb_kias} kts IAS`, `${perf.roc_oei_fpm} fpm predicted`, na);
+    : row(`Climb to 50 ft on one engine at ${go.climb_kias} kts IAS`, `${perf.roc_oei_fpm} fpm calculated`, na);
 
   return `
           <div class="fork">

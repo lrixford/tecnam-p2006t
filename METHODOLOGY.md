@@ -261,9 +261,9 @@ That assumption flatters the result. The estimate allows no time for recognition
 
 ### Climb floor and caution
 
-| Predicted single-engine climb | Result |
+| Calculated single-engine climb | Result |
 |---|---|
-| Below the floor | Distance shows N/A with the predicted rate |
+| Below the floor | Distance shows N/A with the calculated rate |
 | At the floor, up to 50 fpm above it | Distance shows with an amber caution |
 | More than 50 fpm above the floor | Distance shows normally |
 
@@ -321,11 +321,11 @@ The landing figures use the 2479 lb landing weight.
 
 **Accelerate-stop.** (285 + 177) × 1.30 = **601 m**, which fits the 1,005 m runway.
 
-**Accelerate-go.** The predicted climb rate is 143 fpm. Groundspeed is 84 − 9 = 75 kt, so the climb to 50 ft takes 809 m, and the total is 285 + 809 = **1,094 m**.
+**Accelerate-go.** The calculated climb rate is 143 fpm. Groundspeed is 84 − 9 = 75 kt, so the climb to 50 ft takes 809 m, and the total is 285 + 809 = **1,094 m**.
 
 **Obstacle.** A tree stands 42 ft high, 313 ft past the end. Distance available is 3,298 + 313 ft, or 1,101 m, less the 285 m ground roll, leaving 816 m. At 75 kt that takes 0.352 minutes, so the required climb is 42 ÷ 0.352, rounded up to **120 fpm**.
 
-The floor rises from 50 to 120 fpm. The predicted 143 fpm is above the floor but within 50 fpm of it, so the card shows a caution: *"Predicted single-engine climb rate is 143 fpm. Required 120 fpm to clear obstacle."*
+The floor rises from 50 to 120 fpm. The calculated 143 fpm is above the floor but within 50 fpm of it, so the card shows a caution: *"Calculated single-engine climb rate is 143 fpm. Required 120 fpm to clear obstacle."*
 
 ## 11. Data sources and currency
 

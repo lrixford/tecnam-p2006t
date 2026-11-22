@@ -32,7 +32,7 @@ test('accel-go warns with no distance when OEI climb is negative', () => {
   assert.equal(r.accel_go.dist_m, null);
   assert.equal(r.accel_go.level, 'warning');
   assert.equal(r.accel_go.message,
-    'Predicted single-engine climb rate is -38 fpm.');
+    'Calculated single-engine climb rate is -38 fpm.');
 });
 
 test('accel-go cautions with a distance when OEI climb is marginal', () => {
@@ -41,7 +41,7 @@ test('accel-go cautions with a distance when OEI climb is marginal', () => {
   assert.equal(typeof r.accel_go.dist_m, 'number');
   assert.equal(r.accel_go.level, 'caution');
   assert.equal(r.accel_go.message,
-    'Predicted single-engine climb rate is 69 fpm.');
+    'Calculated single-engine climb rate is 69 fpm.');
 });
 
 // At 3000 ft and 2712 lb, these temperatures land on either side of each limit.
@@ -152,7 +152,7 @@ test('an obstacle above the climb rate removes accel-go and states the requireme
   assert.equal(accel_go.dist_m, null);
   assert.equal(accel_go.level, 'warning');
   assert.equal(accel_go.message,
-    'Predicted single-engine climb rate is 142 fpm. Required 176 fpm to clear obstacle.');
+    'Calculated single-engine climb rate is 142 fpm. Required 176 fpm to clear obstacle.');
 });
 
 test('the caution band sits above the raised floor', () => {
@@ -160,7 +160,7 @@ test('the caution band sits above the raised floor', () => {
   assert.equal(typeof accel_go.dist_m, 'number');
   assert.equal(accel_go.level, 'caution');
   assert.equal(accel_go.message,
-    'Predicted single-engine climb rate is 142 fpm. Required 106 fpm to clear obstacle.');
+    'Calculated single-engine climb rate is 142 fpm. Required 106 fpm to clear obstacle.');
 });
 
 test('the obstacle note shows on its own when climb is comfortably above the floor', () => {
@@ -181,7 +181,7 @@ test('an obstacle within the ground roll removes accel-go with no required figur
   const { accel_go } = obstaclePerf({ height_ft: 10, dist_ft: 0 }, 1000);
   assert.equal(accel_go.dist_m, null);
   assert.equal(accel_go.level, 'warning');
-  assert.equal(accel_go.message, 'Predicted single-engine climb rate is 142 fpm.');
+  assert.equal(accel_go.message, 'Calculated single-engine climb rate is 142 fpm.');
 });
 
 test('crosswind uses the gust midpoint, distances use the steady wind', () => {

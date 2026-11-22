@@ -225,7 +225,7 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
     : roc_oei_fpm <= floor_fpm + CAUTION_BAND_FPM ? 'caution'
     : null;
   const accelGoMessage = [
-    accelGoLevel && `Predicted single-engine climb rate is ${roc_oei_fpm} fpm.`,
+    accelGoLevel && `Calculated single-engine climb rate is ${roc_oei_fpm} fpm.`,
     floor_fpm > MIN_OEI_ROC_FPM && Number.isFinite(floor_fpm)
       && `Required ${floor_fpm} fpm to clear obstacle.`,
   ].filter(Boolean).join(' ') || null;
