@@ -369,3 +369,22 @@ test('the result carries the inputs the figures were computed from', () => {
   assert.equal(r.landing_weight_kg, 1111);
   assert.equal(r.xwind_limit_kt, 17);
 });
+
+test('reports the surface and slope factors applied to each ground roll', () => {
+  const at = (surface, slope_pct) => calcPerformance({
+    grossLb: 2600,
+    landingLb: 2600,
+    airport: { elev_ft: 0 },
+    runway: { surface, length_ft: 6000, ends: { 18: { hdg_mag: 180, slope_pct } } },
+    endId: '18',
+    metar: { altimeter_inhg: 29.92, oat_c: 15, wind_dir_deg: 180, wind_speed_kt: 0 },
+  }).factors;
+  assert.deepEqual(at('paved', 0.4), {
+    takeoff: { surface_pct: -6, slope_pct: 2 },
+    landing: { surface_pct: -2, slope_pct: -1 },
+  });
+  assert.deepEqual(at('turf', null), {
+    takeoff: { surface_pct: 0, slope_pct: null },
+    landing: { surface_pct: 0, slope_pct: null },
+  });
+});

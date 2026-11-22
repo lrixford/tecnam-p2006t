@@ -222,6 +222,25 @@ export function componentWind_kt(metar) {
     : metar.wind_speed_kt;
 }
 
+// Flight category from the ceiling and visibility, with the two figures it was
+// judged on. The ceiling is the lowest broken or overcast layer, or the
+// vertical visibility. Returns null when the report gives no visibility or no
+// sky condition.
+export function flightCategory(metar) {
+  if (metar?.visibility_sm == null || !metar.sky?.length) return null;
+  const layers = metar.sky.filter((l) => ['BKN', 'OVC', 'VV'].includes(l.coverage));
+  // A ceiling layer with no readable height leaves the category unknown
+  if (layers.some((l) => l.alt_ft === null)) return null;
+  const ceiling_ft = layers.length ? Math.min(...layers.map((l) => l.alt_ft)) : null;
+  const vis = metar.visibility_sm;
+  const ceil = ceiling_ft ?? Infinity;
+  const category = ceil < 500 || vis < 1 ? 'LIFR'
+    : ceil < 1000 || vis < 3 ? 'IFR'
+    : ceil <= 3000 || vis <= 5 ? 'MVFR'
+    : 'VFR';
+  return { category, ceiling_ft, visibility_sm: vis };
+}
+
 // Headwind component relative to a runway heading (positive = headwind).
 export function headwindComponent(windDir_deg, windSpeed_kt, runwayHdg_deg) {
   if (windDir_deg === null || windSpeed_kt === null) return null;

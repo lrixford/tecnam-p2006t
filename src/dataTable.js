@@ -2,6 +2,7 @@ import { P2006T } from './data/p2006t.js';
 import { computeAll } from './loadingCondition.js';
 import { lbToKg, galToL, formatNumber } from './units.js';
 import { renderCgEnvelope } from './cgEnvelope.js';
+import { flightCategory } from './metar.js';
 
 const DENSITY = P2006T.fuel.density_lb_per_gal;
 const LB_FT_PER_KG_M = 7.23301;
@@ -128,6 +129,24 @@ const fmtFt = (ft) => `${Math.round(ft).toLocaleString()} ft`;
 const fmtLbKg = (lb, kg) => `${formatNumber(lb, 0)} lb (${formatNumber(kg, 0)} kg)`;
 const warnIf = (bad, html) => (bad ? `<span class="dt-oei-warn">${html}</span>` : html);
 
+const signed = (n) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n)}%`;
+
+// The surface and slope corrections applied to the two ground rolls.
+function runwayFactors(perf) {
+  const { takeoff, landing } = perf.factors;
+  const rolls = (to, ldg) => `takeoff roll ${signed(to)}, landing roll ${signed(ldg)}`;
+  const surfaceName = SURFACE_LABEL[perf.surface] ?? perf.surface;
+  const surface = takeoff.surface_pct || landing.surface_pct
+    ? `${surfaceName}: ${rolls(takeoff.surface_pct, landing.surface_pct)}`
+    : `${surfaceName}: ${perf.surface === 'turf' ? 'none, POH distances are for grass' : 'no factor applied'}`;
+  const slope = takeoff.slope_pct === null
+    ? 'Slope: not published, none applied'
+    : perf.slope_pct === 0
+      ? 'Slope 0%: none'
+      : `Slope ${signed(perf.slope_pct)}: ${rolls(takeoff.slope_pct, landing.slope_pct)}`;
+  return `${surface}<br>${slope}`;
+}
+
 // Rows for the Inputs table: every condition the figures were computed from.
 function performanceInputs(perf, metar) {
   const airport = [perf.airport_name, perf.airport_id ? `(${perf.airport_id})` : null].filter(Boolean).join(' ');
@@ -140,9 +159,12 @@ function performanceInputs(perf, metar) {
     dims,
     SURFACE_LABEL[perf.surface] ?? perf.surface,
   ].filter(Boolean).join('; ');
-  const slope = perf.slope_pct !== null && perf.slope_pct !== undefined
-    ? `${perf.slope_pct > 0 ? '+' : ''}${perf.slope_pct}%`
-    : null;
+  const cat = flightCategory(metar);
+  const category = cat && [
+    cat.category,
+    cat.ceiling_ft !== null ? `ceiling ${fmtFt(cat.ceiling_ft)}` : 'no ceiling',
+    `visibility ${Math.round(cat.visibility_sm * 100) / 100} sm`,
+  ].join(', ');
   const along = perf.headwind_kt >= 0 ? `Headwind ${perf.headwind_kt} kt` : `Tailwind ${Math.abs(perf.headwind_kt)} kt`;
   const cross = perf.xwind_kt === null
     ? null
@@ -154,10 +176,11 @@ function performanceInputs(perf, metar) {
     ['Airport', airport],
     ['Field elevation', fmtFt(perf.elev_ft)],
     ['Weather from', weather],
+    ['Flight category', category],
     ['Runway', runway],
     ['Takeoff run available', perf.tora_ft ? fmtFt(perf.tora_ft) : null],
     ['Landing distance available', perf.lda_ft ? fmtFt(perf.lda_ft) : null],
-    ['Slope', slope],
+    ['Runway factors applied', runwayFactors(perf)],
     ['OAT', `${perf.oat_c} °C / ${Math.round(perf.oat_c * 9 / 5 + 32)} °F`],
     ['Altimeter', metar?.altimeter_inhg != null ? `${metar.altimeter_inhg.toFixed(2)} inHg` : null],
     ['Pressure altitude', fmtFt(perf.pa_ft)],
@@ -241,7 +264,7 @@ function phaseTree(perf) {
             ])}
             <div class="fork__branch">
               ${table('Stop', [
-                row('Decision', `30% allowance for a delayed decision: ${stop.decision_s.toFixed(1)} s at ${stop.liftoff_gs_kt} kt groundspeed`, fmtFtM(stop.decision_m)),
+                row('Observe, Orient, Decide, Act', `30% allowance for a delayed decision: ${stop.decision_s.toFixed(1)} s at ${stop.liftoff_gs_kt} kt groundspeed`, fmtFtM(stop.decision_m)),
                 row('Stop', 'Landing ground roll at planned landing weight', fmtFtM(stop.stop_m)),
                 row('Accelerate-stop', 'Accelerate + decision + stop', warnIf(!perf.accel_stop.ok, fmtFtM(perf.accel_stop.dist_m)), 'dt-total'),
               ])}

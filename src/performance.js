@@ -131,6 +131,17 @@ function applyCorrections(raw, corr, headwind_kt, surface, slope_pct) {
   return { gr: Math.round(gr), to50ft: Math.round(to50ft) };
 }
 
+// The surface and slope corrections above, as percent of ground roll.
+// The POH distances are for grass, so only a paved surface carries a factor.
+function groundRollFactors(corr, surface, slope_pct) {
+  return {
+    surface_pct: surface === 'paved' ? corr.paved_gr_pct : 0,
+    slope_pct: slope_pct === null || slope_pct === undefined
+      ? null
+      : Math.round(corr.slope_gr_pct_per_upslope * slope_pct * 100) / 100,
+  };
+}
+
 // OEI climb rate from liftoff to the top of the object past the runway end.
 function requiredOeiFpm(obstacle, length_ft, gr_m, gs_kt) {
   if (!obstacle || !length_ft) return null;
@@ -251,6 +262,11 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
     xwind_limit_kt: XWIND_LIMIT_KT,
     surface,
     slope_pct,
+    // Percent applied to each ground roll for the surface and for the slope
+    factors: {
+      takeoff: groundRollFactors(P2006T.takeoff.corrections, surface, slope_pct),
+      landing: groundRollFactors(P2006T.landing.corrections, surface, slope_pct),
+    },
     tora_ft,
     lda_ft,
     takeoff:     { ...toCorr, tora_ok: toraOk },

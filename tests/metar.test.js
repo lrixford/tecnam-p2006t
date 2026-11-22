@@ -1,6 +1,6 @@
 import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { componentWind_kt, fetchMETAR, parseMETAR } from '../src/metar.js';
+import { componentWind_kt, fetchMETAR, flightCategory, parseMETAR } from '../src/metar.js';
 
 const realFetch = globalThis.fetch;
 afterEach(() => { globalThis.fetch = realFetch; });
@@ -127,4 +127,23 @@ test('serves repeat lookups from the cache', async () => {
   await fetchMETAR('KHHH');
   await fetchMETAR('KHHH');
   assert.equal(urls.length, 1);
+});
+
+test('rates the flight category from ceiling and visibility', () => {
+  const cat = (wx) => flightCategory(parseMETAR(`KAAA 051553Z 18010KT ${wx} 20/10 A3010`));
+  assert.deepEqual(cat('10SM FEW020 SCT040'), { category: 'VFR', ceiling_ft: null, visibility_sm: 10 });
+  assert.deepEqual(cat('10SM CLR'), { category: 'VFR', ceiling_ft: null, visibility_sm: 10 });
+  assert.equal(cat('10SM BKN035').category, 'VFR');
+  assert.equal(cat('10SM SCT010 BKN030 OVC050').category, 'MVFR');
+  assert.equal(cat('5SM BKN060').category, 'MVFR');
+  assert.equal(cat('10SM OVC009').category, 'IFR');
+  assert.equal(cat('2 1/2SM BKN060').category, 'IFR');
+  assert.equal(cat('10SM VV004').category, 'LIFR');
+  assert.equal(cat('1/2SM FG OVC020').category, 'LIFR');
+});
+
+test('gives no flight category without visibility, sky or a ceiling height', () => {
+  assert.equal(flightCategory(parseMETAR('KAAA 051553Z 18010KT CLR 20/10 A3010')), null);
+  assert.equal(flightCategory(parseMETAR('KAAA 051553Z 18010KT 10SM 20/10 A3010')), null);
+  assert.equal(flightCategory(parseMETAR('KAAA 051553Z AUTO 18010KT 10SM OVC/// 20/10 A3010')), null);
 });
