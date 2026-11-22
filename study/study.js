@@ -389,6 +389,7 @@ function renderHome() {
         ${total.learn ? `<a class="btn" href="#/study/learning">Review ${total.learn} still learning</a>` : ''}
         ${starred ? `<a class="btn" href="#/study/starred">Study ${starred} starred</a>` : ''}
         <a class="btn btn--quiet" href="#/browse/all">Search all cards</a>
+        <a class="btn btn--quiet" href="kneeboard.html">Print kneeboard checklists</a>
       </div>
     </section>
     ${groups}
