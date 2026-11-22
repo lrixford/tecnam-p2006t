@@ -161,7 +161,7 @@ function performanceInputs(perf, metar) {
   ].filter(Boolean).join('; ');
   const cat = flightCategory(metar);
   const category = cat && [
-    cat.category,
+    `<strong class="dt-cat dt-cat--${cat.category.toLowerCase()}">${cat.category}</strong>`,
     cat.ceiling_ft !== null ? `ceiling ${fmtFt(cat.ceiling_ft)}` : 'no ceiling',
     `visibility ${Math.round(cat.visibility_sm * 100) / 100} sm`,
   ].join(', ');
@@ -252,10 +252,10 @@ function phaseTree(perf) {
               </table>`;
   const na = '<span class="dt-oei-warn">N/A</span>';
   const climb = go.climb_m !== null
-    ? row('Climb to 50 ft on one engine',
+    ? row(`Climb to 50 ft on one engine at ${go.climb_kias} kts IAS`,
         `${perf.roc_oei_fpm} fpm at ${go.climb_gs_kt} kt groundspeed, ${go.climb_s} s`,
         `<span class="${goClass}">${fmtFtM(go.climb_m)}</span>`)
-    : row('Climb to 50 ft on one engine', `${perf.roc_oei_fpm} fpm predicted`, na);
+    : row(`Climb to 50 ft on one engine at ${go.climb_kias} kts IAS`, `${perf.roc_oei_fpm} fpm predicted`, na);
 
   return `
           <div class="fork">

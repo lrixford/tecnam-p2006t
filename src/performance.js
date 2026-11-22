@@ -292,6 +292,7 @@ export function calcPerformance({ grossLb, landingLb, airport, runway, endId, me
         accelerate_m: toCorr.gr,
         climb_m:      canAccelGo ? accelGo_m - toCorr.gr : null,
         climb_s:      canAccelGo ? Math.round(50 / roc_oei_fpm * 60) : null,
+        climb_kias:   vyse_kt,
         climb_gs_kt:  oeiGs_kt,
       },
     },

@@ -1708,6 +1708,13 @@
 .p2006t .dt-oei-warn   { color: var(--warn); }
 .p2006t .dt-oei-caution { color: light-dark(#b35a00, #e8a04a); }
 
+/* Flight category, in the usual chart colors */
+.p2006t .dt-cat       { font-weight: 700; }
+.p2006t .dt-cat--vfr  { color: #1a7f37; }
+.p2006t .dt-cat--mvfr { color: #4a5fc1; }
+.p2006t .dt-cat--ifr  { color: #c1121f; }
+.p2006t .dt-cat--lifr { color: #c026d3; }
+
 .p2006t .perf-dist-note {
   font-size: 0.65rem;
   font-weight: 400;
